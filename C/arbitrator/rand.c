@@ -8,7 +8,8 @@
  * (c) 2001
  *
  * This module implements an instance-izable, predictable, pseudo-random
- * number generator.
+ * number generator or alterantively a wrapper for the kernel's random
+ * bytes generator.
  *
  * The algorithm used is identical to that of the Microsoft Win32 Run-Time 
  * Library. (don't look at us - it's just that the same algorithm is used
@@ -16,8 +17,7 @@
  * it available as part of Freecell Solver).
  *
  * We cannot use srand() because we wanted several instances of the random
- * number generator to be accessible. Basically, this module should be 
- * replaced by calls to the internal Linux random number generator.
+ * number generator to be accessible. 
  * 
  * */
 

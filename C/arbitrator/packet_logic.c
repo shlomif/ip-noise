@@ -1,3 +1,17 @@
+/*
+ * packet_logic.c - Part of the IP-Noise project.
+ * Written by Shlomi Fish & Roy Glasberg
+ * The Computer Networks Laboratory
+ * The Electrical Engineering Department
+ * The Technion
+ *
+ * (c) 2001
+ *
+ * This module is the packet logic: the code that decides what to do with
+ * a given packet based on the states on the chains (and the outcome of the
+ * randomosity).
+ *
+ * */
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -528,9 +542,19 @@ static ip_noise_verdict_t decide(
     global_verdict.delay_len = 0;
     global_verdict.flag = IP_NOISE_VERDICT_FLAG_UNPROCESSED;
 
+    /* 
+     * We check the outcome for all the chains regardless of what the chains
+     * of the previous iterations said, so we can know the times for the
+     * stable delay for each chain.
+     * */
     for(chain_index = 1 ; chain_index < data->num_chains ; chain_index++)
     {
         chain_verdict = chain_decide(self, chain_index, packet_info, 0);
+        /* 
+         * If the chain tells us to drop the packet, then the packet will
+         * be dropped conclusively.
+         * 
+         * */
         if (chain_verdict.action == IP_NOISE_VERDICT_DROP)
         {
             global_verdict.action = IP_NOISE_VERDICT_DROP;
@@ -544,11 +568,20 @@ static ip_noise_verdict_t decide(
             }
             else if (global_verdict.action == IP_NOISE_VERDICT_DELAY)
             {
+                /* 
+                 * Two or more delays accumulate to a delay that is the 
+                 * sum of both delays.
+                 * */
                 global_verdict.delay_len += chain_verdict.delay_len;
             }
+            /* 
+             * An accept verdict is neutral, so let's replace it with
+             * what this chain said.
+             * */
             else if (global_verdict.action == IP_NOISE_VERDICT_ACCEPT)
             {
                 global_verdict = chain_verdict;
+                /* Set it to processed */
                 global_verdict.flag = IP_NOISE_VERDICT_FLAG_PROCESSED; 
             }
         }
