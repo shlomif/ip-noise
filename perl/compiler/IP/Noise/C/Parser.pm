@@ -410,6 +410,10 @@ sub parse_state
     # Some initial values:
     $drop_prob = 0;
     $delay_prob = 0;
+    # The default move_to is to move back to the current state in a probability
+    # of 1.
+    $move_to = { $state_name => 1 };
+    $time_factor = 1000;
 
     $stable_delay_prob = 0;
     
@@ -428,28 +432,11 @@ sub parse_state
         # is the end of the state construct.
         if ($line =~ /^\}/)
         {
-            
             # Some Sanity Checks
             if ($delay_prob + $drop_prob > 1)
             {
                 die IP::Noise::C::Parser::Exception->new(
                     'text' => "The state's delay and drop probabilites exceed 1.0",
-                    'line' => $stream->get_line_num(),
-                    );                
-            }
-
-            if (!defined($time_factor))
-            {
-                die IP::Noise::C::Parser::Exception->new(
-                    'text' => "The state's time factor was not defined",
-                    'line' => $stream->get_line_num(),
-                    );                                
-            }
-
-            if (!defined($move_to))
-            {
-                die IP::Noise::C::Parser::Exception->new(
-                    'text' => "The state's move_tos were not defined",
                     'line' => $stream->get_line_num(),
                     );
             }
