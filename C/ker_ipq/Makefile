@@ -1,5 +1,6 @@
 
-UML = 1
+UML = 0
+DEBUG = 0
 
 ifeq ($(UML),1)
 	LINUX_KERNEL_DIR = /home/shlomi/Download/unpack/kernel/User-Mode-Linux/kernel/linux
@@ -7,7 +8,12 @@ ifeq ($(UML),1)
 	CFLAGS = -g -c -Wall $(INCLUDES) -U__i386__ -DMODULE -D__KERNEL__ -DUM_FASTCALL -DNESTING=0 -D__arch_um__ -DSUBARCH="i386"
 else
 	LINUX_KERNEL_DIR = /usr/src/linux
-	CFLAGS = -g -c -Wall -I$(LINUX_KERNEL_DIR)/include -DMODULE -D__KERNEL__
+	ifeq ($(DEBUG),1)
+		DFLAGS = -g
+	else
+		DFLAGS = -O3
+	endif
+	CFLAGS = $(DFLAGS) -c -Wall -I$(LINUX_KERNEL_DIR)/include -DMODULE -D__KERNEL__
 endif
 
 OBJECTS = ip_queue.o rand.o pqueue.o delayer.o k_stdlib.o

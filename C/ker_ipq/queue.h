@@ -34,13 +34,16 @@ struct ip_noise_message_struct
     struct timeval tv;
     struct ip_noise_message_struct * next;
 };
-
-typedef struct ip_noise_message_struct ip_noise_message_t;
 #else
-typedef ip_noise_ipq_packet_msg_t ip_noise_message_t;
+struct ip_noise_message_struct
+{
+    struct sk_buff * skb;
+    struct nf_info * info;
+};
+
 #endif
 
-
+typedef struct ip_noise_message_struct ip_noise_message_t;
 
 #ifndef __KERNEL__
 
