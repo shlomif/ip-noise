@@ -71,7 +71,7 @@ int PQueuePush( PQUEUE *pq, void *item)
     {
         int new_size;
         new_size = pq->MaxSize + 256;
-        pq->Elements = (pq_element_t *)ourrealloc( pq->Elements, sizeof(pq_element_t) * (new_size+1), sizeof(pq_element_t) * (pq->MaxSize+1));
+        pq->Elements = (pq_element_t *)ourrealloc( pq->Elements, sizeof(pq_element_t) * (pq->MaxSize+1), sizeof(pq_element_t) * (new_size+1));
         pq->MaxSize = new_size;
     }
     
