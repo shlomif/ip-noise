@@ -1,0 +1,5 @@
+UniformDelay {
+    delay = 0.4
+    delay_type = U(20,100)
+    time_factor = 2000
+}

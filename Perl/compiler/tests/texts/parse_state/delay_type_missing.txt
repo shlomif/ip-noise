@@ -1,0 +1,7 @@
+Hello {
+    delay = 0.2
+    time_factor = 1000
+    move_to = {
+        1 = Hello
+    }
+}

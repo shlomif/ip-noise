@@ -1,0 +1,6 @@
+MyState {
+    drop = 0.2
+    delay = 0.1
+    time_factor = 500
+}
+
