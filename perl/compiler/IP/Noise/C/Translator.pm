@@ -292,7 +292,7 @@ sub transact
     my $conn = $self->{'conn'};
 
     $conn->conn_write(pack_opcode($record->{'opcode'}));
-
+    
     foreach my $param_type (@{$record->{'params'}})
     {
         # TODO: Write each parameter according to what was inputted in the 
@@ -400,6 +400,7 @@ sub transact
         {
             die "Unknown param_type $param_type!\n";
         }
+        # TODO: Remove
     }
 
     my $ret_value = $self->read_retvalue();

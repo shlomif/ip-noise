@@ -726,7 +726,7 @@ void ip_noise_arbitrator_iface_loop(
         {
             opcode = read_opcode(self);
 
-            if (opcode < -1)
+            if (opcode < 0)
             {
                 self->_continue = 0;
                 continue;
