@@ -31,11 +31,22 @@ bind(SOCKET, $paddr)                          || die "bind: $!";
 $rin = '';
 vec($rin, fileno(SOCKET), 1) = 1;
 
+$SIG{TERM} = sub {
+    print "\$count is $count\n";
+    exit(-1);
+    };
+
 # timeout after 10.0 seconds
+$count = 0;
 while (select($rout = $rin, undef, undef, 200.0)) {
     $rtime = '';
     ($hispaddr = recv(SOCKET, $rtime, 40, 0))        || die "recv: $!";
-    print "Received Message: \"$rtime\"!\n";
+    if ($count % 25000 == 0)
+    {
+	    print "$count time=" . time() . "\n";
+    }
+    $count++;
+    #print "Received Message: \"$rtime\"!\n";
 }
 
 

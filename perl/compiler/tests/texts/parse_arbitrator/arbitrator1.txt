@@ -4,16 +4,9 @@ Chain Default {
         move_to = {
             1 = A
         }
-        delay = 1
-        stable_delay = 1
+        delay = 0
+        stable_delay = 0
         delay_type = U(1000,1010)
         time_factor = 100000
-    }
-    State B {
-        move_to = {
-            0.2 = A
-            0.9 = B
-        }
-        drop = 0.5
     }
 }

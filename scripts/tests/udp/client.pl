@@ -20,7 +20,7 @@ $SECS_of_70_YEARS      = 2208988800;
 
 
 
-$iaddr = gethostbyname(hostname());
+$iaddr = gethostbyname("localhost");
 $proto = getprotobyname('udp');
 #$port = getservbyname('time', 'udp');
 $port = 5000;
@@ -36,12 +36,17 @@ $host = "localhost";
 
 $| = 1;
 
+$SIG{TERM} = sub {
+    print "\$count is $count\n";
+    exit(-1);
+    };
+
 $hisiaddr = inet_aton($host)    || die "unknown host";
 $hispaddr = sockaddr_in($port, $hisiaddr);
-for($count=0;$count<100;$count++)
+for($count=0;$count<200_000;$count++)
 {
     my $msg = pack("A40", sprintf("%s", $count));
-    print "Sending \"$msg\"!\n";
+    #print "Sending \"$msg\"!\n";
     #if ($count % 100 == 0)
     #{
     #    print "Sending \"$msg\"!\n";
@@ -49,5 +54,6 @@ for($count=0;$count<100;$count++)
     defined(send(SOCKET, $msg, 0, $hispaddr))    || die "send $host: $!";
     #sleep(1);
     #usleep(20000);
-    usleep(200000);
+    #usleep(200000);
 }
+print $count;
