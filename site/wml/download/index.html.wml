@@ -1,6 +1,13 @@
 #!wml
 #include 'template.wml'
 <subject "IP-Noise Project Downloads">
+
+<p>
+Note, there are more recent downloads below, with more up-to-date code than
+the final code which we were given credit for.
+</p>
+
+<h2>The Project's Final Material (as given credit for)</h2>
 <p>
 <a href="IP-Noise-perl-filters-0.1.0.tar.gz">
 IP-Noise-perl-filters-0.1.0.tar.gz
@@ -36,5 +43,19 @@ final arbitrator.
 IP-Noise-C-Arbitrator-0.1.7.tar.gz
 </a> - 
 an arbitrator written in C.
+</p>
+
+<h2>More Recent Downloads</h2>
+
+<p>
+<a href="IP-Noise-C-Arbitrator-0.1.8.tar.gz">
+IP-Noise-C-Arbitrator-0.1.8.tar.gz
+</a>
+</p>
+
+<p>
+<a href="IP-Noise-Compiler-0.1.7.tar.gz">
+IP-Noise-Compiler-0.1.7.tar.gz
+</a>
 </p>
 
