@@ -8,7 +8,9 @@ use strict;
 
 require 'flush.pl';
 
-my $pipes_dir = "/home/project" . "/ip-noise/pipes/";
+my $pipes_dir = exists($ENV{'IP_NOISE_UM_ARB_CONN_PATH'}) ? 
+    $ENV{'IP_NOISE_UM_ARB_CONN_PATH'} :
+    ("/home/project" . "/ip-noise/pipes/");
 
 local(*OUT,*IN);
 

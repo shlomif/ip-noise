@@ -5,25 +5,48 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "conn.h"
-
-#define pipes_dir "/home/project" "/ip-noise/pipes/"
 
 ip_noise_conn_t * ip_noise_conn_open(void)
 {
     ip_noise_conn_t * conn;
+    char * local_pipes_dir;
+    char * ip_noise_env_var;
+    char * pipe_path;
 
     conn = malloc(sizeof(ip_noise_conn_t));
 
-    conn->out = open( pipes_dir "/from_arb", O_WRONLY);
-
+    ip_noise_env_var = getenv("IP_NOISE_UM_ARB_CONN_PATH");
+    if (ip_noise_env_var == NULL)
+    {
+        local_pipes_dir = "/home/project/ip-noise/pipes/";
+    }
+    else
+    {
+        local_pipes_dir = ip_noise_env_var;
+    }
+    
+    pipe_path = malloc(strlen(local_pipes_dir)+100);
+    strncpy(pipe_path, local_pipes_dir, strlen(local_pipes_dir)+1);
+    strncat(pipe_path, "/from_arb", 99);
+    
+    conn->out = open( pipe_path, O_WRONLY);
+    
     if (conn->out == -1)
     {
+        free(pipe_path);
         free(conn);
         return NULL;
     }
-    conn->in = open( (pipes_dir "/to_arb"), O_RDONLY);
+    
+    strncpy(pipe_path, local_pipes_dir, strlen(local_pipes_dir)+1);
+    strncat(pipe_path, "/to_arb", 99);
+    
+    conn->in = open(pipe_path, O_RDONLY);
+
+    free(pipe_path);
 
     if (conn->in == -1)
     {
