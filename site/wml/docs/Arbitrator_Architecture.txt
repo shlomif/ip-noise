@@ -27,15 +27,7 @@ struct chain_filter
     ip_specification * dest;
     protocols_bit_mask protocols; /* A bit mask specifiying which protocols to filter */
     /* We treat the TOS bits as one big 6-bit integer 
-    int min_tos;
-    int max_tos;
-    int which_tos;        /* 
-                             Can be - 0 - don't care.
-                             1 - Greater than min 
-                             2 - Lower than max
-                             3 - Between min and max
-                             4 - Not between min and max.
-                          */
+    tos_bit_mask tos;
     int min_packet_len;
     int max_packet_len;
     int which_packet_len; /* 
@@ -124,7 +116,7 @@ struct arbitrator_struct
     bool terminate_threads;
 #endif
 
-    Dictionary <sting -> int> chain_names;
+    Dictionary <String -> int> chain_names;
 }
 
 struct change_state_event_struct
@@ -150,7 +142,7 @@ struct delay_function_struct
             struct prob_and_delay 
             {
                 probability_t prob;
-                double delay;
+                int delay;
             } * points;
         };
     };

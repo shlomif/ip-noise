@@ -7,7 +7,7 @@ State - If 0 is transmitted - <int32> - index
 
 Chain - If 0 is transmitted - <int32> - index
         If 1 - <string> - its name
-        If 2 is transmitted - the last state used
+        If 2 is transmitted - the last chain used
 
 Return Values - 0 - OK
                 1 - Wrong Input
@@ -19,7 +19,7 @@ Packet Ranges Specifier - <Packet Range> <Packet Range> .... <Terminator>
 
 IP Component - ip=<int32> 
                netmask_width=<int32> 
-               inverse=<bool> 
+               inverse=<bool>  (?)
                <Packet Ranges Specifier>
 
 IP Component Terminator - ip=255.255.255.255 but there is still a netmask
@@ -36,7 +36,7 @@ Split Linear Specifier Token :
 Split Linear Specifier:
     <Split Linear Token> <Split Linear Token> ... <Terminator>
 
-Delay Type - any of:
+Delay Function Type - any of:
     1. Exponential   0x0
     2. Split Linear  0x1
     
@@ -54,7 +54,7 @@ Protocol Operations:
 
 * Define a new state in a chain.
 
-    Input: <0x0001> chain=<Chain> state_name=<State>
+    Input: <0x0001> chain=<Chain> state_name=<string>
     Output : <RetValue> state_number=<int32>
 
 * Define the move probabilities between states @source to states @dest.
@@ -100,21 +100,16 @@ Protocol Operations:
               enable_or_disable=<bool>
         Output:
             <RetValue>
-        
-    - Set TOS Precedence Bits
-        Input: <0x0006>
-               chain=<Chain>
-               Precedence = <int16>
-        Output:
-            <RetValue>
-            
-    - Set TOS bits mask
-        Input: <0x0007>
-            chain=<Chain>
-            tos_bits_mask=<int16>
-        Output:
-            <RetValue>
 
+    - Enable/Disable TOS Value:
+        Input: <0x0006>
+              chain=<Chain>
+              tos_index=<int32>
+                 - If > 63 then all bits are enabled or disabled.
+              enable_or_disable=<bool>
+        Output:
+            <RetValue>
+        
     - Set Min. packet length
         Input: <0x0008>
                chain=<Chain>
@@ -185,7 +180,7 @@ Protocol Operations:
         Input: <0x000f>
                chain=<Chain>
                state=<State>
-               delay_type=<Delay Type>
+               delay_type=<Delay Function Type>
         Output:
             <RetValue>
 
