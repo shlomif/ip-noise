@@ -199,5 +199,54 @@ following commands as root:
 the configuration utility.
 </p>
 
+<h2>Running the Arbitrator</h2>
+
+<h3>Setting up IP-Tables Rules to Transfer Packets for Noisifying</h3>
+
+<p>
+The simulator intercepts packets from the kernel by means of the IP-Tables
+framework. It receives those packets (and only those packets) that were 
+designated with the <tt>QUEUE</tt> rule. Normally, you would like to configure
+the IP-Tables rules, so that important communication will not be interfered 
+with. Only the ports, protocols and IPs of interest need to be transferred
+to the arbitrator in order to decide their verdict.
+</p>
+
+<p>
+Describing how to set up IP-Tables rules is out of the scope of this article. 
+We refer you to the Internet for further information. However, we will present 
+a script that we use to set up the IP-Tables rules on our Mandrake Linux 8.1 
+system:
+</p>
+
+<p>
+<table border="1">
+<tr>
+<td>
+<pre>
+<FONT color=#0000ff>#!/bin/sh</FONT>
+
+<FONT color=#008b8b>UDP_PORTS</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>67 111 135 137 138 161 513 520 525 631 2571</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+<FONT color=#008b8b>TCP_PORTS</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>6346 6347 5901</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+<FONT color=#008b8b>IFACES</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>eth0 lo</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+
+<B><FONT color=#a52a2a>for</FONT></B> iface <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$IFACES</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B> 
+    <B><FONT color=#a52a2a>for</FONT></B> port <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$UDP_PORTS</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> udp <FONT color=#6a5acd>--destination-port</FONT> <FONT color=#a020f0>$port</FONT>
+    <B><FONT color=#a52a2a>done</FONT></B>
+    <B><FONT color=#a52a2a>for</FONT></B> port <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$TCP_PORTS</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> tcp <FONT color=#6a5acd>--destination-port</FONT> <FONT color=#a020f0>$port</FONT>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> tcp <FONT color=#6a5acd>--source-port</FONT> <FONT color=#a020f0>$port</FONT>
+    <B><FONT color=#a52a2a>done</FONT></B>
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> tcp
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> udp
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> icmp
+<B><FONT color=#a52a2a>done</FONT></B>
+</pre>
+</td>
+</tr>
+</table>
+</p>
+
 </body>
 </html>
