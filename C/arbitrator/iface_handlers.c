@@ -472,13 +472,13 @@ static int ip_noise_arbitrator_iface_handler_set_delay_type(ip_noise_arbitrator_
     if ((state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR) &&
         (delay_type != IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR))
     {
-        free(state->delay_function.split_linear.points);
+        free(state->delay_function.params.split_linear.points);
     }
     state->delay_function.type = delay_type;
     if (delay_type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
     {
-        state->delay_function.split_linear.num_points = 0;
-        state->delay_function.split_linear.points = NULL;        
+        state->delay_function.params.split_linear.num_points = 0;
+        state->delay_function.params.split_linear.points = NULL;        
     }
     
 	return 0;
@@ -492,14 +492,32 @@ static int ip_noise_arbitrator_iface_handler_set_split_linear_points(ip_noise_ar
 	int state_index = params[1].state;
 	ip_noise_split_linear_function_t points = params[2].split_linear_points;
 
+    ip_noise_state_t * state;
 
+    printf("Set Split Linear Points!\n");
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    state = get_state(self, chain_index, state_index);
 
+    if (state == NULL)
+    {
+        free(points.points);
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    if (state->delay_function.type != IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
+    {
+        return IP_NOISE_RET_VALUE_SPLIT_LINEAR_SET_POINTS_ON_OTHER_TYPE;
+    }
+
+    if(state->delay_function.params.split_linear.points != NULL)
+    {
+        free(state->delay_function.params.split_linear.points);
+    }
+
+    state->delay_function.params.split_linear = points;
+    
 	return 0;
 }
-
 
 
 static int ip_noise_arbitrator_iface_handler_set_lambda(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)

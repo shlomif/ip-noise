@@ -48,7 +48,7 @@ struct ip_noise_delay_struct
     {
         double lambda;
         ip_noise_split_linear_function_t split_linear;
-    };
+    } params;
 };
 
 typedef struct ip_noise_delay_struct ip_noise_delay_t;

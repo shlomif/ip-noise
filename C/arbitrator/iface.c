@@ -13,7 +13,7 @@ enum IP_NOISE_RET_VALUE_T
     IP_NOISE_RET_VALUE_SOMETHING_WRONG = 1,
     IP_NOISE_RET_VALUE_UNKNOWN_OPCODE = 2,
     IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE = 3,
-
+    IP_NOISE_RET_VALUE_SPLIT_LINEAR_SET_POINTS_ON_OTHER_TYPE = 4,
 };
 
 ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
@@ -146,7 +146,10 @@ static void state_free(ip_noise_state_t * state)
 {
     if (state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
     {
-        free(state->delay_function.split_linear.points);
+        if(state->delay_function.params.split_linear.points != NULL)
+        {
+            free(state->delay_function.params.split_linear.points);
+        }
     }
     free(state->move_tos);
     free(state);
@@ -329,6 +332,40 @@ param_t read_param_type(
             {
                 ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_NONE;
             }
+        }
+        break;
+
+        case PARAM_TYPE_SPLIT_LINEAR_POINTS:
+        {
+            double prob;
+            int delay;
+            
+            int max_num_points;
+            ip_noise_split_linear_function_t points;
+
+            max_num_points = 16;
+            points.points = malloc(sizeof(points.points[0])*max_num_points);
+            points.num_points = 0;
+
+            do 
+            {
+                prob = read_param_type(self, PARAM_TYPE_PROB).prob;
+                delay = read_int(self);
+
+                points.points[points.num_points].prob = prob;
+                points.points[points.num_points].delay = delay;
+
+                points.num_points++;
+                if (points.num_points == max_num_points)
+                {
+                    max_num_points += 16;
+                    points.points = realloc(points.points, sizeof(points.points[0])*max_num_points);
+                }                
+            } while ((prob < 1));
+
+            points.points = realloc(points.points, sizeof(points.points[0])*points.num_points);
+
+            ret.split_linear_points = points;
         }
         break;
         

@@ -651,15 +651,10 @@ sub read_param_type
         while ($do_first || ($prob < 1))
         {
             $do_first = 0;
-            # TODO: Sanity check that 
-            $prob = unpack("d", $conn->conn_read(8));
+            # TODO: Sanity check that the probs increase.
+            $prob = $self->read_param_type("prob");
             $delay = $self->read_int();
 
-            if (($prob < 0) || ($prob > 1))
-            {
-                $prob = 0;
-            }
-            
             push @ret, {'prob' => $prob, 'delay' => $delay };
         }
 
