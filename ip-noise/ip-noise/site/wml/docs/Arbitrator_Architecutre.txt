@@ -1,0 +1,149 @@
+The Arbitrator is going to have two threads:
+
+1. The Arbitrating Thread - this thread accepts packets from the
+Packets Queue, decides what to with them according to the Markovian chains
+and if it is to be delayed, it puts it in the priority queue of the release 
+thread (which is not part of the arbitrator and is described in 
+Architecure.txt.
+
+2. The Chains States Maintainance thread - this thread updates the
+active states of the Markovian chains by using a priority queue.
+
+It is possible that there will be several arbitrating threads, all of which
+are symetrical. Each one will decide what to do with a single packet before
+opting to receive others of its kind.
+
+The chains states maintainance thread is quite trivial to write. Therefore,
+most of this document will focus on the Arbitrating Thread.
+
+Chain Filter Structure:
+-----------------------
+
+A chain filter structure will look as follows:
+
+struct chain_filter
+{
+    ip_specification * source;
+    ip_specification * dest;
+    int protocols; /* A bit mask specifiying which protocols to filter */
+    int tos_precedence; /* A bit mask for the various precendence available */
+    int tos_bits; /* Bit masks for the acceptibility of Delay, Throughput and
+                     Relay-ability. Bits:
+                        0 - If set no-delay is accepted.
+                        1 - If set delay is accepted
+                        2 - If set no-throughput is accepted.
+                        3 - If set throughput is accepted
+                        4 - If set no-Relayability is accepted
+                        5 - If set Relayibility is accepted.
+
+                  */
+    int min_packet_len;
+    int max_packet_len;
+    int which_packet_len; /* 
+                             Can be - 0 - don't care.
+                             1 - Greater than min 
+                             2 - Lower than max
+                             3 - Between min and max
+                             4 - Not between min and max.
+                          */
+}
+
+And the ip_specification struct is defined as follows:
+
+struct ip_specification
+{
+    ip_specification * next; /* = NULL to terminate the linked list. */
+
+    bit inverse; /* Inverse the condition */
+    in_addr ip;
+    int net_mask; /* The sub-net width of the IP range */
+    int num_port_ranges; /* If = 0 then any port will do. */
+    /* A sorted array of port ranges. We do a binary search to see
+       if the port of the packet matches them. */
+    port_range_struct * port_ranges; 
+}
+
+State Syntax:
+-------------
+
+struct state_struct
+{
+    probability_type drop_prob;
+    probability_type delay_prob;
+    delay_type * delay_function;
+    int time_factor;
+    int num_move_tos;
+    move_to_type * move_tos;
+    probability_type stable_delay_prob;
+}
+
+struct move_to_type
+{
+    probabilty_type comulative_prob;
+    int which_state; /* Determines the state to go to */
+}
+
+Move to is a sorted array. We search it for the apropriate probability
+in the range (0,1) and from that we determine the state to go to next.
+
+Chain Syntax:
+-------------
+
+struct chain_struct
+{
+    int num_states;
+    state_type * states;
+
+    int current_state;
+    chain_filter_type * filter;
+
+    time_t time_of_last_packet;
+}
+
+Arbitrator Data Structure Syntax:
+---------------------------------
+
+struct arbitrator_struct
+{
+    int num_chains;
+    chain_type * chains;
+
+    read_write_lock_t lock;
+
+    priority_queue<change_state_event_type> change_states_pq;
+
+#if there is more than one arbitrator threads:
+    mutex protect_num_active_threads;
+    int num_active_threads;
+    bool terminate_threads;
+#endif
+}
+
+struct change_state_event_struct
+{
+    int chain;
+    time_t invalidation_time;
+}
+
+
+The Delay Function Type:
+------------------------
+
+struct delay_function_struct
+{
+    int type;
+                 
+    union params
+    {
+        double lambda;
+        struct split_linear_function_struct
+        {
+            int num_points;
+            struct prob_and_delay 
+            {
+                probability_t prob;
+                double delay;
+            } * points;
+        };
+    };
+}

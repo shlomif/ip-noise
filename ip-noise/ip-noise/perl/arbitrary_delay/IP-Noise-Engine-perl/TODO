@@ -1,0 +1,9 @@
+* Convert to C
+
+* A generic class to handle (sec,usec) times
+
+* Add some more beaf to the rules of Packet::Logic.
+
+* Merge the duplicate code of main.pl and main_mt.pl
+
+* Write a description of the rules.
