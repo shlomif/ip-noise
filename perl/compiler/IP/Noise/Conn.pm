@@ -8,7 +8,7 @@ use strict;
 
 require 'flush.pl';
 
-my $pipes_dir = $ENV{'HOME'} . "/ip-noise/pipes/";
+my $pipes_dir = "/home/project" . "/ip-noise/pipes/";
 
 local(*OUT,*IN);
 

@@ -174,7 +174,6 @@ static int ip_noise_arbitrator_iface_handler_new_chain(ip_noise_arbitrator_iface
 	char * name = params[0].string;
     int index;
 
-	/* FILL IN WITH BODY*/
     ip_noise_arbitrator_data_t * data;
 
     printf("New Chain: \"%s\"!\n", name);
@@ -214,11 +213,12 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     int a;
     int index;
 
-    ip_noise_arbitrator_data_t * data = self->data;
+    ip_noise_chain_t * chain = get_chain(self,chain_index);
 
-	/* FILL IN WITH BODY*/
-
-    ip_noise_chain_t * chain = data->chains[chain_index];
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
     printf("New state: \"%s\"!\n", state_name);
     
@@ -264,11 +264,54 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
 	int chain_index = params[0].chain;
 	int num_sources = params[1]._int;
 	int num_dests = params[2]._int;
+    int i,s,d;
+    int * sources;
+    int * dests;
 
+    ip_noise_chain_t * chain;
 
+    chain = get_chain(self, chain_index);
 
-	/* FILL IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    sources = malloc(sizeof(sources[0]) * num_sources);
+    for(i=0;i<num_sources;i++)
+    {
+        sources[i] = read_param_type(self, PARAM_TYPE_STATE).state;
+        if (sources[i] >= chain->num_states)
+        {
+            free(sources);
+            return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+        }
+    }
+
+    dests = malloc(sizeof(dests[0]) * num_dests);
+    for(i=0;i<num_dests;i++)
+    {
+        dests[i] = read_param_type(self, PARAM_TYPE_STATE).state;
+        if (dests[i] >= chain->num_states)
+        {
+            free(sources);
+            free(dests);
+            return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+        }
+    }
+
+    /*
+     * TODO: add sanity check that the some of the dests in any source
+     *  equals the present sum.
+     *
+     * */
+    for(s=0;s<num_sources;s++)
+    {
+        for(d=0;d<num_dests;d++)
+        {
+            chain->states[sources[s]]->move_tos[dests[d]].comulative_prob = read_param_type(self, PARAM_TYPE_PROB).prob;
+        }
+    }
 
 	return 0;
 }
@@ -282,7 +325,7 @@ static int ip_noise_arbitrator_iface_handler_set_source(ip_noise_arbitrator_ifac
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -297,7 +340,7 @@ static int ip_noise_arbitrator_iface_handler_set_dest(ip_noise_arbitrator_iface_
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -313,7 +356,7 @@ static int ip_noise_arbitrator_iface_handler_set_protocol(ip_noise_arbitrator_if
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -329,7 +372,7 @@ static int ip_noise_arbitrator_iface_handler_set_tos(ip_noise_arbitrator_iface_t
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -344,7 +387,7 @@ static int ip_noise_arbitrator_iface_handler_set_length_min(ip_noise_arbitrator_
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -359,7 +402,7 @@ static int ip_noise_arbitrator_iface_handler_set_length_max(ip_noise_arbitrator_
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -374,7 +417,7 @@ static int ip_noise_arbitrator_iface_handler_set_which_length(ip_noise_arbitrato
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -388,8 +431,6 @@ static int ip_noise_arbitrator_iface_handler_set_drop_delay_prob(ip_noise_arbitr
 	int state_index = params[1].state;
 	ip_noise_prob_t drop_prob = params[2].prob;
 	ip_noise_prob_t delay_prob = params[3].prob;
-
-	/* FILL IN WITH BODY*/
 
     ip_noise_state_t * state;
 
@@ -416,11 +457,30 @@ static int ip_noise_arbitrator_iface_handler_set_delay_type(ip_noise_arbitrator_
 	int state_index = params[1].state;
 	int delay_type = params[2].delay_function_type;
 
+    ip_noise_state_t * state;
 
+    printf("Set Delay Type!\n");
 
-	/* FILL IN WITH BODY*/
+    state = get_state(self, chain_index, state_index);
 
+    if (state == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    /* Free the split linear points in case the type is no longer split-linear */
+    if ((state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR) &&
+        (delay_type != IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR))
+    {
+        free(state->delay_function.split_linear.points);
+    }
+    state->delay_function.type = delay_type;
+    if (delay_type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
+    {
+        state->delay_function.split_linear.num_points = 0;
+        state->delay_function.split_linear.points = NULL;        
+    }
+    
 	return 0;
 }
 
@@ -434,7 +494,7 @@ static int ip_noise_arbitrator_iface_handler_set_split_linear_points(ip_noise_ar
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -450,7 +510,7 @@ static int ip_noise_arbitrator_iface_handler_set_lambda(ip_noise_arbitrator_ifac
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;
@@ -464,11 +524,17 @@ static int ip_noise_arbitrator_iface_handler_set_time_factor(ip_noise_arbitrator
 	int state_index = params[1].state;
 	int time_factor = params[2].delay_type;
 
+    ip_noise_state_t * state;
 
+    state = get_state(self, chain_index, state_index);
 
-	/* FILL IN WITH BODY*/
-
-
+    if (state == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
+    
+    state->time_factor = time_factor;
+    
 	return 0;
 }
 
@@ -480,10 +546,20 @@ static int ip_noise_arbitrator_iface_handler_set_stable_delay_prob(ip_noise_arbi
 	int state_index = params[1].state;
 	ip_noise_prob_t stable_delay_prob = params[2].prob;
 
+    ip_noise_state_t * state;
 
 
-	/* FILL IN WITH BODY*/
 
+    printf("Set Stable Delay Prob - %f!\n", stable_delay_prob);
+
+    state = get_state(self, chain_index, state_index);
+
+    if (state == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
+
+    state->stable_delay_prob = stable_delay_prob;
 
 	return 0;
 }
@@ -492,8 +568,6 @@ static int ip_noise_arbitrator_iface_handler_set_stable_delay_prob(ip_noise_arbi
 
 static int ip_noise_arbitrator_iface_handler_clear_all(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
-	/* FILL IN WITH BODY*/
-
     ip_noise_arbitrator_data_t * data = self->data;
 
     int a;
@@ -520,7 +594,7 @@ static int ip_noise_arbitrator_iface_handler_end_connection(ip_noise_arbitrator_
 
 
 
-	/* FILL IN WITH BODY*/
+	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
 
 
 	return 0;

@@ -220,53 +220,6 @@ static ip_noise_state_t * get_state(ip_noise_arbitrator_iface_t * self, int chai
     return chain->states[state_index];
 }
 
-#include "iface_handlers.c"
-
-static int opcode_compare_wo_context(const void * void_a, const void * void_b)
-{
-    operation_t * op_a = (operation_t *)void_a;
-    operation_t * op_b = (operation_t *)void_b;
-
-    int a = op_a->opcode;
-    int b = op_b->opcode;
-
-    if (a < b)
-    {
-        return -1;
-    }
-    else if (a > b)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }    
-}
-
-static void write_int(
-    ip_noise_arbitrator_iface_t * self,
-    int retvalue    
-    )
-{
-    unsigned char buffer[4];
-    int a;
-    for(a=0;a<4;a++)
-    {
-        buffer[a] = ((retvalue>>(a*8))&0xFF);
-    }
-    ip_noise_conn_write(self->conn, buffer, 4);
-}
-
-
-static void write_retvalue(
-    ip_noise_arbitrator_iface_t * self,
-    int retvalue    
-    )
-{
-    write_int(self, retvalue);
-}
-
 param_t read_param_type(
     ip_noise_arbitrator_iface_t * self,
     param_type_t param_type
@@ -344,7 +297,38 @@ param_t read_param_type(
                 d = 0;
             }
             ret.prob = d;
-            printf("Read Prob!\n");
+        }
+        break;
+
+        case PARAM_TYPE_DELAY_TYPE:
+        {
+            int delay;
+
+            delay = read_int(self);
+            if (delay <= 0)
+            {
+                delay = 1000;
+            }
+            ret.delay_type = delay;            
+        }
+        break;
+
+        case PARAM_TYPE_DELAY_FUNCTION_TYPE:
+        {
+            int delay_type = read_int(self);
+
+            if (delay_type == 0)
+            {
+                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_EXP;
+            }
+            else if (delay_type == 1)
+            {
+                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR;
+            }
+            else 
+            {
+                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_NONE;
+            }
         }
         break;
         
@@ -353,9 +337,58 @@ param_t read_param_type(
             printf("Uknown Param Type %i!\n", param_type);
             exit(-1);
         }
+        break;
     }
 
     return ret;
+}
+
+
+#include "iface_handlers.c"
+
+static int opcode_compare_wo_context(const void * void_a, const void * void_b)
+{
+    operation_t * op_a = (operation_t *)void_a;
+    operation_t * op_b = (operation_t *)void_b;
+
+    int a = op_a->opcode;
+    int b = op_b->opcode;
+
+    if (a < b)
+    {
+        return -1;
+    }
+    else if (a > b)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }    
+}
+
+static void write_int(
+    ip_noise_arbitrator_iface_t * self,
+    int retvalue    
+    )
+{
+    unsigned char buffer[4];
+    int a;
+    for(a=0;a<4;a++)
+    {
+        buffer[a] = ((retvalue>>(a*8))&0xFF);
+    }
+    ip_noise_conn_write(self->conn, buffer, 4);
+}
+
+
+static void write_retvalue(
+    ip_noise_arbitrator_iface_t * self,
+    int retvalue    
+    )
+{
+    write_int(self, retvalue);
 }
 
 static void write_param_type(

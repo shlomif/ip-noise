@@ -554,7 +554,7 @@ sub handler_set_move_probs
     {
         for($d=0;$d<$num_dests;$d++)
         {
-            $chain->{'states'}->[$s]->{'move_tos'}->[$d] = $self->read_param_type("prob");
+            $chain->{'states'}->[$sources[$s]]->{'move_tos'}->[$dests[$d]] = $self->read_param_type("prob");
         }
     }
 

@@ -29,7 +29,7 @@ ip_noise_verdict_t decide_what_to_do_with_packet(ipq_packet_msg_t * m)
     what_to_do = (rand() % 3);
     delay = (rand() % 3000);
 
-    if (what_to_do == 0)
+    if (1)/* (what_to_do == 0) */
     {
         ret.action = IP_NOISE_VERDICT_ACCEPT;
     }
