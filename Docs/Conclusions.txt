@@ -19,7 +19,7 @@ It usually worked very well. VNC is not without its flaws, however.
 For instance, using a tiled-image wallpaper, resulted in a very slow rendering
 of the screen for some reason.
 
-The VNC homepage is:
+The VNC home page is:
 http://www.uk.research.att.com/vnc/
 
 Perl:
@@ -35,7 +35,7 @@ Furthermore, Perl is similar enough to C (if you don't abuse its more powerful
 features), that we were able to benefit from having a working Perl code to
 base upon.
 
-We would recommend anyone, who can afford to, to write the initial codebase in
+We would recommend anyone, who can afford to, to write the initial code base in
 Perl (or a similar language such as Python or Ruby), before converting it to
 C.
 
@@ -43,7 +43,7 @@ We plan to keep the compiler in Perl, because Perl is much better suited for
 tasks like that, because it is available on most UNIX systems, and because the
 compiler is not a real-time application.
 
-The Perl homepage is:
+The Perl home page is:
 http://www.perl.com/
 
 User-Mode Linux
@@ -57,7 +57,7 @@ Kernel modules that the user writes can be loaded and debugged using gdb,
 and if there is a bug inside one of them, it only crashes the process, 
 while the system remains intact.
 
-The User-Mode Linux homepage is:
+The User-Mode Linux home page is:
 http://user-mode-linux.sourceforge.net/
 
 CVS
@@ -76,7 +76,7 @@ Please note that there is a software project under works called Subversion that
 will eventually offer an even better alternative to CVS. Both CVS and
 Subversion are open source software.
 
-The CVS homepage is:
+The CVS home page is:
 http://www.cvshome.org/
 
 BerliOS
@@ -87,10 +87,10 @@ use all of the services that BerliOS offered us, but we made extensive used of
 the fact that it gave us a CVS repository. 
 
 At the time of this writing there are two similar services to BerliOS on the 
-web: SourceForge and GNU Savanah. All of them offer a good service for hosting
+web: SourceForge and GNU Savannah. All of them offer a good service for hosting
 open-source software.
 
-The BerliOS homepage is:
+The BerliOS home page is:
 http://developer.berlios.de/
 
 Lessons about C and Kernel Programming:
@@ -130,7 +130,7 @@ kernel 2.4 supports them well:
 
 1. Most people try to avoid using them inside their kernel modules.
 
-2. The Netfilter architecure parallizes handling the incoming packets for us,
+2. The Netfilter architecture parallelizes handling the incoming packets for us,
 assuming it is an SMP machine.
 
 3. It would be faster and have less overhead to write the code asynchronously
@@ -164,7 +164,8 @@ Exceptions should be used with care
 
 Exceptions are Evil (with a capital "E") in C++, much less in C. We decided
 not to use them due to the fact that C does not have garbage collection and
-because it may mean our code will be killed due to an uncatched exception.
+because it may mean our code will be killed due to an exception that was not
+caught.
 
 In Perl, however, which supports exceptions, and has garbage collection, we
 used exceptions extensively. We did not use them in the arbitrator and the 
@@ -172,7 +173,7 @@ translator, but it made our life when writing the parser easier, because we
 did not have to pass an error code.
 
 We strongly recommend C++ programmers not to use exceptions in their code. But
-programmers of Perl and similiar languages may use them with care.
+programmers of Perl and similar languages may use them with care.
 
 
 
