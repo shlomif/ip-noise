@@ -1,5 +1,8 @@
 Chain MyChain {
     State A {
+        drop = 0.3
+        delay = 0.2
+        delay_type = U(20,50)
         move_to = {
             0.5 = B 
             0.5 = C
@@ -7,6 +10,7 @@ Chain MyChain {
         time_factor = 500        
     }
     State B {
+        drop = 0.4
         move_to = {
             0.3 = A
             0.7 = B
@@ -24,6 +28,7 @@ Chain MyChain {
 
 Chain AnotherChain {
     State A {
+        drop = 0.7
         time_factor = 1000
         move_to = {
             0.2 = A

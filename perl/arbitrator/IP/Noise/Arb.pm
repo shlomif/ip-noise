@@ -72,6 +72,11 @@ my %operations =
         'params' => [],
         'handler' => \&handler_clear_all,
     },
+    0xE =>
+    {
+        'params' => [ "chain", "state", "prob", "prob" ],
+        'handler' => \&handler_set_drop_delay_prob
+    },
     0x10000 =>
     {
         'params' => [],
@@ -147,7 +152,12 @@ sub handler_new_state
 
     my $states_ref = $chain->{'states'};
 
-    push @$states_ref, { 'name' => $state_name };
+    push @$states_ref, 
+        { 
+            'name' => $state_name , 
+            'drop_prob' => 0, 
+            'delay_prob' => 0 
+        };
 
     my $index = scalar(@$states_ref) - 1;
 
@@ -158,6 +168,24 @@ sub handler_new_state
     return (0, $index);
 }
 
+sub handler_set_drop_delay_prob
+{
+    my $self = shift;
+
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $drop_prob = shift;
+    my $delay_prob = shift;
+
+    # TODO: Add sanity check that the sum of drop+delay is lesser than 1.
+
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    $state->{'drop_prob'} = $drop_prob;
+    $state->{'delay_prob'} = $delay_prob;
+}
 
 sub read_param_type
 {
@@ -190,6 +218,35 @@ sub read_param_type
         {
             die "Unknown which $which!\n";
         }
+    }
+    elsif ($param_type eq "state")
+    {
+        my $which = $conn->conn_read(4);
+
+        $which = unpack("V", $which);
+
+        # TODO : Implement the other state types
+        if ($which == 2)
+        {
+            return $self->{'last_state'};
+        }
+        else
+        {
+            die "Uknown state which $which!\n";
+        }
+    }
+    elsif ($param_type eq "prob")
+    {
+        my $prob = $conn->conn_read(8);
+
+        $prob = unpack("d", $prob);
+
+        if (($prob < 0) || ($prob > 1))
+        {
+            $prob = 0;
+        }
+        
+        return $prob;
     }
     else
     {

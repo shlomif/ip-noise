@@ -299,11 +299,30 @@ sub parse_delay_type
         my $t_end = parse_natural_number($stream);
         parse_constant_char($stream, ")");
 
-        return
+        if ($t_end < $t_start)
+        {
+            die IP::Noise::C::Parser::Exception->new(
+                    'text' => "In Uniform type the end must come after the start",
+                    'line' => $stream->get_line_num(),
+                    'context' => $stream->peak_line(),
+                    );
+        }
+
+        #return
+        #    {
+        #        'type' => "uniform",
+        #        'start' => $t_start,
+        #        'end' => $t_end,
+        #    };
+
+        return 
             {
-                'type' => "uniform",
-                'start' => $t_start,
-                'end' => $t_end,
+                'type' => "generic",
+                'points' => 
+                    [ 
+                        { 'prob' => 0, 'delay' => $t_start } , 
+                        { 'prob' => 1, 'delay' => $t_end }
+                    ],
             };
     }
     # Generic Random Variable

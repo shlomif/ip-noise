@@ -11,6 +11,11 @@ sub LAST_CHAIN ()
     return { 'type' => 'last' };
 }
 
+sub LAST_STATE ()
+{
+    return { 'type' => 'last' };
+}
+
 sub new
 {
     my $class = shift;
@@ -66,6 +71,18 @@ my %transactions =
         'params' => [ "chain", "string" ],
         'out_params' => [ "int" ],
     },
+    'set_drop_delay_prob' =>
+    {
+        'opcode' => 0x0E,
+        'params' => [ "chain", "state", "prob", "prob" ],
+        'out_params' => [],
+    },
+    'set_delay_type' =>
+    {
+        'opcode' => 0x0F,
+        'params' => [ "chain", "state", "delay_type" ],
+        'out_params' => [],
+    },
 );
 
 sub pack_int32
@@ -100,6 +117,28 @@ sub pack_string
 
     return pack(("a" . $arb_string_len), $string);     
 }
+
+sub pack_prob
+{
+    my $prob = shift;
+    
+    return pack("d", $prob);
+}
+
+sub pack_delay_type
+{
+    my $delay_type = shift;
+
+    if ($delay_type->{'type'} eq "exponential")
+    {
+        return pack_int32(0);
+    }
+    elsif ($delay_type->{'type'} eq "generic")
+    {
+        return pack_int32(1);
+    }
+}
+
 
 sub transact
 {
@@ -138,6 +177,25 @@ sub transact
             {
                 die "Unknown chain type!\n";
             }
+        }
+        elsif ($param_type eq "state")
+        {
+            if ($param->{'type'} eq "last")
+            {
+                $conn->conn_write(pack_int32(2));
+            }
+            else
+            {
+                die "Unknown state type!\n";
+            }        
+        }
+        elsif ($param_type eq "prob")
+        {
+            $conn->conn_write(pack_prob($param));
+        }
+        elsif ($param_type eq "delay_type")
+        {
+            $conn->conn_write(pack_delay_type($param));
         }
         else
         {
@@ -202,6 +260,8 @@ sub load_arbitrator
 
         foreach my $state_name (keys(%{$chain->{'states'}}))
         {
+            my $state = $chain->{'states'}->{$state_name};
+            
             print "In State " , $state_name, "\n";
             ($ret_value, $other_args) = 
                 $self->transact(
@@ -214,8 +274,39 @@ sub load_arbitrator
             {
                 die "The arbitrator did not accept the state!\n";
             }
-            $chain->{'states'}->{$state_name}->{'id'} = $other_args->[0];
-        }
+            # Put the index of the state within the arbitrator in a safe
+            # place for safekeeping.
+            $state->{'id'} = $other_args->[0];
+
+            # Let's set the drop/delay probabilities of the state.
+
+            ($ret_value, $other_args) = 
+                $self->transact(
+                    "set_drop_delay_prob",
+                    LAST_CHAIN,
+                    LAST_STATE,
+                    $state->{'drop_prob'},
+                    $state->{'delay_prob'}
+                    );
+                
+            if ($ret_value != 0)
+            {
+                die "The arbitrator did not accept the Drop/Delay probabilites!\n";
+            }
+
+            if ($state->{'delay_prob'} > 0)
+            {
+                # Let's set the delay function type of the state
+    
+                ($ret_value, $other_args) = 
+                    $self->transact(
+                        "set_delay_type",
+                        LAST_CHAIN,
+                        LAST_STATE,
+                        $state->{'delay_type'}
+                        );
+            }
+       }
     }
 
     ($ret_value, $other_args) = $self->transact("end_connection");
