@@ -77,6 +77,12 @@ my %transactions =
         'params' => [ "chain", "ip_packet_filter"],
         'out_params' => [],
     },
+    'set_dest' =>
+    {
+        'opcode' => 0x4,
+        'params' => [ "chain", "ip_packet_filter"],
+        'out_params' => [],
+    },
     'set_drop_delay_prob' =>
     {
         'opcode' => 0x0E,
@@ -506,6 +512,23 @@ sub load_arbitrator
             if ($ret_value != 0)
             {
                 die "The arbitrator did not accept our source!\n";
+            }
+        }
+
+        if ($chain->{'dest'}->{'type'} ne "none")
+        {
+            print "Uploading dest!\n";
+
+            ($ret_value, $other_args) = 
+                $self->transact(
+                    "set_dest",
+                    LAST_CHAIN,
+                    $chain->{'dest'}
+                    );
+
+            if ($ret_value != 0)
+            {
+                die "The arbitrator did not accept our dest!\n";
             }
         }
     }

@@ -72,6 +72,11 @@ my %operations =
         'params' => [ "chain", "ip_packet_filter" ],
         'handler' => \&handler_set_source,
     },
+    0x4 =>
+    {
+        'params' => [ "chain", "ip_packet_filter" ],
+        'handler' => \&handler_set_dest,
+    },    
     0x19 =>
     {
         'params' => [],
@@ -333,6 +338,24 @@ sub handler_set_source
 
     return 0;    
 }
+
+sub handler_set_dest
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $dest = shift;
+
+    print "Set Dest!\n";
+
+    my $data = $self->{'data'};
+
+    my $chain = $data->{'chains'}->[$chain_index];
+
+    $chain->{'dest'} = $dest;
+
+    return 0;    
+}
+
 
 sub read_param_type
 {
