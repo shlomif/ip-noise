@@ -1,3 +1,7 @@
+#
+# This is a random number generator
+#
+
 package IP::Noise::Rand;
 
 use strict;

@@ -1,3 +1,9 @@
+#
+# This is the arbitrator's interface which updates the configuration
+# of the arbitrator based on instructions it receives from the translator.
+#
+#
+
 package IP::Noise::Arb::IFace;
 
 use strict;
@@ -63,6 +69,8 @@ sub read_opcode
     return unpack("V", $opcode_proto);
 }
 
+# This table matches each opcode with its arguments, out arguments,
+# and handler function.
 my %operations =
 (
     0x0 =>
@@ -762,7 +770,8 @@ sub loop
     {        
         $self->{'continue'} = 1;
         $self->{'conn'} = IP::Noise::Conn->new(1);
- 
+
+        # Gain writer permission to the data
         $data_lock->down_write(); 
         
         my $conn = $self->{'conn'};
@@ -821,6 +830,7 @@ sub loop
 
         $flags->{'reinit_switcher'} = 1;
 
+        # Release the data for others to use.
         $data_lock->up_write();
 
         # Destroy the connection.
