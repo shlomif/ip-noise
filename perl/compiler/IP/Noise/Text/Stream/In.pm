@@ -37,7 +37,7 @@ sub read_next_line
 
     my $line = readline(*{$self->{'file'}});
 
-    if ($line eq "")
+    if ((! defined($line)) || ($line eq ""))
     {
         return -1; #EOF
     }
