@@ -9,6 +9,7 @@
 #include "queue.h"
 #include "delayer.h"
 #include "verdict.h"
+#include "iface.h"
 
 
 static void die(struct ipq_handle * h)
@@ -176,6 +177,13 @@ void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
     free(m);
 }
 
+void * arb_iface_thread_func(void * context)
+{
+    ip_noise_arbitrator_iface_loop( (ip_noise_arbitrator_iface_t * )context);
+
+    return NULL;
+}
+
 int main(int argc, char * argv[])
 {
     int status;
@@ -191,6 +199,15 @@ int main(int argc, char * argv[])
     pthread_t release_packets_thread;
     int check;
     ip_noise_delayer_t * delayer;
+
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_flags_t flags;
+    ip_noise_arbitrator_iface_t * arb_iface;
+    pthread_t arb_iface_thread;
+
+
+
+
 
     srand(24);
 
@@ -245,6 +262,24 @@ int main(int argc, char * argv[])
     if (check != 0)
     {
         fprintf(stderr, "Could not create the release packets thread!\n");
+        exit(-1);
+    }
+
+    data = ip_noise_arbitrator_data_alloc();
+    flags.reinit_switcher = 1;
+
+    arb_iface = ip_noise_arbitrator_iface_alloc(data, &flags);
+
+    check = pthread_create(
+        &arb_iface_thread,
+        NULL,
+        arb_iface_thread_func,
+        (void *)arb_iface
+        );
+
+    if (check != 0)
+    {
+        fprintf(stderr, "Could not create the arbitrator interface thread!\n");
         exit(-1);
     }
 

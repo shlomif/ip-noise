@@ -20,7 +20,7 @@ static int ip_noise_arbitrator_iface_handler_end_connection(ip_noise_arbitrator_
 
 
 #define NUM_OPERATIONS 18
-operation_t operations[NUM_OPERATIONS] = 
+static operation_t operations[NUM_OPERATIONS] = 
 {
 	{
 		0x0,
@@ -167,14 +167,39 @@ operation_t operations[NUM_OPERATIONS] =
 		ip_noise_arbitrator_iface_handler_end_connection
 	},
 };
+
+
 static int ip_noise_arbitrator_iface_handler_new_chain(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
 	char * name = params[0].string;
-
-
+    int index;
 
 	/* FILL IN WITH BODY*/
+    ip_noise_arbitrator_data_t * data;
 
+    printf("New Chain: \"%s\"!\n", name);
+
+    data = self->data;
+
+    if (data->num_chains == data->max_num_chains)
+    {
+        data->max_num_chains += 16;
+
+        data->chains = realloc(data->chains, sizeof(data->chains[0])*data->max_num_chains);        
+    }
+
+    index = data->num_chains;
+    data->chains[index] = chain_alloc(name);
+    
+    ip_noise_str2int_dict_add(data->chain_names, name, index);
+    
+    self->last_chain = index;
+
+    self->last_state = -1;
+    
+    data->num_chains++;
+
+    out_params[1]._int = index;
 
 	return 0;
 }
@@ -186,11 +211,49 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
 	int chain_index = params[0].chain;
 	char * state_name = params[1].string;
 
+    int a;
+    int index;
 
+    ip_noise_arbitrator_data_t * data = self->data;
 
 	/* FILL IN WITH BODY*/
 
+    ip_noise_chain_t * chain = data->chains[chain_index];
 
+    printf("New state: \"%s\"!\n", state_name);
+    
+    for(a=0;a<chain->num_states;a++)
+    {
+        realloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
+        chain->states[a]->move_tos[chain->num_states].comulative_prob = 0; 
+    }
+
+    if (chain->num_states == chain->max_num_states)
+    {
+        chain->max_num_states += 16;
+        chain->states = realloc(
+                chain->states,
+                sizeof(chain->states[0])*chain->max_num_states
+                );
+    }
+
+    index = chain->num_states;
+
+    chain->states[index] = state_alloc(state_name);
+    
+    ip_noise_str2int_dict_add(chain->state_names, state_name, index);
+
+    self->last_state = index;
+    
+    chain->states[index]->move_tos = malloc(sizeof(chain->states[index]->move_tos[0])*(index+1));
+    for(a=0;a<index;a++)
+    {
+        chain->states[index]->move_tos[a].comulative_prob = 0;
+    }
+    chain->states[index]->move_tos[a].comulative_prob = 1;
+
+    chain->num_states++;
+    
 	return 0;
 }
 
@@ -418,11 +481,23 @@ static int ip_noise_arbitrator_iface_handler_set_stable_delay_prob(ip_noise_arbi
 
 static int ip_noise_arbitrator_iface_handler_clear_all(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
-
-
-
 	/* FILL IN WITH BODY*/
 
+    ip_noise_arbitrator_data_t * data = self->data;
+
+    int a;
+
+    printf("Clear All!\n");
+
+    
+    for(a=0;a<data->num_chains;a++)
+    {
+        chain_free(data->chains[a]);
+    }
+
+    data->num_chains = 0;
+
+    ip_noise_str2int_dict_reset(data->chain_names);
 
 	return 0;
 }

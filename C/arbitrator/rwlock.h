@@ -37,6 +37,9 @@ struct ip_noise_rwlock_struct
 
 typedef struct ip_noise_rwlock_struct ip_noise_rwlock_t;
 
+extern ip_noise_rwlock_t * ip_noise_rwlock_alloc();
+extern void ip_noise_rwlock_free(ip_noise_rwlock_t * lock);
+
 extern void ip_noise_rwlock_down_read ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_down_write ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_up_read ( ip_noise_rwlock_t * lock );

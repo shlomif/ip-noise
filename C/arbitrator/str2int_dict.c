@@ -85,3 +85,8 @@ void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict)
     }
 }
 
+void ip_noise_str2int_dict_free(ip_noise_str2int_dict dict)
+{
+    ip_noise_str2int_dict_reset(dict);
+    rbdestroy(dict);
+}

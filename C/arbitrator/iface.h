@@ -9,8 +9,10 @@
 #include "redblack.h"
 
 #include "rwlock.h"
+#include "conn.h"
 
-typedef char ip_noise_id_t[80];
+#define IP_NOISE_ID_LEN 80
+typedef char ip_noise_id_t[IP_NOISE_ID_LEN];
 
 typedef struct rbtree * ip_noise_str2int_dict;
 
@@ -34,6 +36,7 @@ typedef struct ip_noise_split_linear_function_struct ip_noise_split_linear_funct
 
 enum IP_NOISE_DELAY_FUNCTION_T
 {
+    IP_NOISE_DELAY_FUNCTION_NONE,
     IP_NOISE_DELAY_FUNCTION_EXP,
     IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR,
 };
@@ -129,7 +132,8 @@ struct ip_noise_chain_struct
     ip_noise_id_t name;
 
     int num_states;
-    ip_noise_state_t * states;
+    int max_num_states;
+    ip_noise_state_t * * states;
 
     int current_state;
     ip_noise_chain_filter_t * filter;
@@ -144,9 +148,10 @@ typedef struct ip_noise_chain_struct ip_noise_chain_t;
 struct ip_noise_arbitrator_data_struct
 {
     int num_chains;
-    ip_noise_chain_t * chains;
+    int max_num_chains;
+    ip_noise_chain_t * * chains;
 
-    ip_noise_rwlock_t lock;
+    ip_noise_rwlock_t * lock;
 
     ip_noise_str2int_dict chain_names;
 };
@@ -158,6 +163,40 @@ extern int ip_noise_str2int_dict_get(ip_noise_str2int_dict dict, char * name);
 extern void ip_noise_str2int_dict_add(ip_noise_str2int_dict dict, char * name, int index);
 extern void ip_noise_str2int_dict_remove(ip_noise_str2int_dict dict, char * name);
 extern void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict);
+
+extern void ip_noise_str2int_dict_free(ip_noise_str2int_dict dict);
+
+struct ip_noise_flags_struct
+{
+    int reinit_switcher;    
+};
+
+typedef struct ip_noise_flags_struct ip_noise_flags_t;
+
+struct ip_noise_arbitrator_iface_struct
+{
+    ip_noise_arbitrator_data_t * data;
+    int _continue;
+    ip_noise_conn_t * conn;
+    ip_noise_flags_t * flags;    
+    int last_chain;
+    int last_state;
+};
+
+typedef struct ip_noise_arbitrator_iface_struct ip_noise_arbitrator_iface_t;
+
+extern ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
+    ip_noise_arbitrator_data_t * data,
+    ip_noise_flags_t * flags
+    );
+
+extern void ip_noise_arbitrator_iface_loop(
+    ip_noise_arbitrator_iface_t * self
+    );
+
+extern ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(
+        void
+        );
 
 #endif /* #ifndef __IP_NOISE_IFACE_H */
 
