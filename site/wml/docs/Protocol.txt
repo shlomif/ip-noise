@@ -1,11 +1,13 @@
 
 State - If 0 is transmitted - <int32> - index
         If 1 is transmitted - <string> - its name
+        If 2 is transmitted - the last state used
         <string> is string_len+1 bytes that terminate with a NULL character.
         string_len should be 127 bytes or so.
 
 Chain - If 0 is transmitted - <int32> - index
         If 1 - <string> - its name
+        If 2 is transmitted - the last state used
 
 Return Values - 0 - OK
                 1 - Wrong Input
@@ -131,13 +133,13 @@ Protocol Operations:
         Input: <0x000a>
                chain=<Chain>
                Which_Packet-Length=<int16>
-        Output:
-            <RetValue>
                              Can be - 0 - don't care.
                              1 - Greater than min 
                              2 - Lower than max
                              3 - Between min and max
-                             4 - Not between min and max.
+                             4 - Not between min and max.               
+        Output:
+            <RetValue>
 
 * Retrieve the index of the chain (by name).
         Input: <0x000b>
@@ -279,4 +281,9 @@ in the order in which they were received).
                             time_factor=<Delay Type>
                             stable_delay_prob=<Probability Type>
                            
+
+* Clear all the chains.
+        Input: <0x0019>
+        Output:
+               <RetValue>
 
