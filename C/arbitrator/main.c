@@ -22,33 +22,6 @@ static void die(struct ipq_handle * h)
 }
 
 
-static ip_noise_verdict_t decide_what_to_do_with_packet(ipq_packet_msg_t * m)
-{
-    int what_to_do;
-    int delay;
-    ip_noise_verdict_t ret;
-
-    what_to_do = (rand() % 3);
-    delay = (rand() % 3000);
-
-    if (1)/* (what_to_do == 0) */
-    {
-        ret.action = IP_NOISE_VERDICT_ACCEPT;
-    }
-    else if (what_to_do == 1)
-    {
-        ret.action = IP_NOISE_VERDICT_DROP;
-    }
-    else
-    {
-        ret.action = IP_NOISE_VERDICT_DELAY;
-        ret.delay_len = delay;
-    }
-
-    return ret;
-}
-
-
 struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
 {
     ip_noise_messages_queue_t * queue;
