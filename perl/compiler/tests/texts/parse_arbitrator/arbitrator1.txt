@@ -11,9 +11,9 @@ Chain Default {
 }
 
 # The purpose of this chain is to simulate a situation where the host
-# "vipe" is normally fine, but there are sometimes periods when it becomes
+# "t2" is normally fine, but there are sometimes periods when it becomes
 # noisy and delays packets.
-Chain Vipe {
+Chain T2 {
     State Normal {
         time_factor = 5000
         move_to = {
@@ -26,7 +26,8 @@ Chain Vipe {
             0.8 = Noisy
             0.2 = Normal
         }
-        delay = 1
+        delay = 0.3
+        drop = 0.3
 
         delay_type = U(100,3000)
 
@@ -35,9 +36,112 @@ Chain Vipe {
         stable_delay = 0
     }
    
-    # These are the IPs of vipe.technion.ac.il and the local host
-    source = 132.68.7.4 ; 132.68.52.118 ; 127.0.0.1
-    dest = 132.68.7.4 ; 132.68.52.118 ; 127.0.0.1
-    
+    # These are the IPs of t2.technion.ac.il and the local host
+    source = 132.68.7.4:23,80,110 ; 132.68.52.118
+    dest = 132.68.7.4:23,80,110 ; 132.68.52.118
 }
 
+Chain TX {
+    State Normal {
+        time_factor = 5000
+        move_to = {
+            0.8 = Normal
+            0.2 = Noisy
+        }        
+    }
+    State Noisy {
+        move_to = {
+            0.8 = Noisy
+            0.2 = Normal
+        }
+        delay = 0.3
+        drop = 0.3
+
+        delay_type = U(100,3000)
+
+        time_factor = 20000
+
+        stable_delay = 0
+    }
+   
+    # These are the IPs of t2.technion.ac.il and the local host
+    source = 132.68.1.28 ; 132.68.52.118
+    dest = 132.68.1.28 ; 132.68.52.118
+}
+
+Chain ElecEng {
+    State Normal {
+        time_factor = 5000
+        move_to = {
+            0.9 = Normal
+            0.1 = SlightLoad
+        }
+        drop = 0.1
+    }
+    State SlightLoad {
+        time_factor = 5000
+        move_to = {
+            0.7 = SlightLoad
+            0.2 = HighLoad
+            0.1 = Normal
+        }
+        drop = 0.2
+        delay = 0.2
+        
+        delay_type = E(500)
+
+        stable_delay = 1        
+    }
+    State HighLoad {
+        time_factor = 2000
+        move_to = {
+            0.8 = HighLoad
+            0.2 = Normal
+        }
+        drop = 0.5
+        delay = 0.3
+
+        delay_type = U(2000,4000)
+        
+        stable_delay = 1
+    }
+    
+    source = 132.68.52.0/8
+}
+
+Chain Technion {
+    State Normal {
+        time_factor = 5000
+        move_to = {
+            0.9 = Normal
+            0.1 = Noisy
+        }
+        delay = 0.1
+
+        delay_type = U(0,500)
+
+    }
+
+    State Noisy {
+        time_factor = 10000
+        move_to = {
+            0.7 = Noisy
+            0.3 = Normal
+        }
+        delay = 0.3
+        drop = 0.2
+
+        delay_type = Generic {
+            0 = 0
+            0.5 = 1000
+            1 = 5000
+        }
+
+        stable_delay = 0.5
+    }
+
+    source = 132.68.0.0/16
+    dest = 132.68.0.0/16
+
+    length = l > 500
+}

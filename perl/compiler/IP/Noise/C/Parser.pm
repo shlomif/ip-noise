@@ -168,6 +168,8 @@ sub parse_constant_char
     }
 }
 
+my $float_delta = 1e-10;
+
 # This function parses a move_to construct. A move_to construct is a
 # construct that specifies which states at which probabilities are moved
 # to from the current state.
@@ -253,7 +255,7 @@ sub parse_move_to
         $move_tos{$state_lc} = { 'state' => $state, 'prob' => $prob };
     }
 
-    if ($sum != 1)
+    if (($sum < 1 - $float_delta) || ($sum > 1 + $float_delta))
     {
         die IP::Noise::C::Parser::Exception->new(
             'text' => "Proabibilities in move_to do not sum to 1",
