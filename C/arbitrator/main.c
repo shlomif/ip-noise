@@ -42,7 +42,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
     ip_noise_message_t * msg_with_time;
     int status;
     struct ipq_handle * h;
+#ifdef DEBUG
     static int num;
+#endif
     ip_noise_verdict_t verdict;
     ip_noise_delayer_t * delayer;
     ip_noise_arbitrator_data_t * data;
@@ -79,7 +81,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
         
         if (verdict.action == IP_NOISE_VERDICT_ACCEPT)
         {
+#ifdef DEBUG
             printf("Release Packet! (%i)\n", num++);
+#endif
             status = ipq_set_verdict(h, msg_with_time->m->packet_id, NF_ACCEPT, 0, NULL);
 
             if (status < 0)
@@ -91,7 +95,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
         }
         else if (verdict.action == IP_NOISE_VERDICT_DROP)
         {
+#ifdef DEBUG
             printf("Dropping Packet! (%i)\n", num++);
+#endif
             status = ipq_set_verdict(h, msg_with_time->m->packet_id, NF_DROP, 0, NULL);
 
             if (status < 0)
@@ -103,7 +109,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
         }
         else if (verdict.action == IP_NOISE_VERDICT_DELAY)
         {
+#ifdef DEBUG
             printf("Delaying Packet! (%i)\n", num++);
+#endif
             ip_noise_delayer_delay_packet(
                 delayer,
                 msg_with_time,
@@ -335,7 +343,9 @@ int main(int argc, char * argv[])
             {
                 ip_noise_message_t * msg_with_time;
                 struct timezone tz;
+#ifdef DEBUG
                 static int num = 0;
+#endif
 
                 msg_with_time = malloc(sizeof(ip_noise_message_t));
 
@@ -354,8 +364,10 @@ int main(int argc, char * argv[])
                     packets_to_arbitrate_queue,
                     msg_with_time
                     );
-                
+
+#if 0
                 printf("Received a message! (%i)\n", num++);
+#endif
 
 #if 0
                 status = ipq_set_verdict(h, m->packet_id, NF_ACCEPT, 0, NULL);

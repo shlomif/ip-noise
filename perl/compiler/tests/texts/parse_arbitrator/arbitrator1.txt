@@ -21,10 +21,11 @@ Chain Vipe {
         move_to = {
             1 = B
         }
+        #delay = 0.1
         delay = 1
 
-        #delay_type = U(0,3000)        
-        delay_type = U(1000,1000);
+        delay_type = U(0,3000)        
+        #delay_type = U(1000,1000);
 
         time_factor = 50000
 
@@ -38,11 +39,11 @@ Chain Vipe {
     # tos works
     #
     
-    source = 127.0.0.1:80
+    #source = 127.0.0.1
     #tos = 24
     #length = l < 500
 
-    protocol = tcp
+    #protocol = udp
  
 }
 

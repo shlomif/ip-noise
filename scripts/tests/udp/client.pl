@@ -3,6 +3,8 @@ use strict;
 use Socket;
 use Sys::Hostname;
 
+use Time::HiRes qw(usleep);
+
 
 
 
@@ -42,5 +44,11 @@ while (1)
     $count++;
     my $msg = pack("A40", sprintf("%s", $count));
     print "Sending \"$msg\"!\n";
+    #if ($count % 100 == 0)
+    #{
+    #    print "Sending \"$msg\"!\n";
+    #}
     defined(send(SOCKET, $msg, 0, $hispaddr))    || die "send $host: $!";
+    #sleep(1);
+    usleep(20000);
 }

@@ -31,7 +31,6 @@ bind(SOCKET, $paddr)                          || die "bind: $!";
 $rin = '';
 vec($rin, fileno(SOCKET), 1) = 1;
 
-
 # timeout after 10.0 seconds
 while (select($rout = $rin, undef, undef, 200.0)) {
     $rtime = '';

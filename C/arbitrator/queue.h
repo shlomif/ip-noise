@@ -11,7 +11,7 @@ extern "C" {
 #include <linux/netfilter.h>
 #include <libipq.h>
 
-#define IP_NOISE_MESSAGE_BUFSIZE 0x10000
+#define IP_NOISE_MESSAGE_BUFSIZE 0x20000
 
 struct ip_noise_message_struct
 {

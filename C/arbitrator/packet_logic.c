@@ -491,7 +491,9 @@ static ip_noise_verdict_t decide(
             exit(-1);
         }
     }
+#if 0
     printf("global_verdict.delay_len=%i\n", global_verdict.delay_len);    
+#endif
 
     if (global_verdict.flag == IP_NOISE_VERDICT_FLAG_UNPROCESSED)
     {
@@ -531,6 +533,7 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
 
         packet_info = get_packet_info(payload);
 
+#if 0
         printf(
             "SOURCE=%.8X:%i DEST=%.8X:%i PROTO=%i LEN=%i\n", 
             *(int*)&(packet_info->source_ip), packet_info->source_port,
@@ -538,6 +541,7 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
             packet_info->protocol,
             packet_info->length
             );
+#endif
             
 
         verdict = decide(self, packet_info);
