@@ -40,7 +40,7 @@ void ip_noise_rand_srand(ip_noise_rand_t * rand, int seed)
 
 #define rand_normalizer 10000000
 
-double ip_noise_rand_in_0_1(ip_noise_rand_t * rand)
+double ip_noise_rand_rand_in_0_1(ip_noise_rand_t * rand)
 {
     int rand_num;
 

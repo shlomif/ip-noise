@@ -111,7 +111,6 @@ sub reinit
                 $sec, $usec, $chain_index
                 )
             );
-        print "Hello $chain_index!\n";
     }
 }
 
@@ -124,7 +123,7 @@ sub switch_chain
     my $data = $self->{'data'};
 
     my $chain = $data->{'chains'}->[$chain_index];
-
+                                                  
     my $current_state = $chain->{'current_state'};
 
     my $move_tos = $chain->{'states'}->[$current_state]->{'move_tos'};
