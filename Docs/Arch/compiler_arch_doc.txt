@@ -3,7 +3,7 @@ Overview:
 
 The compiler is split into two passes: the parser and the translator. The
 parser's objective is to parse the syntax file which is edited by the user 
-and to form an hierarchial perl data structure that describes it 1-by-1.
+and to form an hierarchal perl data structure that describes it 1-by-1.
 
 The translator's purpose is to feed this data structure into the arbitrator
 by serializing it. 
@@ -30,7 +30,7 @@ the translator's constructor is given the class reference as a parameter,
 so everything works transparently.
 
 The translator contains a map called %transactions, which maps the 
-transactions's names to their opcodes, parameters and output parameters.
+transactions' names to their opcodes, parameters and output parameters.
 The function transact is used to perform a transaction with the specified 
 arguments and to return the return value as well as the input codes. For more 
 information consult the <SectionRef protocol description>protocol description
