@@ -15,6 +15,10 @@
 #include "rand.h"
 #include "packet_logic.h"
 
+/*
+ * This struct summarizes the relevanat information for an individual
+ * IP Packet
+ * */
 struct ip_noise_packet_info_struct
 {
     struct in_addr source_ip, dest_ip;
@@ -107,6 +111,7 @@ static int is_in_ip_filter(
 
     ip_bytes = (unsigned char*)&ip_proto;
 
+    /* Construct a 32-bit integer out of address' bytes */
     ip = (((unsigned int)ip_bytes[0])<<24) |
          (((unsigned int)ip_bytes[1])<<16) |
          (((unsigned int)ip_bytes[2])<<8)  |
@@ -117,17 +122,24 @@ static int is_in_ip_filter(
         return 1;
     }
     spec = ip_filter;
+    /* Traverse each one of the components and check for each one if the
+     * IP fits into it 
+     * */
     while (spec != NULL)
     {
         netmask_width = spec->net_mask;
 
+        /* Construct a 32-bit integer out of address' bytes */
         ip_bytes = (unsigned char*)&(spec->ip);
         
         spec_ip = (((unsigned int)ip_bytes[0])<<24) |
                   (((unsigned int)ip_bytes[1])<<16) |
                   (((unsigned int)ip_bytes[2])<<8)  |
                   (((unsigned int)ip_bytes[3]))     ;
-        
+       
+        /* Check if the uppermost (32-netmask_width) bits of spec_ip and 
+         * ip are the same 
+         * */
         if ((spec_ip >> netmask_width) == (ip >> netmask_width))
         {
             if (port == -1)
@@ -191,6 +203,8 @@ static int is_in_chain_filter(
         return 0;
     }
 
+    /* chain->filter->tos is a bit mask and we check the appropriate bit
+     * to see if it is set */
     offset = packet_info->tos;
     byte = offset >> 3;
     bit = offset & 0x7;
@@ -255,23 +269,21 @@ static int is_in_chain_filter(
             
         }
         break;
-
-        default:
-        {
-            printf("Uknown len_type == %i!\n", len_type);
-#ifndef __KERNEL__
-            exit(-1);
-#endif
-        }
-        break;
     }
-
     
-    return 1;                
+    return 1;
 }
 
 #define prob_delta 0.00000000001
 
+/* chain_decide(self, chain_index, packet_info, ignore_filter) - decide
+ * what the verdict is going to be according to chain No. chain_index.
+ *
+ * packet_info - the summary of the packet information (protocol, tos, src
+ *      and dest, etc).
+ * ignore_filter - a flag that specifies to ignore the chain's filter. Used
+ *      for the default chain.
+ * */
 static ip_noise_verdict_t chain_decide(
     ip_noise_arbitrator_packet_logic_t * self,
     int chain_index,
@@ -313,9 +325,11 @@ static ip_noise_verdict_t chain_decide(
         /* Delay */
         int delay;
         ip_noise_prob_t do_a_stable_delay_prob;
-        struct timeval tv, last_tv;
-#ifndef __KERNEL__
+#ifndef __KERNEL__        
+        struct timeval tv, last_tv;        
         struct timezone tz;
+#else
+        unsigned long tv, last_tv;
 #endif
 
         if (current_state->delay_function.type == IP_NOISE_DELAY_FUNCTION_EXP)
@@ -394,9 +408,17 @@ static ip_noise_verdict_t chain_decide(
 
         do_a_stable_delay_prob = ip_noise_rand_rand_in_0_1(self->rand);
 
+#ifndef __KERNEL__
         gettimeofday(&tv, &tz);
+#else
+        tv = jiffies;
+#endif
 
+#ifndef __KERNEL__
         if (chain->last_packet_release_time.tv_sec == 0)
+#else
+        if (chain->last_packet_release_time == 0)
+#endif
         {
             chain->last_packet_release_time = tv;
         }
@@ -408,27 +430,39 @@ static ip_noise_verdict_t chain_decide(
                time of the last packet and adding the delay. */
 
             last_tv = chain->last_packet_release_time;
+#ifndef __KERNEL__
             last_tv.tv_usec += delay*1000;
             if (last_tv.tv_usec > 1000000)
             {
                 last_tv.tv_sec += last_tv.tv_usec / 1000000;
                 last_tv.tv_usec %= 1000000;                
             }
+#else
+            last_tv += ((delay * HZ) / 1000);
+#endif
 
+#ifndef __KERNEL__
             delay = (last_tv.tv_sec - tv.tv_sec) * 1000 + ((last_tv.tv_usec-tv.tv_usec) / 1000);
-
+#else
+            delay = ((last_tv - tv) * 1000) / HZ;
+#endif
+           
             if (delay < 0)
             {
                 delay = 0;
             }        
         }
 
+#ifndef __KERNEL__
         tv.tv_usec += delay * 1000;
         if (tv.tv_usec > 1000000)
         {
             tv.tv_sec += tv.tv_usec / 1000000;
             tv.tv_usec %= 1000000;
         }
+#else
+        tv += (delay * HZ) / 1000;
+#endif
         chain->last_packet_release_time = tv;
         
         ret.action = IP_NOISE_VERDICT_DELAY;

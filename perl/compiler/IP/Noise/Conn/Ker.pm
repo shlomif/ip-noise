@@ -12,7 +12,7 @@ sub O_RDWR () {    02;}
 require 'flush.pl';
 
 #my $pipes_dir = "/home/project" . "/ip-noise/pipes/";
-my $dev_path = "/home/project/Docs/Univ/cvs/C/arbitrator/" . "iface_dev";
+my $dev_path = $ENV{'HOME'} . "/" . "iface_dev";
 
 #local(*OUT,*IN);
 local (*DEV);

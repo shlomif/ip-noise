@@ -460,7 +460,11 @@ static ip_noise_chain_t * chain_alloc(char * name)
 
     chain->state_names = ip_noise_str2int_dict_alloc();
 
+#ifndef __KERNEL__
     chain->last_packet_release_time.tv_sec = 0;
+#else
+    chain->last_packet_release_time = 0;
+#endif
 
     return chain;
 }

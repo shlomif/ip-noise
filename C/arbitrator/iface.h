@@ -162,7 +162,12 @@ struct ip_noise_chain_struct
     int current_state;
     ip_noise_chain_filter_t * filter;
 
+#ifndef __KERNEL__
     struct timeval last_packet_release_time;
+#else
+    /* The release time of the last packet, in jiffies */
+    unsigned long last_packet_release_time;
+#endif
 
     ip_noise_str2int_dict state_names;
 
