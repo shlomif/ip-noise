@@ -1,0 +1,7 @@
+We used lowercase names for all of our identifiers. The words or 
+components are separated by underscores. 
+
+All exportable symbols start with "ip_noise" in order to avoid 
+namespace collition. 
+
+
