@@ -1,0 +1,78 @@
+Overview:
+=========
+
+The compiler is split into two passes: the parser and the translator. The
+parser's objective is to parse the syntax file which is edited by the user 
+and to form an hierarchal perl data structure that describes it 1-by-1.
+
+The translator's purpose is to feed this data structure into the arbitrator
+by serializing it. 
+
+The Parser:
+===========
+
+The Parser uses a class named IP::Noise::Text::Stream::In to parse the files
+line by line and to strip comments. It is not a very sophisticated class,
+but it was adequate for the purpose of the parser.
+
+The parser itself is written as one monolithic class (IP::Noise::C::Parser)
+where every data type has its own parsing function. In this stage, we have 
+allowed ourselves to throw exceptions freely. 
+<SectionRef Exceptions should be used with care>
+
+Some functions such as parse_chain are managing a loop in which they parse 
+an ID (a C-like variable name that contains alphanumeric characters and start
+with a letter), and then attempt to peak an equal sign, and afterwards
+an expression that matches the ID. This is suitable for "key = {value_expr}"
+constructs that are placed inside chains or states.
+
+    IP::Noise::Text::Stream::In:
+    ----------------------------
+
+    This class is used by the parser to aid in parsing the configuration 
+    file. The function read_next_line() reads the next line of the file
+    into a buffer in memory. By reading it, the object keeps track of the
+    line number.
+
+    The function peak_line() returns the current line from the current
+    pointer to its end. It can be used, to look at the data the line holds,
+    before deciding whether to finally read it or not. The function 
+    increment_ptr() increments the pointer of the current line, and by 
+    this marking the characters is read and permanently unreachable.
+
+Depreciated=<<<
+The parsing functions are:
+
+parse_natural_number() - this function parses a natural number from the
+stream. It is of the form [0-9]+. It handles such thing as stripping leading
+whitespace, and also permorms two sanity checks:
+
+1. That the integer is not too long.
+2. That it is not represented as an integer.
+>>>
+
+
+The Translator:
+===============
+
+The translator uses the class IP::Noise::Conn or IP::Noise::Conn::Ker (pardon
+the pun) to communicate with the arbitrator. The choice of the class is 
+determined by whether he is communicating with the kernel or not. In any case,
+the translator's constructor is given the class reference as a parameter,
+so everything works transparently.
+
+The translator contains a map called %transactions, which maps the 
+transactions' names to their opcodes, parameters and output parameters.
+The function transact is used to perform a transaction with the specified 
+arguments and to return the return value as well as the input codes. For more 
+information consult the <SectionRef protocol description>protocol description
+</SectionRef>.
+
+The function load_arbitrator() is a monolithic function that is used to load
+the arbitrator. It performs various operations, one by one, while sometimes 
+relying on the return results of the previous transactions.
+
+In this code we have also used exception throwing to abruptly end a 
+connection.
+
+
