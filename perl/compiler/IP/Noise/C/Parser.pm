@@ -265,14 +265,19 @@ sub parse_move_to
     return { (map { $_->{'state'} => $_->{'prob'} } values(%move_tos)) };
 }
 
+# This function parses a delay function specifier.
+# Something like E(500) or U(20,500), or Generic { ... }
 sub parse_delay_type
 {
     my $stream = shift;
- 
+
+    # The first thing we parse is an identifier that identifies the type
+    # of the function.
     my $id = parse_id_string($stream);
 
     $id = lc($id);
-
+    
+    # E(lambda) - exponential random variable
     if ($id eq "e")
     {
         parse_constant_char($stream, "(");
@@ -285,6 +290,7 @@ sub parse_delay_type
                 'lambda' => $lambda,
             };
     }
+    # U(start,end) - uniform random variable
     elsif ($id eq "u")
     {
         parse_constant_char($stream, "(");
@@ -300,10 +306,12 @@ sub parse_delay_type
                 'end' => $t_end,
             };
     }
+    # Generic Random Variable
     elsif ($id eq "generic")
     {
         parse_constant_char($stream, "{");
-
+        
+        # Points are the generic function guide-points
         my @points;
         # We initialize it to -1 so it will be lesser than 0.
         my $prev_prob = -1;
@@ -313,6 +321,7 @@ sub parse_delay_type
 
             my $orig_line = $stream->peak_line();
             
+            # Strip leading whitespace
             my $line = $orig_line;
 
             $line =~ s/^\s+//;
@@ -356,8 +365,7 @@ sub parse_delay_type
             
             parse_constant_char($stream, "=");
             my $delay = parse_natural_number($stream);
-
-
+          
             push @points, { 'prob' => $prob, 'delay' => $delay };
 
             $prev_prob = $prob;
@@ -369,17 +377,17 @@ sub parse_delay_type
             die IP::Noise::C::Parser::Exception->new(
                 'text' => "Probabilities in generic type should end at 1",
                 'line' => $stream->get_line_num(),
-                );            
+                );
         }
 
 
         return 
             {
                 'type' => "generic",
-                'points' => [ @points ],
+                'points' => \@points,
             };
     }
-    else    # A different id
+    else    # An unknown ID
     {
         die IP::Noise::C::Parser::Exception->new(
                 'text' => "Unknown delay type",
@@ -389,6 +397,7 @@ sub parse_delay_type
     }
 }
 
+# This function parses a state of a Markovian chain.
 sub parse_state
 {
     my $stream = shift;
@@ -411,8 +420,10 @@ sub parse_state
 
         $line =~ s/^\s+//;
         # { - to satisfy gvim
-
-        if ($line =~ /}/)
+        
+        # If the line begins with a right curly bracket, it means that this
+        # is the end of the state construct.
+        if ($line =~ /^\}/)
         {
             
             # Some Sanity Checks
@@ -458,12 +469,14 @@ sub parse_state
                 'move_to' => $move_to,
             };
         }
-
+        
+        # If the line is empty, then skip to the next line.
         if ($line eq "")
         {
             next;
         }
-
+        
+        # Parse a "[Param Name] = " input
         my $id = parse_id_string($stream);
 
         parse_constant_char($stream, "=");
@@ -501,10 +514,17 @@ sub parse_state
     }
 }
 
+# This function parses a range specifier.
+# A range specifier is used to restrict a value to a certain range of scalar
+# integral values.
+# For instance: "tos = tos < 5" says that tos should be lesser than 5.
+# Or "tos = 23 < tos < 45" says that tos should be between 23 and 45
+
 sub parse_range_spec
 {
     my $stream = shift;
 
+    # The name of the parameter to be used inside the expression.
     my $param_name = shift;
 
     my $orig_line = $stream->peak_line();
@@ -600,6 +620,8 @@ sub parse_range_spec
 
     # TODO : Add "5 < l", "10 > l" , etc.
 }
+
+# TODO: Add more comments starting from here to the EOF.
 
 my %protocol_names = 
 (
