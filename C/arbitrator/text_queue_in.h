@@ -1,6 +1,10 @@
 #ifndef __IP_NOISE_TEXT_QUEUE_IN_H
 #define __IP_NOISE_TEXT_QUEUE_IN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ip_noise_text_queue_in_struct
 {
     char * buffer;
@@ -41,5 +45,9 @@ extern void ip_noise_text_queue_in_commit(
 extern void ip_noise_text_queue_in_rollback(
     ip_noise_text_queue_in_t * q
     );
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* #ifndef __IP_NOISE_TEXT_QUEUE_IN_H */

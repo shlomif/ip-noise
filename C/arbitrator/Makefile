@@ -1,9 +1,9 @@
 
 all: arb
 
-INCLUDES = conn.h delayer.h fcs_dm.h iface.h packet_logic.h pqueue.h queue.h rand.h rwlock.h switcher.h verdict.h 
+INCLUDES = conn.h delayer.h fcs_dm.h iface.h packet_logic.h pqueue.h queue.h rand.h read.h redblack.h rwlock.h switcher.h text_queue_in.h text_queue_out.h verdict.h 
 
-OBJECTS_PROTO = conn.o delayer.o fcs_dm.o main.o packet_logic.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o text_queue_in.o
+OBJECTS_PROTO = conn.o delayer.o fcs_dm.o main.o packet_logic.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o text_queue_in.o text_queue_out.o
 
 $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
 	gcc -DUSE_TEXT_QUEUE_IN -g -Wall -c $<

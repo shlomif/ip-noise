@@ -15,7 +15,7 @@ Chain Default {
 # noisy and delays packets.
 Chain Vipe {
     State Normal {
-        time_factor = 50000
+        time_factor = 5000
         move_to = {
             0.8 = Normal
             0.2 = Noisy
@@ -31,7 +31,7 @@ Chain Vipe {
 
         delay_type = U(0,3000)
 
-        time_factor = 20000
+        time_factor = 2000
 
         stable_delay = 0
     }

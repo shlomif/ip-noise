@@ -232,7 +232,10 @@ static void ip_spec_free(ip_noise_ip_spec_t * spec)
 
     while(spec != NULL)
     {
-        free(spec->port_ranges);
+        if (spec->port_ranges != NULL)
+        {
+            free(spec->port_ranges);
+        }
         next_spec = spec->next;
         free(spec);
         spec = next_spec;
@@ -451,6 +454,7 @@ int read_param_type(
             
             
             head = malloc(sizeof(ip_noise_ip_spec_t));
+            head->port_ranges = NULL;
             tail = head;
             tail->next = NULL;
 
