@@ -5,6 +5,7 @@ D = /var/www/html/ip-noise
 IMAGES = $(D)/style.css                                             \
          $(D)/docs/Arbitrator_Architecture.txt                      \
          $(D)/docs/Architecture.txt                                 \
+         $(D)/docs/IP-Noise-Generator-Mid-Term.doc                  \
          $(D)/docs/ip_noise.spec.zip                                \
          $(D)/docs/Mid-Term.ppt                                     \
          $(D)/docs/Protocol.txt                                     \

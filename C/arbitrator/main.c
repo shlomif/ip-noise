@@ -83,7 +83,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
         if (verdict.action == IP_NOISE_VERDICT_ACCEPT)
         {
 #ifdef DEBUG
+#if 0
             printf("Release Packet! (%i)\n", num++);
+#endif
 #endif
             status = ipq_set_verdict(h, msg_with_time->m->packet_id, NF_ACCEPT, 0, NULL);
 
@@ -328,7 +330,7 @@ int main(int argc, char * argv[])
         status = ipq_read(h, message, sizeof(message), 0);
         if (status < 0)
         {
-            die(h);
+            /* die(h); */
         }
         switch(ipq_message_type(message))
         {
