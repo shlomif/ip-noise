@@ -31,4 +31,11 @@ an arbitrator written in Perl, which will be the codebase for the
 final arbitrator.
 </p>
 
+<p>
+<a href="IP-Noise-C-Arbitrator-0.1.1.tar.gz">
+IP-Noise-C-Arbitrator-0.1.1.tar.gz
+</a> - 
+an arbitrator written in C. Not all of the functionality was implemented
+yet.
+</p>
 
