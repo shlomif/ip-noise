@@ -75,7 +75,7 @@ sub delay_packet
     }
     
     my $heap_elem = 
-        Msg->new(
+        IP::Noise::Arb::Msg->new(
             $packet, 
             $delay_to_sec, 
             $delay_to_usec, 

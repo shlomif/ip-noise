@@ -31,6 +31,8 @@ sub initialize
     my $data_lock = shift;
 
     my $flags = shift;
+    
+    my $terminate_ptr = shift;
 
     $self->{'data'} = $data;
 
@@ -41,6 +43,8 @@ sub initialize
     $self->{'rand'} = IP::Noise::Rand->new(24);
     
     $self->{'pq'} = Heap::Binary->new();
+
+    $self->{'terminate_ptr'} = $terminate_ptr;
 
     return 0;
 }
@@ -138,7 +142,9 @@ sub switch_chain
         {
             $chain->{'current_state'} = $i;
 
-            print "Switcher: Switching chain No. $chain_index to State No. $i\n";
+            #print "Switcher: Switching chain No. $chain_index to State No. $i\n";
+            print "Switcher: Switching \"" . $chain->{'name'} . 
+                "\" to \"" . $chain->{'states'}->[$chain->{'current_state'}]->{'name'} . "\"\n";
             last;
         }
     }
@@ -200,7 +206,7 @@ sub loop
 
     my $chains = $data->{'chains'};
 
-    while(1)
+    while( ! ${$self->{'terminate_ptr'}})
     {
         #Check if the whole db is valid
         $data_lock->down_read();

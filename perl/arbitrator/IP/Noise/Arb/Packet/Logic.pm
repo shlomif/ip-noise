@@ -115,7 +115,7 @@ sub is_in_ip_filter
             }
             else
             {
-                foreach my $port_spec ($spec->{'ports'})
+                foreach my $port_spec (@{$spec->{'ports'}})
                 {
                     if (($port_spec->{'start'} <= $port) &&
                        ($port <= $port_spec->{'end'}))
@@ -281,11 +281,11 @@ sub chain_decide
     my $current_state = $chain->{'states'}->[$chain->{'current_state'}];
 
     my $which_prob = $self->{'rand'}->rand_in_0_1();
-    if ($current_state->{'drop_prob'} < $which_prob)
+    if ($which_prob < $current_state->{'drop_prob'})
     {
         return { 'action' => "drop" };
     }
-    elsif ($current_state->{'drop_prob'} + $current_state->{'delay_prob'} < $which_prob)
+    elsif ($which_prob <= $current_state->{'drop_prob'} + $current_state->{'delay_prob'})
     {
         # Delay
 
@@ -405,7 +405,7 @@ sub decide
         { 
             'action' => 'accept' , 
             'delay_len' => 0,
-            'flag' => "unprocesed"
+            'flag' => "unprocessed"
         };
 
     for my $chain_index (1 .. (scalar(@$chains)-1))
@@ -495,8 +495,9 @@ sub decide_what_to_do_with_packet
 
         $verdict = $self->decide($packet_info);
 
-        my $d = Data::Dumper->new([ $verdict], [ "\$verdict"]);
+        my $d = Data::Dumper->new([ $verdict, $packet_info], [ "\$verdict", "\$packet_info"]);
         print $d->Dump();
+       
 
         $data_lock->up_read();        
 

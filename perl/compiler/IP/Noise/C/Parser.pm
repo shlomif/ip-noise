@@ -779,7 +779,7 @@ sub parse_ip_spec
             {               
                 $net_mask_width = $1;
                 $rest_of_ip_filter =~ s/^\d+//;
-                if (($net_mask_width == 0) || ($net_mask_width > 32))
+                if ($net_mask_width > 32)
                 {
                     die IP::Noise::C::Parser::Exception->new(
                         'text' => "Net Mask Width Out of range in IP Spec",

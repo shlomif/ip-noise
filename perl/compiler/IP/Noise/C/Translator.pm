@@ -435,7 +435,42 @@ sub load_arbitrator
         die "The arbitrator failed or refused to clear all the chains!\n";
     }
 
-    foreach my $chain (values(%{$ds->{'chains'}}))
+    my @chains = values(%{$ds->{'chains'}});
+
+    if (grep { lc($_->{'name'}) eq "default" } @chains)
+    {
+        my ($default_chain) = (grep { lc($_->{'name'}) eq "default" } @chains);
+        my @other_chains = (grep { lc($_->{'name'}) ne "default" } @chains);
+        @chains = ($default_chain, @other_chains);
+    }
+    else
+    {
+        my $default_chain = {
+            'name' => "default",
+            'states' =>
+            {
+                "A" => {
+                    'name' => "A",
+                    'move_to' => {
+                        "A" => 1
+                    },
+                    'drop_prob' => 0,
+                    'delay_prob' => 0,
+                    'time_factor' => 10000,
+                    'stable_delay_prob' => 0,
+                    'delay_type' => { 'type' => "exponential", 'lambda' => 500 },                    
+                },
+            },
+            'length_spec' => { 'type' => "all" },
+            'tos_spec' => {'type' => "all" },
+            'protocols' => { 'type' => "all" },
+            'source' => { 'type' => "none" },
+            'dest' => { 'type' => "none" },            
+        };
+        @chains = ($default_chain, @chains);
+    }
+
+    foreach my $chain (@chains)
     {
         # Create a new chain by that name in the arbitrator
         print "In chain: " , $chain->{'name'}, "\n";

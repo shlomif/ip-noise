@@ -1,54 +1,41 @@
-Chain MyChain {
+Chain Default {
     State A {
-        drop = 0.3
-        delay = 0.2
-        delay_type = U(20,50)
         move_to = {
-            0.5 = B 
-            0.5 = C
+            1 = A
         }
-        time_factor = 500
-        stable_delay = 0.5
+        drop = 0
+        delay = 0
+        time_factor = 100000
     }
-    State B {
-        drop = 0.4
-        delay = 0.2
-        delay_type = E(500)
-        move_to = {
-            0.3 = A
-            0.7 = B
-        }
-        time_factor = 1000
-    }
-    State C {
-        move_to = {
-            0.6 = C
-            0.4 = B
-        }
-        time_factor = 800
-    }
-    protocol = tcp, udp
-    tos = 23, 47
-    length = ! 100 < l < 500
 }
 
-Chain AnotherChain {
+Chain Vipe {
     State A {
-        drop = 0.7
-        time_factor = 1000
         move_to = {
-            0.2 = A
-            0.8 = B
-        }
-    }
-    State B {
-        time_factor = 500
-        move_to = {
-            0.5 = A
+            0.5 = A 
             0.5 = B
         }
+        drop = 0.1
+        delay = 0.9
+
+        delay_type = E(500)
+
+        time_factor = 1000
     }
-    #source = 123.45.67.8/24:80 ; 192.68.114.56/16
-    #dest = 24.56.78.9/8:50-60 ; 200.1.1.1/4:90
-    #length = l < 5000
+
+    State B {
+        move_to = {
+            0.1 = A
+            0.9 = B
+        }
+        drop = 0.5
+        delay = 0.5
+        
+        time_factor = 5000
+        delay_type = E(100)
+    }
+
+    source = 132.69.253.254/16
+    
 }
+
