@@ -6,9 +6,12 @@
 #include <libipq.h>
 #include <sys/time.h>
 
+#include "pqueue.h"
+
 struct ip_noise_delayer_struct
 {
-    
+    pthread_mutex_t mutex;
+    PQUEUE pq;
 };
 
 typedef struct ip_noise_delayer_struct ip_noise_delayer_t;

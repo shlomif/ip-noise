@@ -2,7 +2,7 @@
 all: arb
 
 
-OBJECTS = main.o queue.o
+OBJECTS = pqueue.o main.o queue.o
 
 $(OBJECTS) :: %.o : %.c
 	gcc -g -Wall -c $<
