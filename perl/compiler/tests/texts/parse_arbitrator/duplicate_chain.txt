@@ -1,0 +1,43 @@
+Chain MyChain {
+    State A {
+        move_to = {
+            0.5 = B 
+            0.5 = C
+        }
+        time_factor = 500        
+    }
+    State B {
+        move_to = {
+            0.3 = A
+            0.7 = B
+        }
+        time_factor = 1000
+    }
+    State C {
+        move_to = {
+            0.6 = C
+            0.4 = B
+        }
+        time_factor = 800
+    }
+}
+
+Chain mychain {
+    State A {
+        time_factor = 1000
+        move_to = {
+            0.2 = A
+            0.8 = B
+        }
+    }
+    State B {
+        time_factor = 500
+        move_to = {
+            0.5 = A
+            0.5 = B
+        }
+    }
+    source = 123.45.67.8/24:80 ; 192.68.114.56/16
+    dest = 24.56.78.9/8:50-60 ; 200.1.1.1/4:90
+    length = l < 5000
+}
