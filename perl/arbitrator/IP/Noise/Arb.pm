@@ -79,7 +79,7 @@ my %operations =
     },
     0xF => 
     {
-        'params' => [ "chain", "state", "delay_type" ],
+        'params' => [ "chain", "state", "delay_function_type" ],
         'handler' => \&handler_set_delay_type,
     },
     0x10 =>
@@ -91,7 +91,12 @@ my %operations =
     {    
         'params' => [ "chain", "state", "lambda" ],
         'handler' => \&handler_set_lambda,
-    },    
+    },
+    0x13 =>
+    {
+        'params' => [ "chain", "state", "delay_type" ],
+        'handler' => \&handler_set_time_factor,
+    },
     0x10000 =>
     {
         'params' => [],
@@ -159,6 +164,8 @@ sub handler_new_state
 
     my $state_name = shift;
 
+    print "New State!\n";
+
     # TODO: Sanity check that there isn't another state by that name.
 
     my $data = $self->{'data'};
@@ -176,6 +183,7 @@ sub handler_new_state
                 {
                     'type' => "none",
                 },
+            'time_factor' => 1000,
         };
 
     my $index = scalar(@$states_ref) - 1;
@@ -262,6 +270,23 @@ sub handler_set_lambda
     return 0;
 }
 
+sub handler_set_time_factor
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $time_factor = shift;
+    
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    $state->{'time_factor'} = $time_factor;
+
+    return 0;
+}
+
+
 sub read_param_type
 {
     my $self = shift;
@@ -323,7 +348,7 @@ sub read_param_type
         
         return $prob;
     }
-    elsif ($param_type eq "delay_type")
+    elsif ($param_type eq "delay_function_type")
     {
         my $delay_type = $conn->conn_read(4);
 
@@ -373,6 +398,14 @@ sub read_param_type
         $lambda = unpack("V", $lambda);
 
         return $lambda;      
+    }
+    elsif ($param_type eq "delay_type")
+    {
+        my $delay = $conn->conn_read(4);
+
+        $delay = unpack("V", $delay);
+
+        return $delay;
     }
     else
     {

@@ -80,7 +80,7 @@ my %transactions =
     'set_delay_type' =>
     {
         'opcode' => 0x0F,
-        'params' => [ "chain", "state", "delay_type" ],
+        'params' => [ "chain", "state", "delay_function_type" ],
         'out_params' => [],
     },
     'set_split_linear_points' =>
@@ -94,7 +94,13 @@ my %transactions =
         'opcode' => 0x11,
         'params' => [ "chain", "state", "lambda" ],
         'out_params' => [],
-    },        
+    },
+    'set_time_factor' =>
+    {
+        'opcode' => 0x13,
+        'params' => [ "chain", "state", "delay_type" ],
+        'out_params' => [],
+    },
 );
 
 sub pack_int32
@@ -137,7 +143,7 @@ sub pack_prob
     return pack("d", $prob);
 }
 
-sub pack_delay_type
+sub pack_delay_function_type
 {
     my $delay_type = shift;
 
@@ -211,9 +217,9 @@ sub transact
         {
             $conn->conn_write(pack_prob($param));
         }
-        elsif ($param_type eq "delay_type")
+        elsif ($param_type eq "delay_function_type")
         {
-            $conn->conn_write(pack_delay_type($param));
+            $conn->conn_write(pack_delay_function_type($param));
         }
         elsif ($param_type eq "split_linear_points")
         {
@@ -224,6 +230,10 @@ sub transact
             }
         }
         elsif ($param_type eq "lambda")
+        {
+            $conn->conn_write(pack_int32($param));
+        }
+        elsif ($param_type eq "delay_type")
         {
             $conn->conn_write(pack_int32($param));
         }
@@ -375,6 +385,21 @@ sub load_arbitrator
                         die "The arbitrator did not accept our lambda!\n";
                     }
                 }
+            }
+
+            # Let's transmit the time factor of the state
+
+            ($ret_value, $other_args) =
+                $self->transact(
+                    "set_time_factor",
+                    LAST_CHAIN,
+                    LAST_STATE,
+                    $state->{'time_factor'}
+                    );
+
+            if ($ret_value != 0)
+            {
+                die "The arbitrator did not accept our time factor!\n";
             }
         }
     }
