@@ -115,7 +115,7 @@ distributed under the MIT X11 license.
 
 <h3>Global Instructions</h3>
 
-<h4>Pre-requisites</h4>
+<h4>Prerequisites</h4>
 
 <p>
 In order to use the simulator, the IP-Tables kernel module must be compiled,
@@ -253,7 +253,7 @@ Note that the IP-Noise kernel module replaces the IP-Queue mechanism of the
 Linux kernel, and both cannot be used simultaneously.
 </p>
 
-<h3>Loading and Un-loading the arbitrator</h3>
+<h3>Loading and Unloading the arbitrator</h3>
 
 <h4>Userland Arbitrator</h4>
 
@@ -298,8 +298,44 @@ defined for this purpose (which will be described below). After the file has
 been prepared, cd to the <tt>perl/compiler</tt> 
 directory of the distribution. Then type <tt>perl tests/translator.pl</tt>
 or <tt>perl tests/ker_translator.pl</tt> (for the userland and kernel-level 
-arbitrators respectively) followed by the path to the configuration file.
+arbitrators respectively) followed by the path of the configuration file.
 </p>
+
+<h2>Configuration of the Arbitrator - Basic Concepts</h2>
+
+<h3>Markov Chains</h3>
+
+<p>
+Markov chains are similar in concept to state machines, except that the next
+state is determined according to a probability factor rather than the input to
+the state machine. In each iteration, a probability value between 0 and 1 is
+determined randomly (and uniformly) and based on it, the next state is deduced.
+</p>
+
+<p>
+The following figure, displays a sample Markov chain:
+</p>
+
+<p>
+<img src="markov_chain1.png" alt="First Markov Chain">
+</p>
+
+<p>
+As can be seen, after an iteration step, "A" switches to itself with a 
+probabilty of 0.5, and to "B" with a probability of 0.5. "B" and "C" switch
+to themselves and to one another with a various probabilities. One can notice,
+that once the chain leaves "A", it cannot return to it again.
+</p>
+
+<p>
+The sum of the probabilities of the links that emerge out of a certain state
+must be equal to 1, so the chain will always know to which state to go to next. 
+In our implementation of Markov chains, we assumed that in case, the 
+sum of emerging probabilities is less than 1, than the remainder instructs the
+chain to remain in the current state. If the sum of probabilites is greater
+than 1, a compilation-time error will be reported.
+</p>
+
 
 </body>
 </html>
