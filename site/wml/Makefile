@@ -25,6 +25,7 @@ IMAGES = $(D)/style.css                                             \
          $(D)/download/IP-Noise-Perl-Arbitrator-0.1.2.tar.gz        \
          $(D)/download/IP-Noise-Perl-Arbitrator-0.1.3.tar.gz        \
          $(D)/download/IP-Noise-Perl-Arbitrator-0.1.4.tar.gz        \
+         $(D)/download/IP-Noise-Perl-Arbitrator-0.1.5.tar.gz        \
          $(D)/download/IP-Noise-perl-filters-0.1.0.tar.gz           \
          
 
