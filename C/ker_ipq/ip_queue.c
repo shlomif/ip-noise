@@ -4,6 +4,8 @@
  *
  * (C) 2000 James Morris, this code is GPL.
  *
+ * Modified by Shlomi Fish to put all the logic inside the kernel.
+ *
  * 2000-03-27: Simplified code (thanks to Andi Kleen for clues).
  * 2000-05-20: Fixed notifier problems (following Miguel Freitas' report).
  * 2000-06-19: Fixed so nfmark is copied to metadata (reported by Sebastian 
@@ -29,10 +31,12 @@
 #include <linux/netfilter_ipv4/ip_queue.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 
+#include "rand.h"
+
 #define IPQ_QMAX_DEFAULT 1024
-#define IPQ_PROC_FS_NAME "ip_queue"
+#define IPQ_PROC_FS_NAME "ip_queue_ker"
 #define NET_IPQ_QMAX 2088
-#define NET_IPQ_QMAX_NAME "ip_queue_maxlen"
+#define NET_IPQ_QMAX_NAME "ip_queue_ker_maxlen"
 
 typedef struct ipq_rt_info {
 	__u8 tos;
@@ -68,6 +72,7 @@ typedef struct ipq_queue {
  	ipq_peer_t peer;		/* Userland peer */
 } ipq_queue_t;
 
+static ip_noise_rand_t * rand_gen;
 /****************************************************************************
  *
  * Packet queue
@@ -147,18 +152,27 @@ static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
 	return q;
 }
 
+static int ipq_set_verdict_helper(
+    ipq_queue_element_t * e, 
+    ipq_verdict_msg_t *v,
+    unsigned int len
+    );
+
 static int ipq_enqueue(ipq_queue_t *q,
                        struct sk_buff *skb, struct nf_info *info)
 {
 	ipq_queue_element_t *e;
+#if 0
 	int status;
+#endif
 	
 	e = kmalloc(sizeof(*e), GFP_ATOMIC);
 	if (e == NULL) {
-		printk(KERN_ERR "ip_queue: OOM in enqueue\n");
+		printk(KERN_ERR "ip_queue_ker: OOM in enqueue\n");
 		return -ENOMEM;
 	}
 
+    /* Default Verdict */
 	e->verdict = NF_DROP;
 	e->info = info;
 	e->skb = skb;
@@ -175,15 +189,35 @@ static int ipq_enqueue(ipq_queue_t *q,
 	if (q->len >= *q->maxlen) {
 		spin_unlock_bh(&q->lock);
 		if (net_ratelimit()) 
-			printk(KERN_WARNING "ip_queue: full at %d entries, "
+			printk(KERN_WARNING "ip_queue_ker: full at %d entries, "
 			       "dropping packet(s).\n", q->len);
 		goto free_drop;
 	}
+#if 0
 	if (q->flushing || q->peer.copy_mode == IPQ_COPY_NONE
-	    || q->peer.pid == 0 || q->peer.died || q->terminate) {
+	    || q->peer.pid == 0 || q->peer.died || q->terminate)
+#endif
+    if (q->flushing || q->terminate)
+    {
 		spin_unlock_bh(&q->lock);
 		goto free_drop;
 	}
+
+    {
+        double prob;
+        int to_accept;
+        prob = ip_noise_rand_rand_in_0_1(rand_gen);
+        to_accept = (prob < 0.5);
+
+        spin_unlock_bh(&q->lock);
+        
+        nf_reinject(e->skb, e->info, (to_accept ? NF_ACCEPT : NF_DROP));
+    }
+    kfree(e);
+    
+    //ipq_set_verdict_helper(e);
+
+#if 0
 	status = q->peer.send(e);
 	if (status > 0) {
 		list_add(&e->list, &q->list);
@@ -191,7 +225,11 @@ static int ipq_enqueue(ipq_queue_t *q,
 		spin_unlock_bh(&q->lock);
 		return status;
 	}
-	spin_unlock_bh(&q->lock);
+#endif
+	
+    return 0;
+
+#if 0
 	if (status == -ECONNREFUSED) {
 		printk(KERN_INFO "ip_queue: peer %d died, "
 		       "resetting state and flushing queue\n", q->peer.pid);
@@ -201,6 +239,7 @@ static int ipq_enqueue(ipq_queue_t *q,
 			q->peer.copy_range = 0;
 			ipq_flush(q);
 	}
+#endif
 free_drop:
 	kfree(e);
 	return -EBUSY;
@@ -263,7 +302,7 @@ static int ipq_mangle_ipv4(ipq_verdict_msg_t *v, ipq_queue_element_t *e)
 			                         diff,
 			                         GFP_ATOMIC);
 			if (newskb == NULL) {
-				printk(KERN_WARNING "ip_queue: OOM "
+				printk(KERN_WARNING "ip_queue_ker: OOM "
 				      "in mangle, dropping packet\n");
 				return -ENOMEM;
 			}
@@ -297,14 +336,12 @@ static inline int id_cmp(ipq_queue_element_t *e, unsigned long id)
 	return (id == (unsigned long )e);
 }
 
-static int ipq_set_verdict(ipq_queue_t *q,
-                           ipq_verdict_msg_t *v, unsigned int len)
+static int ipq_set_verdict_helper(
+    ipq_queue_element_t * e, 
+    ipq_verdict_msg_t *v,
+    unsigned int len
+    )
 {
-	ipq_queue_element_t *e;
-
-	if (v->value > NF_MAX_VERDICT)
-		return -EINVAL;
-	e = ipq_dequeue(q, id_cmp, v->id);
 	if (e == NULL)
 		return -ENOENT;
 	else {
@@ -316,6 +353,17 @@ static int ipq_set_verdict(ipq_queue_t *q,
 		kfree(e);
 		return 0;
 	}
+}
+
+static int ipq_set_verdict(ipq_queue_t *q,
+                           ipq_verdict_msg_t *v, unsigned int len)
+{
+	ipq_queue_element_t *e;
+
+	if (v->value > NF_MAX_VERDICT)
+		return -EINVAL;
+	e = ipq_dequeue(q, id_cmp, v->id);
+    return ipq_set_verdict_helper(e, v, len);
 }
 
 static int ipq_receive_peer(ipq_queue_t *q, ipq_peer_msg_t *m,
@@ -475,7 +523,7 @@ nlmsg_failure:
 	if (skb)
 		kfree_skb(skb);
 	*errp = 0;
-	printk(KERN_ERR "ip_queue: error creating netlink message\n");
+	printk(KERN_ERR "ip_queue_ker: error creating netlink message\n");
 	return NULL;
 }
 
@@ -520,7 +568,7 @@ static __inline__ void netlink_receive_user_skb(struct sk_buff *skb)
 		RCV_SKB_FAIL(-EPERM);
 	if (nlq->peer.pid && !nlq->peer.died
 	    && (nlq->peer.pid != nlh->nlmsg_pid)) {
-	    	printk(KERN_WARNING "ip_queue: peer pid changed from %d to "
+	    	printk(KERN_WARNING "ip_queue_ker: peer pid changed from %d to "
 	    	      "%d, flushing queue\n", nlq->peer.pid, nlh->nlmsg_pid);
 		ipq_flush(nlq);
 	}	
@@ -648,17 +696,19 @@ static int __init init(void)
 {
 	int status = 0;
 	struct proc_dir_entry *proc;
+
+    rand_gen = ip_noise_rand_alloc(24);
 	
 	nfnl = netlink_kernel_create(NETLINK_FIREWALL, netlink_receive_user_sk);
 	if (nfnl == NULL) {
-		printk(KERN_ERR "ip_queue: initialisation failed: unable to "
+		printk(KERN_ERR "ip_queue_ker: initialisation failed: unable to "
 		       "create kernel netlink socket\n");
 		return -ENOMEM;
 	}
 	nlq = ipq_create_queue(netfilter_receive,
 	                       netlink_send_peer, &status, &sysctl_maxlen);
 	if (nlq == NULL) {
-		printk(KERN_ERR "ip_queue: initialisation failed: unable to "
+		printk(KERN_ERR "ip_queue_ker: initialisation failed: unable to "
 		       "create queue\n");
 		sock_release(nfnl->socket);
 		return status;
@@ -684,6 +734,6 @@ static void __exit fini(void)
 	sock_release(nfnl->socket);
 }
 
-MODULE_DESCRIPTION("IPv4 packet queue handler");
+MODULE_DESCRIPTION("IPv4 in-kernel packet queue handler");
 module_init(init);
 module_exit(fini);
