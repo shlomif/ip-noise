@@ -8,7 +8,7 @@ OBJECTS_PROTO = conn.o delayer.o fcs_dm.o ip_queue.o k_stdlib.o main.o packet_lo
 #CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT -D__KERNEL__ -DMODULE -DLINUX -I/usr/src/linux/include/ -g -Wall
 UML = 0
 
-DEBUG = 1
+DEBUG = 0
 
 ifeq ($(DEBUG),1)
 	OPT_FLAGS = -g -O2

@@ -220,7 +220,9 @@ static void * arb_switcher_thread_func(void * context)
 #ifndef __KERNEL__
 int main(int argc, char * argv[])
 #else
-ip_noise_arbitrator_packet_logic_t * main_init_module()
+ip_noise_arbitrator_packet_logic_t * main_init_module(
+        ip_noise_arbitrator_iface_t * * iface_ptr
+        )
 #endif
 {
 #ifndef __KERNEL__    
@@ -331,6 +333,8 @@ ip_noise_arbitrator_packet_logic_t * main_init_module()
 #endif
 
     arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, arb_switcher, &flags);
+
+    *iface_ptr = arb_iface;
 
 #ifndef __KERNEL__
     check = pthread_create(

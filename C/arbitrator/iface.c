@@ -1116,6 +1116,15 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     return self;
 }
 
+void ip_noise_arbitrator_iface_destroy(ip_noise_arbitrator_iface_t * self)
+{
+#ifdef __KERNEL__
+    unregister_chrdev(Major, "ip_noise_arb_iface");
+#endif
+
+    free(self);
+}
+
 #ifndef __KERNEL__
 #if defined(USE_TEXT_QUEUE_IN)||defined(USE_TEXT_QUEUE_OUT)
 extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;

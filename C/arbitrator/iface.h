@@ -239,6 +239,10 @@ extern ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     ip_noise_flags_t * flags
     );
 
+extern void ip_noise_arbitrator_iface_destroy(
+    ip_noise_arbitrator_iface_t * self
+    );
+
 extern void ip_noise_arbitrator_iface_loop(
     ip_noise_arbitrator_iface_t * self
     );
@@ -246,6 +250,7 @@ extern void ip_noise_arbitrator_iface_loop(
 extern ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void);
 
 extern void ip_noise_arbitrator_data_free(ip_noise_arbitrator_data_t * data);
+
 
 #ifdef __cplusplus
 }
