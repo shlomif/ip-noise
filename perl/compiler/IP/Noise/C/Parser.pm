@@ -328,13 +328,6 @@ sub parse_delay_type
                     );
         }
 
-        #return
-        #    {
-        #        'type' => "uniform",
-        #        'start' => $t_start,
-        #        'end' => $t_end,
-        #    };
-
         return 
             {
                 'type' => "generic",

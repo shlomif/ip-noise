@@ -527,6 +527,13 @@ static ip_noise_state_t * get_state(ip_noise_arbitrator_iface_t * self, int chai
     return chain->states[state_index];
 }
 
+/* 
+ * Read the specified parameter type from the line 
+ * A common paradigm in this function is that the read functions return
+ * a negative values. This indicates an error or an out of data notice,
+ * and it causes the function to return the same thing 
+ *
+ * */
 int read_param_type(
     ip_noise_arbitrator_iface_t * self,
     param_type_t param_type,
@@ -542,11 +549,13 @@ int read_param_type(
     {
         case PARAM_TYPE_STRING:
         {
+            /* Read a buffer from the line */
             ok = ip_noise_read(ret->string, sizeof(ret->string));
             if (ok < 0)
             {
                 return ok;
             }
+            /* Make sure it ends with a null character */
             ret->string[IP_NOISE_ID_LEN-1] = '\0';
         }
         break;
@@ -566,7 +575,9 @@ int read_param_type(
             int which;
 
             which = read_int(self);
-
+            
+            /* Currently we only perform operations on the last chain 
+             * that was used on the line */
             if (which == 2)
             {
                 ret->chain = self->last_chain;
@@ -574,7 +585,7 @@ int read_param_type(
             else if (which < 0)
             {
                 return which;
-            }           
+            }
             else
             {
                 printf("Uknown chain which %i!\n", which);
@@ -591,6 +602,9 @@ int read_param_type(
 
             if (which == 0)
             {
+                /* Indicates a specify state by index request.
+                 * We read an extra int that would be the state ID 
+                 * */
                 int index = read_int(self);
                 if (index < 0)
                 {
@@ -601,6 +615,7 @@ int read_param_type(
             }
             else if (which == 2)
             {
+                /* The last state chosen */
                 ret->state = self->last_state;
             }
             else if (which < 0)
@@ -624,6 +639,8 @@ int read_param_type(
             {
                 return ok;
             }
+            /* Sanity check - makes sure prob is in the range [0,1] */
+
             if ((d < 0) || (d > 1))
             {
                 d = 0;
@@ -641,6 +658,7 @@ int read_param_type(
             {
                 return delay;
             }
+            /* Assign the default delay */
             if (delay == 0)
             {
                 delay = 1000;
@@ -675,6 +693,12 @@ int read_param_type(
 
         case PARAM_TYPE_IP_FILTER:
         {
+            /*
+             *
+             * This is an ugly code that constructs a linked list out
+             * of the data that was sent on the line.
+             * 
+             * */
             ip_noise_ip_spec_t * head;
             ip_noise_ip_spec_t * tail;
             ip_noise_ip_spec_t * prev_tail;
@@ -686,7 +710,9 @@ int read_param_type(
             ip_noise_port_range_t * port_ranges = NULL;
             int start, end;
             
-            
+            /* Allocate the initial element.
+             * We keep writing data at tail, but when the function 
+             * returns we use head to refer to the whole linked list.*/
             head = malloc(sizeof(ip_noise_ip_spec_t));
             head->port_ranges = NULL;
             tail = head;
@@ -710,6 +736,11 @@ int read_param_type(
                     ip_spec_free(head);
                     return netmask;
                 }
+
+                /* Read the port ranges. This is an array which is read
+                 * one element by one, until a terminator is encounterd.
+                 * */
+                
                 max_num_port_ranges = 16;
                 port_ranges = malloc(sizeof(port_ranges[0])*max_num_port_ranges);
                 num_port_ranges = 0;
@@ -734,6 +765,8 @@ int read_param_type(
                     {
                         break;
                     }
+                    /* If we reached the end of the array - expand it,
+                     * so we will have more data */
                     if (num_port_ranges == max_num_port_ranges)
                     {
                         int new_max_num_port_ranges = max_num_port_ranges+16;
@@ -749,6 +782,7 @@ int read_param_type(
                 port_ranges = ourrealloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges, sizeof(port_ranges[0])*num_port_ranges);
                 if (memcmp(&ip, &terminator, sizeof(ip)) != 0)
                 {
+                    /* Advance to the next element. */
                     tail->ip = ip;
                     tail->net_mask = netmask;
                     tail->num_port_ranges = num_port_ranges;
@@ -864,6 +898,9 @@ int read_param_type(
     return 0;
 }
 
+/*
+ * This proecdure frees the param type in case it was not used.
+ * */
 static void free_param_type(
     ip_noise_arbitrator_iface_t * self,
     param_type_t param_type,

@@ -40,6 +40,22 @@ constructs that are placed inside chains or states.
     increment_ptr() increments the pointer of the current line, and by 
     this marking the characters is read and permanently unreachable.
 
+    Identifiers converted to lower-case:
+    ------------------------------------
+
+    When storing the collection of states/chains etc. in a hash, we wanted
+    to avoid the occasion where the user will enter two such entities with
+    the same name only with different word-case. (e.g: "mystate" and
+    "MyState").
+
+    In order to do so, we used the identifiers converted to lowercase as
+    the keys of the hash. To retrieve the actual ID with its user-entered
+    case, one can use the 'name' member of the value of the hash. E.g:
+
+    print $states{'mystate'}->{'name'};
+
+    # Prints "MyState".
+
 Depreciated=<<<
 The parsing functions are:
 
@@ -74,5 +90,19 @@ relying on the return results of the previous transactions.
 
 In this code we have also used exception throwing to abruptly end a 
 connection.
+    
+    The transact() function:
+    ------------------------
+    
+    The function transact performs a transaction with the arbitrator. A
+    transaction involves:
+
+    1. Broadcasting the Transaction's Opcode.
+    2. Broadcasting every parameter of the transaction to the arbitrator.
+    3. Retrieving the transaction's return code.
+    4. Retrieving possible return values.
+
+    Steps #2 and #4 are performed using a loop. Refer to the code for more
+    information.
 
 

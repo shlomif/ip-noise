@@ -278,6 +278,14 @@ sub pack_state
     }
 }
 
+
+# This function performs one transaction with the arbitrator.
+# A transaction involves:
+# 1. Broadcasting the Transaction's Opcode.
+# 2. Broadcasting every parameter of the transaction to the arbitrator.
+# 3. Retrieving the transaction's return code.
+# 4. Retrieving possible return values.
+
 sub transact
 {
     my $self = shift;
@@ -288,13 +296,17 @@ sub transact
     {
         die "No such transaction - \"$name\"";
     }
-
+    
+    # Retrieve the record that corresponds to this transaction
     my $record = $transactions{$name};
 
     my $conn = $self->{'conn'};
 
+    # Write the opcode to the line.
     $conn->conn_write(pack_opcode($record->{'opcode'}));
     
+    # For every parameter of the record parameters:
+    #       Serialize it and write it to the line
     foreach my $param_type (@{$record->{'params'}})
     {
         # TODO: Write each parameter according to what was inputted in the 
@@ -402,7 +414,6 @@ sub transact
         {
             die "Unknown param_type $param_type!\n";
         }
-        # usleep(20000);
     }
 
     my $ret_value = $self->read_retvalue();
