@@ -33,6 +33,12 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
     return data;
 }
 
+enum IP_NOISE_READ_ERROR_CODES
+{
+    IP_NOISE_READ_OK = 0,
+    IP_NOISE_READ_CONN_TERM = -1,
+    IP_NOISE_READ_NOT_FULLY = -2,
+};
 
 static int read_int(
     ip_noise_arbitrator_iface_t * self
