@@ -145,7 +145,7 @@ an i386-compatible machine, you should edit the file
 to "<tt>I386 = 0</tt>".
 </p>
 
-<h4>Userland Arbitrator Specific Instructions</h4>
+<h3>Userland Arbitrator Specific Instructions</h3>
 
 <p>
 Designate a directory in which two named pipes will be put. These pipes will
@@ -175,7 +175,29 @@ In this directory type the following set of commands as root:
 <p>
 <tt>ipnoise.ipnoise</tt> is the username and group of the user that will 
 be used to invoke the configurator. Now set the environment variable 
-<tt>IP_NOISE_UM_ARB_CONN_PATH</tt> to the full path of this directory.
+<tt>IP_NOISE_UM_ARB_CONN_PATH</tt> to the full path of this directory in the
+initial shell scripts of both root and the <tt>ipnoise</tt> user.
 </p>
+
+<h3>Kernel-module Arbitrator Specific Instructions</h3>
+
+<p>
+Under the home directory of the user which will run the module, type the 
+following commands as root: 
+</p>
+
+<p>
+<pre>
+# mknod iface_dev c 254 0
+# chown ipnoise.ipnoise iface_dev
+# chmod 600 iface_dev
+</pre>
+</p>
+
+<p>
+<tt>ipnoise.ipnoise</tt> is the username and group of the user which will run
+the configuration utility.
+</p>
+
 </body>
 </html>
