@@ -15,6 +15,7 @@ while (my $filename = <./tests/texts/parse_chain/*>)
 }
 
 @files = (grep { ! /\~$/ } @files);
+@files = (grep { ! /CVS/ } @files);
 
 foreach my $filename (@files)
 {

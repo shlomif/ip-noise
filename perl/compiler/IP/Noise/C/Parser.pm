@@ -405,10 +405,13 @@ sub parse_state
     my $state_name = parse_id_string($stream);
 
     my ($drop_prob, $delay_prob, $time_factor, $delay_type, $move_to);
+    my ($stable_delay_prob);
 
     # Some initial values:
     $drop_prob = 0;
     $delay_prob = 0;
+
+    $stable_delay_prob = 0;
     
     parse_constant_char($stream, "{");
 
@@ -464,6 +467,7 @@ sub parse_state
                 'name' => $state_name,
                 'delay_prob' => $delay_prob,
                 'drop_prob' => $drop_prob,
+                'stable_delay_prob' => $stable_delay_prob,
                 'time_factor' => $time_factor,
                 'delay_type' => $delay_type,
                 'move_to' => $move_to,
@@ -490,6 +494,10 @@ sub parse_state
         elsif ($id eq "delay")
         {
             $delay_prob = parse_prob($stream);
+        }
+        elsif ($id eq "stable_delay")
+        {
+            $stable_delay_prob = parse_prob($stream);
         }
         elsif ($id eq "time_factor")
         {
@@ -711,7 +719,7 @@ sub parse_ip_spec
         my $net_mask_width = 1;
         my @port_ranges = ();
 
-        $ip =~ s/(\/|:),*$//;
+        $ip =~ s/(\/|:).*$//;
         if ($ip =~ /^\d+\.\d+\.\d+\.\d+/)
         {
             my @ip_components = split(/\./, $ip);
@@ -736,7 +744,10 @@ sub parse_ip_spec
                 );
         }
 
-        my $rest_of_ip_filter =~ s/^\d+\.\d+\.\d+\.\d+//;
+
+        my $rest_of_ip_filter = $ip_filter;
+
+        $rest_of_ip_filter =~ s/^\d+\.\d+\.\d+\.\d+//;
 
         if ($rest_of_ip_filter =~ /^\//)
         {
@@ -807,7 +818,7 @@ sub parse_ip_spec
 
                     @which_ports_are_selected[$start .. $end] = ((1) x 0x100000);
                 }
-                elsif ($port =~ /^\d+/)
+                elsif ($port =~ /^\d+$/)
                 {
                     if ($port > 0xFFFF)
                     {
@@ -836,6 +847,12 @@ sub parse_ip_spec
                 {
                     $port++;
                 }
+                # We might have reached the end of the port range.
+                if ($port == 0x10000)
+                {
+                    last;
+                }
+                
                 my $start_port = $port;
                 while (($which_ports_are_selected[$port]) && ($port < 0x10000))
                 {
@@ -844,7 +861,11 @@ sub parse_ip_spec
                 push @port_ranges, { 'start' => $start_port, 'end' => ($port-1) };
             }
         }
-
+        
+        if (scalar(@port_ranges) == 0)
+        {
+            push @port_ranges, { 'start' => 0, 'end' => 65535 };
+        }
         push @ip_filters, {
             'ip' => $ip,
             'ports' => \@port_ranges,
@@ -852,7 +873,7 @@ sub parse_ip_spec
         };
     }
 
-    return \@ip_filters;
+    return { 'type' => 'pass', 'filters' => \@ip_filters};
 }
 
 sub parse_chain
@@ -1009,5 +1030,49 @@ sub parse_chain
     }
 }
 
+sub parse_arbitrator
+{
+    my $stream = shift;
+
+    my %chains;
+
+    for(;($stream->read_next_line() == 0);)
+    {
+        my $line = $stream->peak_line();
+
+        $line =~ s/^\s+//;
+
+        my $id = parse_id_string($stream);
+
+        $id = lc($id);
+
+        if ($id eq "chain")
+        {
+            my $chain = parse_chain($stream);
+            my $chain_name_lc = lc($chain->{'name'});
+            # Check if a chain by that name already exists and if so - croak
+            if (exists($chains{$chain_name_lc}))
+            {
+                die IP::Noise::C::Parser::Exception->new(
+                    'text' => "A chain by the same name already exists",
+                    'line' => $stream->get_line_num(),
+                    'context' => $chain->{'name'},
+                    );                    
+            }
+            $chains{$chain_name_lc} = $chain;
+        }
+        else
+        {
+            die IP::Noise::C::Parser::Exception->new(
+                'text' => "Unknown arbitrator construct",
+                'line' => $stream->get_line_num(),
+                'context' => $line,
+                );
+        }
+    }
+    my %chains_to_ret = (map { $_->{'name'} => $_ } values(%chains));
+
+    return { 'chains' => \%chains_to_ret };
+}
 
 1;
