@@ -531,7 +531,7 @@ static ip_noise_verdict_t decide(
 
 extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_with_packet(
     ip_noise_arbitrator_packet_logic_t * self,
-    ipq_packet_msg_t * msg
+    ip_noise_ipq_packet_msg_t * msg
     )
 {
     ip_noise_verdict_t verdict;

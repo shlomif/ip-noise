@@ -220,7 +220,7 @@ static void * arb_switcher_thread_func(void * context)
 #ifndef __KERNEL__
 int main(int argc, char * argv[])
 #else
-int main_init_module()
+ip_noise_arbitrator_packet_logic_t * main_init_module()
 #endif
 {
 #ifndef __KERNEL__    
@@ -259,6 +259,9 @@ int main_init_module()
     ip_noise_arbitrator_switcher_t * arb_switcher;
 #ifndef __KERNEL__
     pthread_t arb_switcher_thread;
+#endif
+#ifdef __KERNEL__
+    ip_noise_arbitrator_packet_logic_t * packet_logic;
 #endif
 
 
@@ -368,7 +371,14 @@ int main_init_module()
         fprintf(stderr, "Could not create the arbitrator thread!\n");
         exit(-1);
     }
+#else
+    packet_logic = ip_noise_arbitrator_packet_logic_alloc(data_ptr, &flags);
+
+    return packet_logic;
+    
 #endif
+
+
     
 
 #if 0

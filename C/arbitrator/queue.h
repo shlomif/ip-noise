@@ -43,6 +43,7 @@ struct ip_noise_message_struct
     struct nf_info * info;
 };
 
+typedef struct sk_buff ip_noise_ipq_packet_msg_t;
 #endif
 
 typedef struct ip_noise_message_struct ip_noise_message_t;

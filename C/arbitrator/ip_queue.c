@@ -39,6 +39,8 @@
 #include "k_stdlib.h"
 #include "k_stdio.h"
 
+#include "packet_logic.h"
+
 #define IPQ_QMAX_DEFAULT 1024
 #define IPQ_PROC_FS_NAME "ip_queue_ker"
 #define NET_IPQ_QMAX 2088
@@ -62,6 +64,7 @@ typedef struct ipq_queue {
  	struct list_head list;		/* Head of packet queue */
  	spinlock_t lock;		/* Queue spinlock */
  	ipq_peer_t peer;		/* Userland peer */
+    ip_noise_arbitrator_packet_logic_t * packet_logic;
 } ipq_queue_t;
 
 static ip_noise_rand_t * rand_gen;
@@ -112,8 +115,12 @@ static void ipq_flush(ipq_queue_t *q)
 	spin_unlock_bh(&q->lock);
 }
 
-static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
-                                     int *errp, int *sysctl_qmax)
+static ipq_queue_t *ipq_create_queue(
+    nf_queue_outfn_t outfn,
+    int *errp, 
+    int *sysctl_qmax,
+    ip_noise_arbitrator_packet_logic_t * packet_logic
+    )
 {
 	int status;
 	ipq_queue_t *q;
@@ -128,6 +135,7 @@ static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
 	q->maxlen = sysctl_qmax;
 	q->flushing = 0;
 	q->terminate = 0;
+    q->packet_logic = packet_logic;
 	INIT_LIST_HEAD(&q->list);
 	spin_lock_init(&q->lock);
 	status = nf_register_queue_handler(PF_INET, outfn, q);
@@ -155,7 +163,7 @@ static void release_handler(ip_noise_message_t * e, void * context)
 static int ipq_enqueue(ipq_queue_t *q,
                        struct sk_buff *skb, struct nf_info *info)
 {
-    double prob;
+    ip_noise_verdict_t verdict;
 #if 0
 	int status;
 #endif
@@ -170,22 +178,26 @@ static int ipq_enqueue(ipq_queue_t *q,
 
     spin_unlock_bh(&q->lock);
 
-    prob = ip_noise_rand_rand_in_0_1(rand_gen);
-    if (prob < 0.5)
+    verdict = 
+        ip_noise_arbitrator_packet_logic_decide_what_to_do_with_packet(
+                q->packet_logic, 
+                skb);
+
+    if (verdict.action == IP_NOISE_VERDICT_ACCEPT)
     {       
         nf_reinject(skb, info, NF_ACCEPT);
     }
-    else if (prob < 0.7)
+    else if (verdict.action == IP_NOISE_VERDICT_DROP)
     {
         nf_reinject(skb, info, NF_DROP);
     }
-    else
+    else 
     {
         int num_millisecs;
         ip_noise_message_t m;
 
         /* Determine the delay in msecs */
-        num_millisecs = ip_noise_rand_rand15(rand_gen) % 3000;
+        num_millisecs = verdict.delay_len;
 
         if (num_millisecs < 100)
         {
@@ -353,21 +365,24 @@ static int ipq_get_info(char *buffer, char **start, off_t offset, int length)
  *
  ****************************************************************************/
 
-extern int main_init_module(void);
+extern ip_noise_arbitrator_packet_logic_t * main_init_module(void);
 
 static int __init init(void)
 {
 	int status = 0;
 	struct proc_dir_entry *proc;
+    ip_noise_arbitrator_packet_logic_t * packet_logic;
 
     rand_gen = ip_noise_rand_alloc(24);
+
+    packet_logic = main_init_module();
 
     delayer = ip_noise_delayer_alloc(release_handler, NULL);
 
     printf("ipq_ker_q: delayer=%p\n", delayer);
 
 	nlq = ipq_create_queue(netfilter_receive,
-	                       &status, &sysctl_maxlen);
+	                       &status, &sysctl_maxlen, packet_logic);
 	if (nlq == NULL) {
 		printk(KERN_ERR "ip_queue_ker: initialisation failed: unable to "
 		       "create queue\n");
@@ -382,7 +397,6 @@ static int __init init(void)
 	register_netdevice_notifier(&ipq_dev_notifier);
 	ipq_sysctl_header = register_sysctl_table(ipq_root_table, 0);
 
-    main_init_module();
 	return status;
 }
 

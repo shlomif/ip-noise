@@ -38,7 +38,9 @@ typedef struct ipq_queue_element {
 } ipq_queue_element_t;
 
 
+#if 0
 typedef ipq_queue_element_t ip_noise_ipq_packet_msg_t;
+#endif
 
 struct ipq_handle
 {
