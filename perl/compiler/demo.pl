@@ -93,9 +93,12 @@ my $code_text_scw = Gtk::ScrolledWindow->new(undef, undef);
 $code_text_scw->add($code_text);
 $code_text_scw->show();
 
-my $right_vbox = Gtk::VBox->new(0,0);
-$right_vbox->pack_start($desc_text, 1, 1, 0);
-$right_vbox->pack_start($code_text_scw, 1, 1, 0);
+#my $right_vbox = Gtk::VBox->new(0,0);
+my $right_vbox = Gtk::VPaned->new();
+#$right_vbox->pack_start($desc_text, 1, 1, 0);
+#$right_vbox->pack_start($code_text_scw, 1, 1, 0);
+$right_vbox->add1($desc_text);
+$right_vbox->add2($code_text_scw);
 $right_vbox->show();
 
 my $window = new Gtk::Window('toplevel');
