@@ -55,7 +55,7 @@ static ip_noise_packet_info_t * get_packet_info(unsigned char * payload)
 
     ret->protocol = payload[9];
     memcpy(&(ret->source_ip), &payload[12], sizeof(ret->source_ip));
-    memcpy(&(ret->dest_ip), &payload[12], sizeof(ret->dest_ip));
+    memcpy(&(ret->dest_ip), &payload[16], sizeof(ret->dest_ip));
     ret->length = (((int)payload[2])<<8) | payload[3];
     ret->tos = payload[1];
 

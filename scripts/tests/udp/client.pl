@@ -38,7 +38,7 @@ $| = 1;
 
 $hisiaddr = inet_aton($host)    || die "unknown host";
 $hispaddr = sockaddr_in($port, $hisiaddr);
-for($count=0;$count<10000;$count++)
+for($count=0;$count<100;$count++)
 {
     my $msg = pack("A40", sprintf("%s", $count));
     print "Sending \"$msg\"!\n";
@@ -49,4 +49,5 @@ for($count=0;$count<10000;$count++)
     defined(send(SOCKET, $msg, 0, $hispaddr))    || die "send $host: $!";
     #sleep(1);
     #usleep(20000);
+    usleep(200000);
 }
