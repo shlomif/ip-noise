@@ -402,8 +402,7 @@ sub transact
         {
             die "Unknown param_type $param_type!\n";
         }
-        # TODO: Remove
-        usleep(20000);
+        # usleep(20000);
     }
 
     my $ret_value = $self->read_retvalue();

@@ -13,7 +13,7 @@ extern "C" {
 
 struct ip_noise_arbitrator_packet_logic_struct
 {
-    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_data_t * * data;
     ip_noise_flags_t * flags;
     ip_noise_rand_t * rand;
 };
@@ -22,7 +22,7 @@ typedef struct ip_noise_arbitrator_packet_logic_struct ip_noise_arbitrator_packe
 
 extern ip_noise_arbitrator_packet_logic_t * 
     ip_noise_arbitrator_packet_logic_alloc(
-        ip_noise_arbitrator_data_t * data,
+        ip_noise_arbitrator_data_t * * data,
         ip_noise_flags_t * flags
         );
 

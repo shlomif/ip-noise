@@ -35,6 +35,233 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
     return data;
 }
 
+static void ip_spec_free(ip_noise_ip_spec_t * spec)
+{
+    ip_noise_ip_spec_t * next_spec;
+
+    while(spec != NULL)
+    {
+        if (spec->port_ranges != NULL)
+        {
+            free(spec->port_ranges);
+        }
+        next_spec = spec->next;
+        free(spec);
+        spec = next_spec;
+    }
+}
+
+static ip_noise_ip_spec_t * ip_spec_duplicate(
+        ip_noise_ip_spec_t * old
+        )
+{
+    ip_noise_ip_spec_t * head, * tail, * prev_tail;
+
+    /* An ugly code of duplicating a linked list */
+
+    head = malloc(sizeof(ip_noise_ip_spec_t));
+    tail = head;
+    prev_tail = NULL;
+    while (old != NULL)
+    {
+        memcpy(&(tail->ip), &(old->ip), sizeof(tail->ip));
+        tail->net_mask = old->net_mask;
+        tail->num_port_ranges = old->num_port_ranges;
+        if (old->port_ranges != NULL)
+        {
+            tail->port_ranges = malloc(sizeof(tail->port_ranges[0]) * tail->num_port_ranges);
+            memcpy(tail->port_ranges, old->port_ranges, sizeof(tail->port_ranges[0]) * tail->num_port_ranges);
+        }
+        old = old->next;
+        tail->next = malloc(sizeof(ip_noise_ip_spec_t));
+        prev_tail = tail;
+        tail = tail->next;            
+    }
+    if (prev_tail == NULL)
+    {
+        head = NULL;
+    }
+    else
+    {
+        free(prev_tail->next);
+        prev_tail->next = NULL;
+    }
+
+    return head;
+}
+
+
+static ip_noise_chain_filter_t * filter_duplicate(
+        ip_noise_chain_filter_t * old
+        )
+{
+    ip_noise_chain_filter_t * new;
+
+    new = malloc(sizeof(ip_noise_chain_filter_t));
+
+    new->source = ip_spec_duplicate(old->source);
+    new->dest = ip_spec_duplicate(old->dest);
+    memcpy(new->protocols, old->protocols, sizeof(new->protocols));
+    memcpy(new->tos, old->tos, sizeof(new->tos));
+
+    new->min_packet_len = old->min_packet_len;
+    new->max_packet_len = old->max_packet_len;
+    new->which_packet_len = old->which_packet_len;
+
+    return new;
+}
+
+static ip_noise_state_t * state_duplicate(
+        ip_noise_state_t * old
+        )
+{
+    ip_noise_state_t * new;
+
+    new = malloc(sizeof(ip_noise_state_t));
+
+    memcpy(&(new->name), &(old->name), sizeof(new->name));
+    new->drop_prob = old->drop_prob;
+    new->delay_prob = old->delay_prob;
+    new->delay_function.type = old->delay_function.type;
+    switch (new->delay_function.type)
+    {
+        case IP_NOISE_DELAY_FUNCTION_EXP:
+            new->delay_function.params.lambda = old->delay_function.params.lambda;
+            break;
+
+        case IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR:
+            new->delay_function.params.split_linear.num_points = old->delay_function.params.split_linear.num_points;
+            new->delay_function.params.split_linear.points = 
+                malloc(
+                    sizeof(new->delay_function.params.split_linear.points[0]) *
+                    new->delay_function.params.split_linear.num_points
+                    );
+            memcpy(
+                new->delay_function.params.split_linear.points,
+                old->delay_function.params.split_linear.points,
+                sizeof(new->delay_function.params.split_linear.points[0]) *
+                new->delay_function.params.split_linear.num_points
+                );
+            break;
+
+    }
+
+    new->time_factor = old->time_factor;
+    new->num_move_tos = old->num_move_tos;
+    new->move_tos = malloc(sizeof(new->move_tos[0]) * new->num_move_tos);
+    memcpy(new->move_tos, old->move_tos, sizeof(new->move_tos[0]) * new->num_move_tos);
+    new->stable_delay_prob = old->stable_delay_prob;
+
+    return new;
+}
+
+static ip_noise_chain_t * chain_duplicate(
+        ip_noise_chain_t * old
+        )
+{
+    ip_noise_chain_t * new;
+    int a;
+
+    new = malloc(sizeof(ip_noise_chain_t));
+
+    new->num_states = old->num_states;
+    new->max_num_states = old->max_num_states;
+
+    new->states = malloc(new->max_num_states * sizeof(new->states[0]));
+
+    for( a = 0 ; a < new->num_states ; a++)
+    {
+        new->states[a] = state_duplicate(old->states[a]);
+    }
+
+    new->current_state = old->current_state;
+    new->filter = filter_duplicate(old->filter);
+
+    new->last_packet_release_time = old->last_packet_release_time;
+
+    new->state_names = ip_noise_str2int_dict_duplicate(old->state_names);
+    
+    return new;
+}
+
+static ip_noise_arbitrator_data_t *
+    ip_noise_arbitrator_data_duplicate(
+        ip_noise_arbitrator_data_t * old
+        )
+{
+    ip_noise_arbitrator_data_t * new;
+    int a;
+    
+    new = malloc(sizeof(ip_noise_arbitrator_data_t));
+    new->max_num_chains = old->max_num_chains;
+    new->num_chains = old->num_chains;
+    new->chains = malloc(new->max_num_chains*sizeof(new->chains[0]));
+    for(a = 0 ; a < new->num_chains ; a++)
+    {
+        new->chains[a] = chain_duplicate(old->chains[a]);
+    }
+    
+    new->lock = old->lock;
+
+    new->chain_names = ip_noise_str2int_dict_duplicate(old->chain_names);
+
+    return new;
+}
+
+static void state_free(ip_noise_state_t * state)
+{
+    if (state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
+    {
+        if(state->delay_function.params.split_linear.points != NULL)
+        {
+            free(state->delay_function.params.split_linear.points);
+        }
+    }
+    free(state->move_tos);
+    free(state);
+}
+
+static void chain_free(ip_noise_chain_t * chain)
+{
+    int a;
+
+    for(a=0;a<chain->num_states;a++)
+    {
+        state_free(chain->states[a]);
+    }
+    
+    ip_spec_free(chain->filter->source);
+    ip_spec_free(chain->filter->dest);
+
+    free(chain->filter);
+
+    ip_noise_str2int_dict_free(chain->state_names);
+    
+    free(chain);
+}
+
+
+void ip_noise_arbitrator_data_clear_all(ip_noise_arbitrator_data_t * data)
+{
+    int a;
+
+    for(a=0;a<data->num_chains;a++)
+    {
+        chain_free(data->chains[a]);
+    }
+
+    data->num_chains = 0;
+
+    ip_noise_str2int_dict_reset(data->chain_names);    
+}
+
+void ip_noise_arbitrator_data_free(ip_noise_arbitrator_data_t * data)
+{
+    ip_noise_arbitrator_data_clear_all(data);
+    ip_noise_str2int_dict_free(data->chain_names);
+    free(data->chains);
+    free(data);
+}
 
 #ifdef USE_TEXT_QUEUE_IN
 
@@ -223,59 +450,12 @@ static ip_noise_state_t * state_alloc(char * name)
     return state; 
 }
 
-static void state_free(ip_noise_state_t * state)
-{
-    if (state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
-    {
-        if(state->delay_function.params.split_linear.points != NULL)
-        {
-            free(state->delay_function.params.split_linear.points);
-        }
-    }
-    free(state->move_tos);
-    free(state);
-}
-
-static void ip_spec_free(ip_noise_ip_spec_t * spec)
-{
-    ip_noise_ip_spec_t * next_spec;
-
-    while(spec != NULL)
-    {
-        if (spec->port_ranges != NULL)
-        {
-            free(spec->port_ranges);
-        }
-        next_spec = spec->next;
-        free(spec);
-        spec = next_spec;
-    }
-}
-
-static void chain_free(ip_noise_chain_t * chain)
-{
-    int a;
-
-    for(a=0;a<chain->num_states;a++)
-    {
-        state_free(chain->states[a]);
-    }
-    
-    ip_spec_free(chain->filter->source);
-    ip_spec_free(chain->filter->dest);
-
-    free(chain->filter);
-
-    ip_noise_str2int_dict_free(chain->state_names);
-    
-    free(chain);
-}
 
 static ip_noise_chain_t * get_chain(ip_noise_arbitrator_iface_t * self, int chain_index)
 {
     ip_noise_arbitrator_data_t * data;
 
-    data = self->data;
+    data = self->data_copy;
 
     if (chain_index >= data->num_chains)
     {
@@ -737,7 +917,7 @@ static void write_param_type(
 }
 
 ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
-    ip_noise_arbitrator_data_t * data,
+    ip_noise_arbitrator_data_t * * data,
     ip_noise_flags_t * flags
     )
 {
@@ -832,7 +1012,7 @@ void ip_noise_arbitrator_iface_loop(
 #endif
 
     flags = self->flags;
-    data_lock = self->data->lock;
+    data_lock = (*self->data)->lock;
 
     while (1)
     {
@@ -862,10 +1042,15 @@ void ip_noise_arbitrator_iface_loop(
 
         /* Gain writer permission to the data */
 
+#if 0
         printf("%s", "IFace: down_write()!\n");
         ip_noise_rwlock_down_write(data_lock);
 
         printf("%s", "IFace: gained down_write()!\n");
+#endif
+        ip_noise_rwlock_down_read(data_lock);
+        self->data_copy = ip_noise_arbitrator_data_duplicate(*(self->data));
+        ip_noise_rwlock_up_read(data_lock);
 
         while (self->_continue)
         {
@@ -961,8 +1146,14 @@ void ip_noise_arbitrator_iface_loop(
         
         flags->reinit_switcher = 1;
 
+        ip_noise_rwlock_down_write(data_lock);
+        ip_noise_arbitrator_data_free(*(self->data));
+        *(self->data) = self->data_copy;
+        ip_noise_rwlock_up_write(data_lock);
+#if 0
         /* Release the data for others to use */
         ip_noise_rwlock_up_write(data_lock);
+#endif
         
         printf("%s", "IFace: Closing a connection!\n");
         ip_noise_conn_destroy(self->conn);

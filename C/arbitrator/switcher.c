@@ -48,7 +48,7 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 }
 
 ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
-    ip_noise_arbitrator_data_t * data,
+    ip_noise_arbitrator_data_t * * data,
     ip_noise_flags_t * flags,
     int * terminate_ptr
     )
@@ -82,7 +82,7 @@ static void reinit(
         free(PQueuePop(&(self->pq)));
     }
 
-    data = self->data;
+    data = *(self->data);
 
     printf("Num chains: %i!\n", data->num_chains);
 
@@ -112,7 +112,7 @@ static void switch_chain(
     double move_tos_com_prob = 0;
     int i;
 
-    data = self->data;
+    data = *(self->data);
     
     chain = data->chains[chain_index];
 
@@ -159,7 +159,7 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     struct timezone tz;
     ip_noise_arbitrator_switcher_event_t * event;    
 
-    data = self->data;
+    data = *(self->data);
     chain = data->chains[chain_index];
     current_state = chain->current_state;
 
@@ -203,7 +203,7 @@ static void ip_noise_arbitrator_switcher_poll(
     struct timezone tz;
     int chain_index;
 
-    data = self->data;
+    data = *(self->data);
     data_lock = data->lock;
     flags = self->flags;
     

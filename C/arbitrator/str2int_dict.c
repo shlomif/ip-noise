@@ -90,3 +90,20 @@ void ip_noise_str2int_dict_free(ip_noise_str2int_dict dict)
     ip_noise_str2int_dict_reset(dict);
     rbdestroy(dict);
 }
+
+static void duplicate_key(const void * void_elem, const VISIT which, const int depth, void * new)
+{
+    dict_elem * elem = (dict_elem *)void_elem;
+    ip_noise_str2int_dict_add(new, elem->name, elem->index);
+}
+
+ip_noise_str2int_dict ip_noise_str2int_dict_duplicate(ip_noise_str2int_dict old)
+{
+    ip_noise_str2int_dict new;
+
+    new = ip_noise_str2int_dict_alloc();
+
+    rbwalk(old, duplicate_key, new);
+
+    return new;
+}

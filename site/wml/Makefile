@@ -15,6 +15,7 @@ IMAGES = $(D)/style.css                                             \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.1.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.2.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.3.tar.gz           \
+         $(D)/download/IP-Noise-C-Arbitrator-0.1.5.tar.gz           \
          $(D)/download/IP-Noise-Compiler-2001-08-28-rev1.tar.gz     \
          $(D)/download/IP-Noise-Compiler-0.1.2.tar.gz               \
          $(D)/download/IP-Noise-Compiler-0.1.3.tar.gz               \

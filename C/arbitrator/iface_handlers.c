@@ -178,7 +178,7 @@ static int ip_noise_arbitrator_iface_handler_new_chain(ip_noise_arbitrator_iface
 
     printf("New Chain: \"%s\"!\n", name);
 
-    data = self->data;
+    data = self->data_copy;
 
     if (data->num_chains == data->max_num_chains)
     {
@@ -752,23 +752,13 @@ static int ip_noise_arbitrator_iface_handler_set_stable_delay_prob(ip_noise_arbi
 
 static int ip_noise_arbitrator_iface_handler_clear_all(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
-    ip_noise_arbitrator_data_t * data = self->data;
-
-    int a;
+    ip_noise_arbitrator_data_t * data = self->data_copy;
 
     printf("Clear All!\n");
 
-    
-    for(a=0;a<data->num_chains;a++)
-    {
-        chain_free(data->chains[a]);
-    }
+    ip_noise_arbitrator_data_clear_all(data);
 
-    data->num_chains = 0;
-
-    ip_noise_str2int_dict_reset(data->chain_names);
-
-	return 0;
+    return 0;
 }
 
 

@@ -173,6 +173,7 @@ extern void ip_noise_str2int_dict_remove(ip_noise_str2int_dict dict, char * name
 extern void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict);
 
 extern void ip_noise_str2int_dict_free(ip_noise_str2int_dict dict);
+extern ip_noise_str2int_dict ip_noise_str2int_dict_duplicate(ip_noise_str2int_dict old);
 
 struct ip_noise_flags_struct
 {
@@ -183,7 +184,8 @@ typedef struct ip_noise_flags_struct ip_noise_flags_t;
 
 struct ip_noise_arbitrator_iface_struct
 {
-    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_data_t * * data;
+    ip_noise_arbitrator_data_t * data_copy;
     int _continue;
     ip_noise_conn_t * conn;
     ip_noise_flags_t * flags;    
@@ -202,7 +204,7 @@ struct ip_noise_arbitrator_iface_struct
 typedef struct ip_noise_arbitrator_iface_struct ip_noise_arbitrator_iface_t;
 
 extern ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
-    ip_noise_arbitrator_data_t * data,
+    ip_noise_arbitrator_data_t * * data,
     ip_noise_flags_t * flags
     );
 

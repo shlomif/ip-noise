@@ -20,7 +20,7 @@ typedef struct ip_noise_packet_info_struct ip_noise_packet_info_t;
 
 extern ip_noise_arbitrator_packet_logic_t * 
     ip_noise_arbitrator_packet_logic_alloc(
-        ip_noise_arbitrator_data_t * data,
+        ip_noise_arbitrator_data_t * * data,
         ip_noise_flags_t * flags
         )
 {
@@ -157,7 +157,7 @@ static int is_in_chain_filter(
     int len_type;
     int p_l;
 
-    data = self->data;
+    data = *(self->data);
 
     chain = data->chains[chain_index];
 
@@ -288,7 +288,7 @@ static ip_noise_verdict_t chain_decide(
         }
     }
 
-    chain = self->data->chains[chain_index];
+    chain = (*(self->data))->chains[chain_index];
     current_state = chain->states[chain->current_state];
 
     which_prob = ip_noise_rand_rand_in_0_1(self->rand);
@@ -442,7 +442,7 @@ static ip_noise_verdict_t decide(
     ip_noise_verdict_t global_verdict, chain_verdict;
     int chain_index;
 
-    data = self->data;
+    data = *(self->data);
     chains = data->chains;
 
     global_verdict.action = IP_NOISE_VERDICT_ACCEPT;
@@ -527,7 +527,7 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
     {
         payload = msg->payload;
 
-        data_lock = self->data->lock;
+        data_lock = (*(self->data))->lock;
 
         ip_noise_rwlock_down_read(data_lock);
 

@@ -29,7 +29,7 @@ struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
     int * terminate;
     struct ipq_handle * h;
     ip_noise_delayer_t * delayer;
-    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_data_t * * data;
     ip_noise_flags_t * flags;
 };
 
@@ -48,7 +48,7 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
 #endif
     ip_noise_verdict_t verdict;
     ip_noise_delayer_t * delayer;
-    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_data_t * * data;
     ip_noise_flags_t * flags;
     ip_noise_arbitrator_packet_logic_t * packet_logic;
 
@@ -207,7 +207,7 @@ int main(int argc, char * argv[])
     int check;
     ip_noise_delayer_t * delayer;
 
-    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_data_t * data, * * data_ptr;
     ip_noise_flags_t flags;
     ip_noise_arbitrator_iface_t * arb_iface;
     pthread_t arb_iface_thread;
@@ -256,9 +256,12 @@ int main(int argc, char * argv[])
     }
 
     data = ip_noise_arbitrator_data_alloc();
+    data_ptr = malloc(sizeof(*data_ptr));
+    *data_ptr = data;
+    
     flags.reinit_switcher = 1;
 
-    arb_iface = ip_noise_arbitrator_iface_alloc(data, &flags);
+    arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, &flags);
 
     check = pthread_create(
         &arb_iface_thread,
@@ -273,7 +276,7 @@ int main(int argc, char * argv[])
         exit(-1);
     }
 
-    arb_switcher = ip_noise_arbitrator_switcher_alloc(data, &flags, &terminate);
+    arb_switcher = ip_noise_arbitrator_switcher_alloc(data_ptr, &flags, &terminate);
 
     check = pthread_create(
         &arb_switcher_thread,
@@ -293,7 +296,7 @@ int main(int argc, char * argv[])
     arbitrator_context->h = h;
     arbitrator_context->terminate = &terminate;
     arbitrator_context->delayer = delayer;
-    arbitrator_context->data = data;
+    arbitrator_context->data = data_ptr;
     arbitrator_context->flags = &flags;
 
 
