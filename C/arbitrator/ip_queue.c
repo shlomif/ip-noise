@@ -166,6 +166,14 @@ static void release_handler(ip_noise_message_t * e, void * context)
     nf_reinject(e->skb, e->info, NF_ACCEPT);
 }
 
+/*
+ * This function receives a packet. It determines what to do with it
+ * by calling ip_noise_arbitrator_packet_logic_decide_what_to_do_with_packet().
+ * 
+ * Then, if the verdict is accept or drop it does that immidiately. If it
+ * is delay, it uses the delayer to delay the function and make sure it is 
+ * released when its time comes.
+ * */
 static int ipq_enqueue(ipq_queue_t *q,
                        struct sk_buff *skb, struct nf_info *info)
 {
@@ -375,6 +383,7 @@ extern ip_noise_arbitrator_packet_logic_t * main_init_module(
         ip_noise_arbitrator_iface_t * * iface
         );
 
+/* Some globals which we can later use to deallocate */
 static ip_noise_arbitrator_packet_logic_t * packet_logic;
 static ip_noise_arbitrator_iface_t * iface;
 
