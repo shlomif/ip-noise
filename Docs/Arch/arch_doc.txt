@@ -105,4 +105,22 @@ The Switcher:
 -------------
 
 The switcher is implemented using a priority queue in user-mode, and using one
-timer for each chain in kernel mode.
+timer for each chain in kernel mode. Waiting on the priority queue is done by
+polling the priority queue every 50 milliseconds.
+
+The switcher can be found in the module switcher.c
+
+The Packet Logic:
+-----------------
+
+The packet logic refers to the data in order to deduce what is the verdict of 
+the packet. The function get_packet_info() retrieves packet information from 
+the packet's headers. Based on it, is_in_chain_filter() decides whether the
+packet enters the chain or not.
+
+The function chain_decide() decides what is the verdict for each chain, while
+the function decide accumulates their decisions.
+
+The function that serves as the interface for the rest of the code is 
+ip_noise_arbitrator_packet_logic_decide_what_to_do_with_packet().
+
