@@ -1014,6 +1014,10 @@ static int ip_noise_device_open(struct inode *inode,
     return 0;
 }
 
+static void close_connection(
+    ip_noise_arbitrator_iface_t * self
+    );
+
 static int ip_noise_device_release(struct inode *inode, 
                           struct file *file)
 {
@@ -1022,6 +1026,8 @@ static int ip_noise_device_release(struct inode *inode,
     self = ip_noise_arb_iface;
 
     self->_continue = 0;
+
+    close_connection(self);
 
     return 0;
 }
