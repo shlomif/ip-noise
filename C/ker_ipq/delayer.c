@@ -124,6 +124,7 @@ void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
         {
             delayer->release_callback(msg->m, delayer->release_callback_context);
             PQueuePop(&(delayer->pq));
+            free(msg);
         }
         else
         {
@@ -228,16 +229,27 @@ void ip_noise_delayer_loop(
             {
                 delayer->release_callback(msg->m, delayer->release_callback_context);
                 PQueuePop(&(delayer->pq));
+
+                free(msg);
             }
             else
             {
                 break;
             }       
         }
-        do {
-            
-            ts_to_wait_for.tv_sec = msg->tv.tv_sec;
-            ts_to_wait_for.tv_nsec = msg->tv.tv_usec * 1000;
+        cond_wait_status = 0;
+        while (cond_wait_status == 0)
+        {
+            if (cond_wait_status == 0)
+            {
+                /* We were signalled from the outside */
+                msg = PQueuePeekMinimum(&(delayer->pq));
+            }
+            if (msg != NULL)
+            {
+                ts_to_wait_for.tv_sec = msg->tv.tv_sec;
+                ts_to_wait_for.tv_nsec = msg->tv.tv_usec * 1000;
+            }
             if (PQueueIsEmpty(&(delayer->pq)))
             {
                 pthread_cond_wait(
@@ -253,14 +265,8 @@ void ip_noise_delayer_loop(
                     &(delayer->mutex),
                     &ts_to_wait_for
                     );
-            }
-                                    
-            if (cond_wait_status == 0)
-            {
-                /* We were signalled from the outside */
-                msg = PQueuePeekMinimum(&(delayer->pq));
-            }
-        } while (cond_wait_status == 0);
+            }            
+        } 
         
         pthread_mutex_unlock(&(delayer->mutex));
     }
