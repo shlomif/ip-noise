@@ -58,7 +58,7 @@ sub initialize
     return 0;
 }
 
-sub read_opcode
+sub read_int
 {
     my $self = shift;
     
@@ -67,6 +67,13 @@ sub read_opcode
     my $opcode_proto = $conn->conn_read(4);
 
     return unpack("V", $opcode_proto);
+}
+
+sub read_opcode
+{
+    my $self = shift;
+
+    return $self->read_int();
 }
 
 use vars qw(%operations);
@@ -572,9 +579,7 @@ sub read_param_type
     }
     elsif ($param_type eq "chain")
     {
-        my $which = $conn->conn_read(4);
-
-        $which = unpack("V", $which);
+        my $which = $self->read_int();
 
         # TODO : Implement the other <Chain> types.
         if ($which == 2)
@@ -588,16 +593,14 @@ sub read_param_type
     }
     elsif ($param_type eq "state")
     {
-        my $which = $conn->conn_read(4);
-
-        $which = unpack("V", $which);
+        my $which = $self->read_int();
 
         # TODO : Implement the other state types
         if ($which == 0)
         {
-            my $index = $conn->conn_read(4);
-            
-            return unpack("V", $index);
+            my $index = $self->read_int();
+
+            return $index;
         }
         elsif ($which == 2)
         {
@@ -623,9 +626,7 @@ sub read_param_type
     }
     elsif ($param_type eq "delay_function_type")
     {
-        my $delay_type = $conn->conn_read(4);
-
-        $delay_type = unpack("V", $delay_type);
+        my $delay_type = $self->read_int();
 
         if ($delay_type == 0)
         {
@@ -652,7 +653,7 @@ sub read_param_type
             $do_first = 0;
             # TODO: Sanity check that 
             $prob = unpack("d", $conn->conn_read(8));
-            $delay = unpack("V", $conn->conn_read(4));
+            $delay = $self->read_int();
 
             if (($prob < 0) || ($prob > 1))
             {
@@ -666,17 +667,13 @@ sub read_param_type
     }
     elsif ($param_type eq "lambda")
     {
-        my $lambda = $conn->conn_read(4);
-
-        $lambda = unpack("V", $lambda);
+        my $lambda = $self->read_int();
 
         return $lambda;      
     }
     elsif ($param_type eq "delay_type")
     {
-        my $delay = $conn->conn_read(4);
-
-        $delay = unpack("V", $delay);
+        my $delay = $self->read_int();
 
         return $delay;
     }
@@ -692,7 +689,7 @@ sub read_param_type
         while ($ip ne "\xFF\xFF\xFF\xFF")
         {
             $ip = $conn->conn_read(4);
-            my $netmask = unpack("V", $conn->conn_read(4));
+            my $netmask = $self->read_int();
             my @ports = ();
             while (1)
             {
@@ -718,11 +715,11 @@ sub read_param_type
     }
     elsif ($param_type eq "int")
     {
-        return unpack("V", $conn->conn_read(4));
+        return $self->read_int();
     }
     elsif ($param_type eq "bool")
     {
-        return (unpack("V", $conn->conn_read(4)) != 0);
+        return (($self->read_int() != 0)?1:0);
     }
     elsif ($param_type eq "which_packet_length")
     {
@@ -733,7 +730,15 @@ sub read_param_type
             3 => 'between',
             4 => 'not-between'
             );
-        return $map{unpack("V", $conn->conn_read(4))};
+        my $index = $self->read_int();
+        if (!exists($map{$index}))
+        {
+            return $map{$index};
+        }
+        else
+        {
+            return 'all';
+        }
     }
     else
     {
