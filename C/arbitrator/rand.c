@@ -29,6 +29,7 @@
 #include <unistd.h>
 #else
 #include "k_stdlib.h"
+#include <linux/random.h>
 #endif
 
 #include "rand.h"
@@ -83,21 +84,30 @@ ip_noise_rand_t * ip_noise_rand_alloc(unsigned int seed)
     ip_noise_rand_t * ret;
     ret = malloc(sizeof(ip_noise_rand_t));
 
+#ifndef __KERNEL__
     ret->fh = open("/dev/urandom", O_RDONLY);
+#endif
 
     return ret;
 }
 
 void ip_noise_rand_free(ip_noise_rand_t * rand)
 {
+#ifndef __KERNEL__
     close(rand->fh);
+#endif
     free(rand);
 }
 
 int ip_noise_rand_rand(ip_noise_rand_t * rand)
 {
     int i;
+#ifndef __KERNEL__
     read(rand->fh, &i, 4);
+#else
+    get_random_bytes(&i, 4);
+#endif
+        
     i &= 0x3FFFFFFF;
 
     return i;

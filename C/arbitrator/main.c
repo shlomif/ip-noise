@@ -8,6 +8,7 @@
 #include <string.h>
 #else
 #include "k_stdlib.h"
+#include "k_stdio.h"
 #endif
 
 #include "queue.h"
