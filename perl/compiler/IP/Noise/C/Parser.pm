@@ -50,6 +50,8 @@ sub parse_natural_number
     }
 }
 
+# This function tries to read a suitable probability value. That is:
+# a decimal fraction between 0 and 1.
 sub parse_prob
 {
     my $stream = shift;
@@ -91,6 +93,8 @@ sub parse_prob
     }
 }
 
+# This function parses a string that is a suitable ID.
+# It can be any combination of digits, letters and underscores
 sub parse_id_string
 {
     my $stream = shift;
@@ -132,6 +136,10 @@ sub parse_id_string
     }
 }
 
+# This function reads enough characters from a line until it
+# encounters a certain constant charcter. If a different character
+# was found it raises an exception.
+#
 sub parse_constant_char
 {
     my $stream = shift;
@@ -141,6 +149,7 @@ sub parse_constant_char
 
     my $line = $orig_line;
 
+    # Strip leading whitespace
     $line =~ s/^\s+//;
 
     if (substr($line, 0, 1) eq $char)
@@ -159,14 +168,32 @@ sub parse_constant_char
     }
 }
 
+# This function parses a move_to construct. A move_to construct is a
+# construct that specifies which states at which probabilities are moved
+# to from the current state.
+#
+# Example for this is: 
+# {
+#       0.2 = A
+#       0.3 = OtherState
+#       0.5 = yet_another_state
+# }
+#
 sub parse_move_to
 {
     my $stream = shift;
 
     parse_constant_char($stream, "{");
     
+    # The keys to the %move_tos hash are the state names converted to 
+    # lowercase.
+    #
+    # Its values are a { 'state' => $state, 'prob' => $prob } hash reference
+    # where $state is the original state name in mixed case, and $prob is
+    # the probability that it will occur.
     my %move_tos = ();
 
+    # $sum is the sum of all probabilites
     my $sum = 0;
 
     while (1)
@@ -177,10 +204,14 @@ sub parse_move_to
 
         my $line = $orig_line;
 
+        # Strip the leading whitespace
         $line =~ s/^\s+//;
 
         # { - to satisfy gvim for balancing matching parens
-        if ($line =~ /\}/)
+
+        # If the line starts with a right curly bracket it is the end
+        # of this construct
+        if ($line =~ /^\}/)
         {
             last;            
         }
@@ -191,11 +222,12 @@ sub parse_move_to
             next;
         }
 
+        # We want a [Probability] = [State] line
         my $prob = parse_prob($stream);
         parse_constant_char($stream, "=");
         my $state = parse_id_string($stream);
         my $state_lc = lc($state);
-
+        
         $sum += $prob;
 
         if ($sum > 1)
@@ -206,7 +238,8 @@ sub parse_move_to
                 'context' => $prob,
                 );
         }
-
+        
+        # Check if there is a move_to entry to a similar state name
         if (exists($move_tos{$state_lc}))
         {
             die IP::Noise::C::Parser::Exception->new(
@@ -215,7 +248,8 @@ sub parse_move_to
                 'context' => $state,
                 );
         }
-
+        
+        # Add an entry for this state to the %move_tos hash.
         $move_tos{$state_lc} = { 'state' => $state, 'prob' => $prob };
     }
 
