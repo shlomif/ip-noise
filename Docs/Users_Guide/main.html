@@ -324,7 +324,7 @@ The following figure, displays a sample Markov chain:
 
 <p>
 As can be seen, after an iteration step, "A" switches to itself with a 
-probabilty of 0.5, and to "B" with a probability of 0.5. "B" and "C" switch
+probability of 0.5, and to "B" with a probability of 0.5. "B" and "C" switch
 to themselves and to one another with a various probabilities. One can notice,
 that once the chain leaves "A", it cannot return to it again.
 </p>
@@ -334,7 +334,7 @@ The sum of the probabilities of the links that emerge out of a certain state
 must be equal to 1, so the chain will always know to which state to go to next. 
 In our implementation of Markov chains, we assumed that in case, the 
 sum of emerging probabilities is less than 1, than the remainder instructs the
-chain to remain in the current state. If the sum of probabilites is greater
+chain to remain in the current state. If the sum of probabilities is greater
 than 1, a compilation-time error will be reported.
 </p>
 
@@ -349,7 +349,7 @@ dictates a different statistical behaviour of the noise.
 
 <p>
 A packet can be delayed by a certain amount of milliseconds. This delay 
-can be determined randomly, by specifiying a certain type of statistical
+can be determined randomly, by specifying a certain type of statistical
 distribution or another.
 </p>
 
@@ -381,7 +381,7 @@ user.
 This is a generic delay type that can be used to model an arbitrarily complex
 delay function. In it one specifies points along the randomosity factor from 0 
 to 1. For each such point, one specifies the delay at that point. Between
-two adjacent points, one interpolates their end-values linearily.
+two adjacent points, one interpolates their end-values linearly.
 </p>
 
 <h4>Uniform Delay</h4>
@@ -397,7 +397,7 @@ maximum specified by the user.
 A delay can be either stable or non-stable. In a stable delay, the packets 
 are sent on their way at the same order in which they arrived.
 In a non-stable delay, their order may be mixed. One can decide whether
-to issue a stable or non-stable delay by specifiying a probability factor.
+to issue a stable or non-stable delay by specifying a probability factor.
 </p>
 
 <h3>How the Arbitration is Done</h3>
@@ -405,7 +405,7 @@ to issue a stable or non-stable delay by specifiying a probability factor.
 <h4>Several Markov Chains</h4>
 
 <p>
-The arbitrator contains several markov chains which are run and processed in 
+The arbitrator contains several Markov chains which are run and processed in 
 parallel. Each chain has a chain filter that specifies which packets it wishes
 to process. When a packet arrives at the arbitrator, it is passed to all the
 chains, except for a special chain which is designated as the default chain. 
@@ -449,7 +449,7 @@ determines the probability for a stable delay.
 <p>
 A chain filter determines which packets are processed by a chain according to 
 their TCP/IP information. The motivation for a chain filter is that different
-parts of the network being modelled may experience different conditions. 
+parts of the network being modeled may experience different conditions. 
 Therefore, packets need to be treated differently based on their destination,
 source and other TCP/IP properties.
 </p>
@@ -501,7 +501,7 @@ the first character is not a digit. Identifier are not case-sensitive.
 
 <p>
 Block constructs are declared at one line, in which a left curly bracket 
-(<tt>{</tt>), must appear, and after it, nothing elese. They span several 
+(<tt>{</tt>), must appear, and after it, nothing else. They span several 
 lines, until they are terminated with a right curly bracket (<tt>}</tt>)
 on its own line.
 </p>
@@ -524,7 +524,7 @@ the same line. A state ends with a right curly bracket (<tt>}</tt>)
 which appears on a line of its own.
 </p>
 
-<h4>drop, and delay probs</h4>
+<h4>drop, and delay probabilities</h4>
 
 <p>
 If a <tt>drop</tt> or <tt>delay</tt> field/value pair appears it specifies
@@ -747,7 +747,7 @@ dest = 132.69.253.254 ; 132.68.7.4    # Either of the two IP addresses.
 <p>
 The protocol specifies the protocols above IP that will be accepted by
 the chain. Each can be a numeric value or it can be a name of the protocol 
-(according to the file /etc/protocols). The indiviuals protocols are separated
+(according to the file /etc/protocols). The individuals protocols are separated
 by a comma.
 </p>
 
@@ -846,7 +846,7 @@ Chain t2 {
 <ol>
 <li>
 The kernel module arbitrator does not work with the new virtual memory manager
-by Andrea Archangeli. We are inspecting what can be done to change the 
+by Andrea Archanageli. We are inspecting what can be done to change the 
 situation.
 </li>
 <li>
@@ -884,7 +884,7 @@ of the Linux kernel version 2.4.x.
 <p>
 <a href="http://user-mode-linux.sourceforge.net">User Mode Linux</a> - Run
 the Linux as a process. Easy debugging with GDB, run a system as a 
-non-priviliged user, and other cool features.
+non-privileged user, and other cool features.
 </p>
 
 <p>
@@ -899,3 +899,9 @@ which proved very helpful to us.
 
 </body>
 </html>
+<!--  LocalWords:  to's AnotherState StateWithoutAName chain's tos dest netmask
+ -->
+<!--  LocalWords:  HTTP localhost vipe len lt gt Archangeli NONINFRINGEMENT GDB
+ -->
+<!--  LocalWords:  TORTIOUS Homepage
+ -->
