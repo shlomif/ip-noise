@@ -69,9 +69,10 @@ sub read_opcode
     return unpack("V", $opcode_proto);
 }
 
+use vars qw(%operations);
 # This table matches each opcode with its arguments, out arguments,
 # and handler function.
-my %operations =
+%operations =
 (
     0x0 =>
     {

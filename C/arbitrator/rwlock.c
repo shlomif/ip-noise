@@ -41,12 +41,12 @@ void ip_noise_rwlock_free(ip_noise_rwlock_t * lock)
     free(lock);
 }
 
-int ip_noise_rwlock_allow_reader(ip_noise_rwlock_t * lock)
+inline int ip_noise_rwlock_allow_reader(ip_noise_rwlock_t * lock)
 {
     return (lock->active_writers == 0) && (lock->waiting_writers == 0);
 }
 
-int ip_noise_rwlock_allow_writer(ip_noise_rwlock_t * lock)
+inline int ip_noise_rwlock_allow_writer(ip_noise_rwlock_t * lock)
 {
     return ((lock->active_writers == 0) && (lock->active_readers == 0));
 }

@@ -32,6 +32,12 @@ struct ip_noise_split_linear_function_struct
 
 typedef struct ip_noise_split_linear_function_struct ip_noise_split_linear_function_t;
 
+enum IP_NOISE_DELAY_FUNCTION_T
+{
+    IP_NOISE_DELAY_FUNCTION_EXP,
+    IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR,
+};
+
 struct ip_noise_delay_struct
 {
     int type;
@@ -145,14 +151,13 @@ struct ip_noise_arbitrator_data_struct
     ip_noise_str2int_dict chain_names;
 };
 
-typedef struct ip_noise_arbitrator_struct ip_noise_arbitrator_data_t;
+typedef struct ip_noise_arbitrator_data_struct ip_noise_arbitrator_data_t;
 
 extern ip_noise_str2int_dict ip_noise_str2int_dict_alloc(void);
 extern int ip_noise_str2int_dict_get(ip_noise_str2int_dict dict, char * name);
 extern void ip_noise_str2int_dict_add(ip_noise_str2int_dict dict, char * name, int index);
 extern void ip_noise_str2int_dict_remove(ip_noise_str2int_dict dict, char * name);
 extern void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict);
-
 
 #endif /* #ifndef __IP_NOISE_IFACE_H */
 
