@@ -14,6 +14,8 @@
 <h1>The IP-Noise Simulator Users' Guide</h1>
 </div>
 
+<!-- <<< Insert Contents Here >>> -->
+
 <h2>Introduction</h2>
 
 <h3>What is the IP-Noise Simulator</h3>
@@ -418,17 +420,21 @@ then the following rules apply:
 </p>
 
 <p>
-<b>1.</b> If the packet was dropped by any chain, then it will be dropped. 
+<ol>
+<li>
+If the packet was dropped by any chain, then it will be dropped. 
 (i.e: each chain can veto the verdict to a drop)
-</p>
+</li>
 
-<p>
-<b>2.</b> If none of the chains dropped it, then the delay the packet would
+<li>
+If none of the chains dropped it, then the delay the packet would
 experience would be the sum of the delays of the chains. 
 (and as previously mentioned, an accept verdict is considered as a 
 delay of length 0)
-</p>
+</li>
 
+</ol>
+</p>
 <h4>State Switching</h4>
 
 <p>
