@@ -702,12 +702,15 @@ sub read_param_type
                 }
                 push @ports, { 'start' => $start, 'end' => $end };
             }
-            push @ret, 
-                { 
-                    'ip' => $ip, 
-                    'ports' => [ @ports ],
-                    'netmask_width' => $netmask
-                };
+            if ($ip ne "\xFF\xFF\xFF\xFF")
+            {
+               push @ret, 
+                    { 
+                        'ip' => unpack("N", $ip), 
+                        'ports' => [ @ports ],
+                        'netmask_width' => $netmask
+                    };
+            }
         }
 
         return { 'type' => 'pass', 'filters' => \@ret};
