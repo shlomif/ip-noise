@@ -1,0 +1,36 @@
+* Installation Instructions
+    - Global
+    - For the user-land arbitrator
+    - For the kernel-land arbitrator
+
+* Setting up a noise source
+    - IP-Tables and IP-Queue
+    - Loading and unloading the arbitrator
+    - Configuring the arbitrator using translator.pl or ker_translator.pl.
+
+* The configuration of the arbitrator - basic concepts
+    - Markov Chains
+    - Basic concepts: delay, drop, exponential delay, split-linear delay, etc.
+    - How the arbitration is done
+        - States are switched at exponential steps
+        - Stable Delays
+        - Totalling the decision 
+        - Chain Filters
+
+* The configuration file syntax
+    - State Syntax
+        - move_to's
+        - time_factor
+        - drop, delay probs
+        - stable_delay prob
+    - Chain Syntax
+        - States
+            - The default state
+        - Filters
+            - length
+            - dest & source
+                - IPs
+                - Netmasks
+            - tos
+            
+        - The default chain.
