@@ -774,8 +774,10 @@ sub loop
 
         # Gain writer permission to the data
 
-        print "Arb::IFace : down_write()!\n";
+        print "IFace : down_write()!\n";
         $data_lock->down_write(); 
+
+        print "IFace : gained down_write()!\n";
         
         my $conn = $self->{'conn'};
 

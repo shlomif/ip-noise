@@ -39,7 +39,7 @@ sub thread_func_interface
     $arb_iface->loop();
 }
 
-my $thread_interface = Thread->new(\&thread_func_interface);
+
 
 sub thread_func_update_states
 {
@@ -47,10 +47,6 @@ sub thread_func_update_states
 
     $update_states->loop();
 }
-
-my $thread_update_states = Thread->new(\&thread_func_update_states);
-
-my $packget_logic = IP::Noise::Arb::Packet::Logic->new();
 
 my $ip_queue = IPTables::IPv4::IPQueue->new(
     'copy_mode' => IPQ_COPY_PACKET,
@@ -62,6 +58,13 @@ if (! $ip_queue)
     die IPTables::IPv4::IPQueue->errstr();
 }
 
+my $packet_logic = 
+    IP::Noise::Arb::Packet::Logic->new($data, $data_lock, \%flags);
+
+my $thread_interface = Thread->new(\&thread_func_interface);
+
+my $thread_update_states = Thread->new(\&thread_func_update_states);
+
 # Thread::Queue is a class for a thread-safe queue.
 my $packets_to_arbitrate_queue = Thread::Queue->new();
 
@@ -69,10 +72,11 @@ my $release_callback =
     sub {
         my $msg = shift;
 
-        $queue->set_verdict($msg->packet_id, NF_ACCEPT);
+        print "Release: Release Msg!\n";
+        $ip_queue->set_verdict($msg->packet_id, NF_ACCEPT);
     };
 
-my $delayer = Delayer->new($release_callback);
+my $delayer = IP::Noise::Arb::Delayer->new($release_callback);
 
 my $terminate = 0;
 
@@ -108,7 +112,7 @@ sub decide_what_to_do_with_packets_thread_func
         elsif ($verdict->{'action'} eq "drop")
         {
             # Drop the packet
-            $queue->set_verdict($msg->packet_id, NF_DROP);
+            $ip_queue->set_verdict($msg->packet_id, NF_DROP);
         }
         elsif ($verdict->{'action'} eq "delay")
         {
@@ -138,6 +142,8 @@ my $packet_index = 0;
 while (1)
 {
     my $msg = $ip_queue->get_message();
+
+    print "IPQ: Received a message!\n";
     my ($sec, $usec) = gettimeofday();
 
     # We have to do something so it won't overflow...
