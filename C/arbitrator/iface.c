@@ -54,6 +54,7 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
     return data;
 }
 
+/* This is basically a linked list freeing routine */
 static void ip_spec_free(ip_noise_ip_spec_t * spec)
 {
     ip_noise_ip_spec_t * next_spec;
@@ -94,7 +95,7 @@ static ip_noise_ip_spec_t * ip_spec_duplicate(
         old = old->next;
         tail->next = malloc(sizeof(ip_noise_ip_spec_t));
         prev_tail = tail;
-        tail = tail->next;            
+        tail = tail->next; 
     }
     if (prev_tail == NULL)
     {
@@ -275,6 +276,11 @@ void ip_noise_arbitrator_data_clear_all(ip_noise_arbitrator_data_t * data)
 }
 
 #ifdef __KERNEL__
+/*
+ * This function cancels the timers that were assigned in order to switch
+ * the active states of the chains.
+ *
+ * */
 static void our_del_timers(ip_noise_arbitrator_data_t * data)
 {
     int a;
@@ -805,7 +811,7 @@ int read_param_type(
                     int new_max_num_points = max_num_points + 16;
                     points.points = ourrealloc(points.points, sizeof(points.points[0])*max_num_points, sizeof(points.points[0])*new_max_num_points);
                     max_num_points = new_max_num_points;
-                }                
+                } 
             } while ((prob < 1));
 
             points.points = ourrealloc(points.points, sizeof(points.points[0])*max_num_points, sizeof(points.points[0])*points.num_points);
@@ -851,13 +857,6 @@ int read_param_type(
             {
                 return ret->lambda;
             }
-        }
-        break;
-        
-        default:
-        {
-            printf("Uknown Param Type %i!\n", param_type);
-            exit(-1);
         }
         break;
     }
@@ -953,11 +952,13 @@ static void write_param_type(
         }
         break;
 
+#if 0
         default:
         {
             printf("Unknown out param type: %i!\n", param_type);
             exit(-1);
         }
+#endif
         break;
     }
 }
@@ -1005,7 +1006,9 @@ static ssize_t ip_noise_device_write(struct file *file,
     self = ip_noise_arb_iface;
 
     ip_noise_text_queue_in_put_bytes(self->text_queue_in, buffer, length);
-
+    
+    /* We received new input - so let's try to perform a transaction - the
+     * worst case scenario is that we will rollback */
     ip_noise_arbitrator_iface_transact(self);
 
     return length;
@@ -1113,8 +1116,10 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     return self;
 }
 
+#ifndef __KERNEL__
 #if defined(USE_TEXT_QUEUE_IN)||defined(USE_TEXT_QUEUE_OUT)
 extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+#endif
 #endif
 
 #ifdef USE_TEXT_QUEUE_IN
@@ -1184,51 +1189,45 @@ static void ip_noise_arbitrator_iface_init_connection(
     
     data_lock = (*self->data)->lock;
 
-        self->_continue = 1;
-        
-        printf("%s", "Trying to open a connection!\n");
+    self->_continue = 1;
+    
+    printf("%s", "Trying to open a connection!\n");
 #ifndef __KERNEL__
-        self->conn = ip_noise_conn_open();
+    self->conn = ip_noise_conn_open();
 #endif
 
 #ifdef USE_TEXT_QUEUE_IN
 #ifndef __KERNEL__
-        self->text_queue_in_mutex = ip_noise_global_initial_mutex_constant;
+    self->text_queue_in_mutex = ip_noise_global_initial_mutex_constant;
 #endif
-        pthread_mutex_init(&(self->text_queue_in_mutex), NULL);
-        self->text_queue_in = ip_noise_text_queue_in_alloc();
+    pthread_mutex_init(&(self->text_queue_in_mutex), NULL);
+    self->text_queue_in = ip_noise_text_queue_in_alloc();
 
 #ifndef __KERNEL__
-        {
-            pthread_t thread;
-            pthread_create(&thread, NULL, poll_conn, self);
-        }
+    {
+        pthread_t thread;
+        pthread_create(&thread, NULL, poll_conn, self);
+    }
 #endif
 #endif
 #ifdef USE_TEXT_QUEUE_OUT
 #ifndef __KERNEL__
-        self->text_queue_out_mutex = ip_noise_global_initial_mutex_constant;
+    self->text_queue_out_mutex = ip_noise_global_initial_mutex_constant;
 #endif
-        pthread_mutex_init(&(self->text_queue_out_mutex), NULL);
-        self->text_queue_out = ip_noise_text_queue_out_alloc();
+    pthread_mutex_init(&(self->text_queue_out_mutex), NULL);
+    self->text_queue_out = ip_noise_text_queue_out_alloc();
 
 #ifndef __KERNEL__
-        pthread_create(&(self->write_poll_conn_thread), NULL, write_poll_conn, self);
+    pthread_create(&(self->write_poll_conn_thread), NULL, write_poll_conn, self);
 #endif
 #endif
-        
+    
 
-        /* Gain writer permission to the data */
+    /* Make a copy of the data */
 
-#if 0
-        printf("%s", "IFace: down_write()!\n");
-        ip_noise_rwlock_down_write(data_lock);
-
-        printf("%s", "IFace: gained down_write()!\n");
-#endif
-        ip_noise_rwlock_down_read(data_lock);
-        self->data_copy = ip_noise_arbitrator_data_duplicate(*(self->data));
-        ip_noise_rwlock_up_read(data_lock);    
+    ip_noise_rwlock_down_read(data_lock);
+    self->data_copy = ip_noise_arbitrator_data_duplicate(*(self->data));
+    ip_noise_rwlock_up_read(data_lock);    
 }
 
 static void close_connection(
@@ -1243,28 +1242,28 @@ static void close_connection(
     
 #ifdef USE_TEXT_QUEUE_OUT
 #ifndef __KERNEL__
-        pthread_cancel(self->write_poll_conn_thread);
+    pthread_cancel(self->write_poll_conn_thread);
 #endif
 #endif
-        
-        flags->reinit_switcher = 1;
+    
+    flags->reinit_switcher = 1;
 
-        ip_noise_rwlock_down_write(data_lock);
-        ip_noise_arbitrator_data_free(*(self->data));
-        *(self->data) = self->data_copy;
+    ip_noise_rwlock_down_write(data_lock);
+    ip_noise_arbitrator_data_free(*(self->data));
+    *(self->data) = self->data_copy;
 #ifdef __KERNEL__
-        ip_noise_arbitrator_switcher_reinit(self->switcher);
+    ip_noise_arbitrator_switcher_reinit(self->switcher);
 #endif
-        ip_noise_rwlock_up_write(data_lock);
+    ip_noise_rwlock_up_write(data_lock);
 #if 0
-        /* Release the data for others to use */
-        ip_noise_rwlock_up_write(data_lock);
+    /* Release the data for others to use */
+    ip_noise_rwlock_up_write(data_lock);
 #endif
-        
+    
 #ifndef __KERNEL__
-        printf("%s", "IFace: Closing a connection!\n");
-        
-        ip_noise_conn_destroy(self->conn);    
+    printf("%s", "IFace: Closing a connection!\n");
+    
+    ip_noise_conn_destroy(self->conn);    
 #endif
 
 }
@@ -1286,92 +1285,90 @@ static void ip_noise_arbitrator_iface_transact(
     
 
 
-            opcode = read_opcode(self);
+    opcode = read_opcode(self);
 
-            if (opcode == IP_NOISE_READ_CONN_TERM)
-            {                
-                self->_continue = 0;
-                return;
-            }
-            else if (opcode == IP_NOISE_READ_NOT_FULLY)
+    if (opcode == IP_NOISE_READ_CONN_TERM)
+    {                
+        self->_continue = 0;
+        return;
+    }
+    else if (opcode == IP_NOISE_READ_NOT_FULLY)
+    {
+        ip_noise_read_rollback();
+        return;
+    }
+
+    opcode_record.opcode = opcode;
+
+    record = SFO_bsearch(
+        &opcode_record, 
+        operations, 
+        NUM_OPERATIONS,
+        sizeof(operation_t),
+        opcode_compare_w_context,
+        NULL,
+        &found
+        );
+
+    if (found == 0)
+    {
+        printf("Unknown opcode 0x%x!\n", opcode);
+        write_retvalue(self, 0x2);
+        return;
+    }
+    
+    /* Read the parameters from the line */
+    for(a=0;a<record->num_params;a++)
+    {
+        ok = read_param_type(self, record->params[a], &params[a]);
+        if (ok < 0)
+        {
+            int i;
+            /* Free the previous parameters that were read from the line*/
+            for(i=0;i<a;i++)
             {
-                ip_noise_read_rollback();
-                return;
-            }
-
-            opcode_record.opcode = opcode;
-
-            record = SFO_bsearch(
-                &opcode_record, 
-                operations, 
-                NUM_OPERATIONS,
-                sizeof(operation_t),
-                opcode_compare_w_context,
-                NULL,
-                &found
-                );
-
-            if (found == 0)
-            {
-                printf("Unknown opcode 0x%x!\n", opcode);
-                write_retvalue(self, 0x2);
-                return;
+                free_param_type(self, record->params[i], &params[i]);
             }
             
-            /* Read the parameters from the line */
-            for(a=0;a<record->num_params;a++)
+            if (ok == IP_NOISE_READ_CONN_TERM)
             {
-                ok = read_param_type(self, record->params[a], &params[a]);
-                if (ok < 0)
-                {
-                    int i;
-                    /* Free the previous parameters that were read from the line*/
-                    for(i=0;i<a;i++)
-                    {
-                        free_param_type(self, record->params[i], &params[i]);
-                    }
-                    
-                    if (ok == IP_NOISE_READ_CONN_TERM)
-                    {
-                        self->_continue = 0;
-                    }
-                    else if (ok == IP_NOISE_READ_NOT_FULLY)
-                    {
-                        ip_noise_read_rollback();
-                    }
-                    goto end_of_loop;
-                }                    
+                self->_continue = 0;
             }
-
-            ret_code = record->handler(self, params, out_params);
-
-            if (ret_code < 0)
+            else if (ok == IP_NOISE_READ_NOT_FULLY)
             {
-                if (ret_code == IP_NOISE_READ_CONN_TERM)
-                {
-                    self->_continue = 0;
-                }
-                else if (ret_code == IP_NOISE_READ_NOT_FULLY)
-                {
-                    ip_noise_read_rollback();
-                }
-                goto end_of_loop;                    
+                ip_noise_read_rollback();
             }
+            return;
+        }                    
+    }
 
-            ip_noise_read_commit();
+    ret_code = record->handler(self, params, out_params);
 
-            write_retvalue(self, ret_code);
+    if (ret_code < 0)
+    {
+        if (ret_code == IP_NOISE_READ_CONN_TERM)
+        {
+            self->_continue = 0;
+        }
+        else if (ret_code == IP_NOISE_READ_NOT_FULLY)
+        {
+            ip_noise_read_rollback();
+        }
+        return;
+    }
 
-            for(a=0;a<record->num_out_params;a++)
-            {
-                write_param_type(
-                    self,
-                    record->out_params[a],
-                    out_params[a]
-                    );
-            }
+    ip_noise_read_commit();
 
-            end_of_loop:    
+    write_retvalue(self, ret_code);
+
+    for(a=0;a<record->num_out_params;a++)
+    {
+        write_param_type(
+            self,
+            record->out_params[a],
+            out_params[a]
+            );
+    }
 }
 
 void ip_noise_arbitrator_iface_loop(
@@ -1379,7 +1376,7 @@ void ip_noise_arbitrator_iface_loop(
     )
 {
     ip_noise_flags_t * flags;
-    ip_noise_rwlock_t * data_lock;        
+    ip_noise_rwlock_t * data_lock;
 
     flags = self->flags;
     data_lock = (*self->data)->lock;
