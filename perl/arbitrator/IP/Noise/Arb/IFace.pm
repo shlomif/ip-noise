@@ -12,7 +12,7 @@ use IP::Noise;
 
 use IP::Noise::Conn;
 
-use Thread;
+#use Thread;
 
 my $arb_string_len = IP::Noise::get_max_id_string_len() + 1;
 
@@ -41,7 +41,7 @@ sub initialize
 
     my $flags = shift;
 
-    $self->{'conn'} = IP::Noise::Conn->new(1);
+    #$self->{'conn'} = IP::Noise::Conn->new(1);
 
     $self->{'data'} = $data;
     $self->{'data_lock'} = $data_lock;
@@ -769,9 +769,12 @@ sub loop
     while (1)
     {        
         $self->{'continue'} = 1;
+        print "Trying to open a connection!\n";
         $self->{'conn'} = IP::Noise::Conn->new(1);
 
         # Gain writer permission to the data
+
+        print "Arb::IFace : down_write()!\n";
         $data_lock->down_write(); 
         
         my $conn = $self->{'conn'};
@@ -834,6 +837,8 @@ sub loop
         $data_lock->up_write();
 
         # Destroy the connection.
+        
+        print "Closing a connection!\n";
         delete($self->{'conn'});
     }
 }

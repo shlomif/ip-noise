@@ -60,6 +60,18 @@ sub rand
     return $one | ($two << 15);
 }
 
+my $rand_normalizer = 10000000;
+
+no integer;
+
+sub rand_in_0_1
+{
+    my $self = shift;
+
+    my $rand = $self->rand();
+
+    return (($rand % $rand_normalizer) / $rand_normalizer);
+}
 1;
 
 

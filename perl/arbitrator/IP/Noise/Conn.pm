@@ -51,6 +51,10 @@ sub destroy
 
     close(*{$self->{'out'}});
     close(*{$self->{'in'}});
+
+    # This is a kludge, but it's here to make sure we do not re-open
+    # the already open connection immidiately
+    sleep(1);
 }
 
 sub DESTROY

@@ -1,6 +1,10 @@
+#!/usr/bin/perl -w
+
 use Data::Dumper;
 
 use IP::Noise::Arb::IFace;
+
+use IP::Noise::Arb::Switcher;
 
 use IP::Noise::Conn;
 
@@ -8,7 +12,7 @@ use Thread;
 
 use Thread::RWLock;
 
-use vars qw(%flags $data $data_lock $arb_iface $update_states)
+use vars qw(%flags $data $data_lock $arb_iface $update_states);
 
 #my $conn = IP::Noise::Conn->new(1);
 
@@ -22,7 +26,10 @@ $data_lock = Thread::RWLock->new();
 
 sub thread_func_interface
 {
-    $arb_iface = IP::Noise::Arb::IFace->new($data, $data_lock, \%flags);
+    print "In thread!\n";
+    $arb_iface = IP::Noise::Arb::IFace->new($data, $data_lock, \%flags);    
+
+    print "In thread 2 ! \n";
 
     $arb_iface->loop();
 }
