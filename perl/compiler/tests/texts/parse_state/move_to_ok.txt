@@ -1,0 +1,9 @@
+Move_Tos {
+    time_factor = 1000
+    delay = 0.5
+    move_to = {
+        0.2 = A
+        0.3 = B
+        0.5 = Move_Tos
+    }
+}

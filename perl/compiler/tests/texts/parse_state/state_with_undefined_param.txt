@@ -1,0 +1,6 @@
+You {
+    drop = 0.3
+    delay = 0.2
+    jok = 5
+}
+

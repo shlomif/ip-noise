@@ -1,0 +1,10 @@
+Not_Ascending_Generic_Delay {
+    delay = 0.2
+    time_factor = 500
+    delay_type = Generic {
+        0 = 600
+        0.6 = 500
+        0.2 = 300
+        1 = 50
+    }    
+}
