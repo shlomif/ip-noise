@@ -713,7 +713,7 @@ same only for the destination of the packets.
 <p>
 The value of these fields is a semicolon delimited list of IP specifications.
 An IP specification contains an IP address (4 decimal digits separated by a 
-dot (<tt>.</tt>)); an optional netmask width preceded by a slash (<tt>/<tt>).
+dot (<tt>.</tt>)); an optional netmask width preceded by a slash (<tt>/</tt>).
 The last part is an optional port specifier that begins with a colon 
 (<tt>:</tt>) and contains a comma-delimited list of port ranges or individual
 port numbers. A port range is of the form <tt>[start_port]-[end_port]</tt>.
@@ -831,6 +831,65 @@ Chain t2 {
 }
 </pre>
 </p>
+
+<h2>Final Notes</h2>
+
+<h3>Known Issues</h3>
+
+<p>
+<ol>
+<li>
+The kernel module arbitrator does not work with the new virtual memory manager
+by Andrea Archangeli. We are inspecting what can be done to change the 
+situation.
+</li>
+<li>
+It is possible for a malicious compiler that communicates with the kernel 
+module to cause the kernel to crash by having it allocate a lot of memory.
+</li>
+</ol>
+</p>
+
+<h3>Disclaimer</h3>
+
+<p>
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+</p>
+
+<h3>Links and References</h3>
+
+<p>
+<a href="http://comnet.technion.ac.il/~cn1w02/">The IP-Noise Simulator Project's Homepage</a>
+</p>
+
+<p>
+<a href="http://netfilter.samba.org/">Netfilter</a> - the IP Firewalling stack
+of the Linux kernel version 2.4.x.
+</p>
+
+<p>
+<a href="http://user-mode-linux.sourceforge.net">User Mode Linux</a> - Run
+the Linux as a process. Easy debugging with GDB, run a system as a 
+non-priviliged user, and other cool features.
+</p>
+
+<p>
+<a href="http://developer.berlios.de/">BerliOS</a> - a software hub, 
+which proved very helpful to us.
+</p>
+
+<p>
+<a href="http://www.linuxdoc.org/">The Linux Documentation Project</a>
+</p>
+
 
 </body>
 </html>
