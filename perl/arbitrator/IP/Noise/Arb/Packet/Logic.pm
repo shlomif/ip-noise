@@ -495,21 +495,21 @@ sub decide_what_to_do_with_packet
         my $verdict;
 
         eval {
-        my $payload = $msg->payload();
+            my $payload = $msg->payload();
 
-        my $data_lock = $self->{'data_lock'};
+            my $data_lock = $self->{'data_lock'};
 
-        $data_lock->down_read();
+            $data_lock->down_read();
 
-        my $packet_info = &get_packet_info($payload);
+            my $packet_info = &get_packet_info($payload);
 
-        $verdict = $self->decide($packet_info);
+            $verdict = $self->decide($packet_info);
 
-        #my $d = Data::Dumper->new([ $verdict, $packet_info], [ "\$verdict", "\$packet_info"]);
-        #print $d->Dump();
+            #my $d = Data::Dumper->new([ $verdict, $packet_info], [ "\$verdict", "\$packet_info"]);
+            #print $d->Dump();
        
 
-        $data_lock->up_read();        
+            $data_lock->up_read();        
 
         };
 

@@ -2,10 +2,13 @@
 all: arb
 
 
-OBJECTS = main.o
+OBJECTS = main.o queue.o
 
 $(OBJECTS) :: %.o : %.c
-	gcc -c $<
+	gcc -g -Wall -c $<
 
 arb: $(OBJECTS)
-	gcc -o $@ $(OBJECTS) -lipq
+	gcc -g -Wall -o $@ $(OBJECTS) -lipq -lpthread
+
+clean:
+	rm -f arb $(OBJECTS)
