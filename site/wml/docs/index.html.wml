@@ -9,7 +9,12 @@
 
 <p>
 <a href="Mid-Term.ppt">Our Mid-Term Presentation</a>. 
-(in  <a href="Mid-Term-html/">HTML</a>)
+(in  <a href="Mid-Term-html/">HTML format</a>)
+</p>
+
+<p>
+<a href="Final2.ppt">Out Final Presentation</a>.
+(in <a href="Final-html/">HTML format</a>)
 </p>
 
 <p>
@@ -18,9 +23,16 @@
 </p>
 
 <p>
-<a href="Users_Guide/">The User Guide</a> (Work under progress) -
+<a href="Users_Guide/">The User Guide</a> -
 HTML format
 </p>
+
+<p>
+<a href="IP-Noise-Gen-Final.doc">Our Final Report</a> (Word 2000 Format)
+<ul>
+    <a href="IP-Noise-Gen-Final.pdf">In PDF (Acrobat Reader) Format</a><br />
+    <a href="Final-Report-HTML/IP noise generator final report.htm">In HTML Format</a><br />
+</ul>
 
 <h2>Architecture Documents and Specs</h2>
 
