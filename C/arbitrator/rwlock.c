@@ -1,3 +1,21 @@
+/*
+ * rwlock.c - Part of the IP-Noise project.
+ * Written by Shlomi Fish & Roy Glasberg
+ * The Computer Networks Laboratory
+ * The Electrical Engineering Department
+ * The Technion
+ *
+ * This code is distributed under the public domain.
+ *
+ * 
+ *
+ * Implementation of a Readers-Writers lock for POSIX threads. Plain and 
+ * simple. This code is based on the code of the ZThreads library, but it 
+ * is not derived from it.
+ *
+ * */
+
+
 #ifndef __KERNEL__
 #include <stdio.h>
 #include <stdlib.h>
@@ -146,6 +164,12 @@ void ip_noise_rwlock_up_write(ip_noise_rwlock_t * lock)
 
 #else
 
+/* 
+ * This is the code for the kernel. Basically, all it does is initialize
+ * a mutex. A mutex can serve as a (very limited) readers-writers lock
+ *
+ * */
+
 ip_noise_rwlock_t * ip_noise_rwlock_alloc(void)
 {
     ip_noise_rwlock_t * ret;
@@ -164,6 +188,11 @@ void ip_noise_rwlock_free(ip_noise_rwlock_t * lock)
 
 #endif
 
+
+/*
+ * The rest is a test program to test the rwlock. It can be safely ignored.
+ *
+ * */
 #if 0
 
 ip_noise_rwlock_t * mylock;

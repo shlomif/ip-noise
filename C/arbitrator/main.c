@@ -363,6 +363,11 @@ ip_noise_arbitrator_packet_logic_t * main_init_module(
     arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, arb_switcher, &flags);
 
 #ifdef __KERNEL__
+    /*
+     * We assign arb_iface to iface_ptr so it can later be de-allocated
+     * inside the module ip_queue.c.
+     *
+     * */
     *iface_ptr = arb_iface;
 #endif
 
