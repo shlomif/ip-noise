@@ -31,26 +31,17 @@
 #include <linux/netfilter_ipv4/ip_queue.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 
+#include "queue.h"
+#include "delayer.h"
 #include "rand.h"
+#include "k_pthread.h"
+#include "k_time.h"
+#include "k_stdlib.h"
 
 #define IPQ_QMAX_DEFAULT 1024
 #define IPQ_PROC_FS_NAME "ip_queue_ker"
 #define NET_IPQ_QMAX 2088
 #define NET_IPQ_QMAX_NAME "ip_queue_ker_maxlen"
-
-typedef struct ipq_rt_info {
-	__u8 tos;
-	__u32 daddr;
-	__u32 saddr;
-} ipq_rt_info_t;
-
-typedef struct ipq_queue_element {
-	struct list_head list;		/* Links element into queue */
-	int verdict;			/* Current verdict */
-	struct nf_info *info;		/* Extra info from netfilter */
-	struct sk_buff *skb;		/* Packet inside */
-	ipq_rt_info_t rt_info;		/* May need post-mangle routing */
-} ipq_queue_element_t;
 
 typedef int (*ipq_send_cb_t)(ipq_queue_element_t *e);
 
@@ -73,6 +64,8 @@ typedef struct ipq_queue {
 } ipq_queue_t;
 
 static ip_noise_rand_t * rand_gen;
+pthread_mutex_t protect_timers_mutex;
+static ip_noise_delayer_t * delayer;
 /****************************************************************************
  *
  * Packet queue
@@ -154,16 +147,11 @@ struct wrapper_struct
 
 typedef struct wrapper_struct wrapper_t;
 
-void release_handler(unsigned long ul_data)
+static void release_handler(ip_noise_message_t * e, void * context)
 {
-    wrapper_t * w = (wrapper_t *)(void *)ul_data;
-    ipq_queue_element_t * e = w->e;
-    struct timer_list * t = w->timer;
-
-    kfree(w);    
-    nf_reinject(e->skb, e->info, NF_ACCEPT);
+    nf_reinject(e->m->skb, e->m->info, NF_ACCEPT);
+    kfree(e->m);
     kfree(e);
-    kfree(t);
 }
 
 static int ipq_enqueue(ipq_queue_t *q,
@@ -217,22 +205,38 @@ static int ipq_enqueue(ipq_queue_t *q,
     }
     else
     {
-        struct timer_list * mytimer;
-        wrapper_t * w;
         int num_millisecs;
+        struct timeval tv;
+        ip_noise_message_t * m;
 
-        mytimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
-        w = kmalloc(sizeof(wrapper_t), GFP_KERNEL);
         /* Determine the delay in msecs */
-        w->timer = mytimer;
-        w->e = e;        
         num_millisecs = ip_noise_rand_rand15(rand_gen) % 3000;
+
+        gettimeofday(&tv, &tz);
+#if 0
+        tv.tv_usec += (num_millisecs % 1000) * 1000;
+        if (tv.tv_usec > 1000000)
+        {
+            tv.tv_sec += (tv.tv_usec / 1000000);
+            tv.tv_usec %= 1000000;
+        }
+        tv.tv_sec += num_millisecs / 1000;        
+#endif
+        m = malloc(sizeof(ip_noise_message_t));
+        m->m = e;
+        m->tv = tv;        
+
+        ip_noise_delayer_delay_packet(delayer, m, tv, num_millisecs);
         
+#if 0
         init_timer(mytimer);
         mytimer->expires = jiffies + (HZ * num_millisecs) / 1000;
         mytimer->data = (unsigned long)w;
         mytimer->function = release_handler;
+        pthread_mutex_lock(&protect_timers_mutex);
         add_timer(mytimer);
+        pthread_mutex_unlock(&protect_timers_mutex);
+#endif
     } 
     
     return 0;
@@ -397,6 +401,10 @@ static int __init init(void)
 	struct proc_dir_entry *proc;
 
     rand_gen = ip_noise_rand_alloc(24);
+
+    delayer = ip_noise_delayer_alloc(release_handler, NULL);
+
+    pthread_mutex_init(&protect_timers_mutex, NULL);
 	
 	nlq = ipq_create_queue(netfilter_receive,
 	                       &status, &sysctl_maxlen);
@@ -418,10 +426,14 @@ static int __init init(void)
 
 static void __exit fini(void)
 {
+    pthread_mutex_destroy(&protect_timers_mutex);
+    ip_noise_rand_free(rand_gen);
+
 	unregister_sysctl_table(ipq_sysctl_header);
 	proc_net_remove(IPQ_PROC_FS_NAME);
 	unregister_netdevice_notifier(&ipq_dev_notifier);
 	ipq_destroy_queue(nlq);
+    ip_noise_delayer_destroy(delayer);
 }
 
 MODULE_DESCRIPTION("IPv4 in-kernel packet queue handler");

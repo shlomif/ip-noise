@@ -1,5 +1,5 @@
 
-UML = 0
+UML = 1
 
 ifeq ($(UML),1)
 	LINUX_KERNEL_DIR = /home/shlomi/Download/unpack/kernel/User-Mode-Linux/kernel/linux
@@ -10,14 +10,13 @@ else
 	CFLAGS = -g -c -Wall -I$(LINUX_KERNEL_DIR)/include -DMODULE -D__KERNEL__
 endif
 
-ip_queue_ker.o: ip_queue.o rand.o
-	ld -r -o $@ ip_queue.o rand.o
+OBJECTS = ip_queue.o rand.o pqueue.o delayer.o k_stdlib.o
 
-ip_queue.o: ip_queue.c
+
+ip_queue_ker.o: $(OBJECTS)
+	ld -r -o $@ $(OBJECTS)
+
+$(OBJECTS) :: %.o : %.c
 	gcc $(CFLAGS) -o $@ $<
-
-rand.o: rand.c
-	gcc $(CFLAGS) -o $@ $<
-
 clean:
 	rm -f *.o

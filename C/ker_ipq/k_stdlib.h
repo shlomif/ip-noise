@@ -8,6 +8,8 @@
 #define malloc(num_bytes) (kmalloc(num_bytes, GFP_KERNEL))
 #define free(ptr)         (kfree(ptr))
 
-extern void * realloc(void * ptr, size_t size);
+#define ourrealloc(ptr, old_size, new_size) ip_noise_krealloc(ptr, old_size, new_size)
+
+extern void * ip_noise_krealloc(void * ptr, size_t old_size, size_t new_size);
 
 #endif /* #ifndef __IP_NOISE_K_STDLIB_H */
