@@ -33,6 +33,33 @@ where [path_to_myfile] is the path to the file that contains the configuration.
 10. You can later reload the arbitrator with different configurations by
 using steps #8 and #9.
 
+Instructions for the Kernel Arbitrator:
+---------------------------------------
 
+1. Unpack the arbitrator and compile it by typing "make -f Makefile.kernel".
 
+2. Unpack the compiler (it is written in Perl so it does not need compilation).
+The compiler need not be run as root.
 
+3. Create a device file by typing "mknod iface_dev c 254 0". Note that the 
+user that will run the compiler need to be able to read and write from it.
+
+4. Set the environment variable IP_NOISE_KER_ARB_CONN_PATH to the full path
+of this device in the shell of the user that would run the compiler.
+
+5. Load the IP-Tables module: "modprobe ip_tables".
+
+6. Set certain firewall rules to have the "QUEUE" directive. Like this:
+# /sbin/iptables -A INPUT -i eth0 -j QUEUE
+
+7. Enter the arbitrator's directory, su into root and type 
+"/sbin/insmod ip-noise-arb.o".
+
+8. Prepare a file containing the configuration of the arbitrator. 
+
+9. Enter the compiler's directory and type 
+"./ker_translator.pl [path_to_myfile]" where [path_to_myfile] is the 
+path to the file that contains the configuration.
+
+10. You can later reload the arbitrator with different configurations by
+using steps #8 and #9.

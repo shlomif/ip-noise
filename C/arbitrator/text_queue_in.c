@@ -41,6 +41,10 @@ void ip_noise_text_queue_in_put_bytes(
     int length
     )
 {
+    /*
+     * If the end of the data plus the new data exceeds the maximum size - 
+     * resize the buffer.
+     * */
     if (q->length + length > q->max_size)
     {
         int new_max_size = q->length + length + IP_NOISE_TEXT_QUEUE_IN_GROW_BY;

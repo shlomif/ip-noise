@@ -77,11 +77,6 @@ ip_noise_delayer_t * ip_noise_delayer_alloc(
     ip_noise_delayer_t * ret;
 
     ret = malloc(sizeof(ip_noise_delayer_t));
-    printf("ipq_ker_q: ret=%p line=%i module=\"%s\"\n", 
-            ret,
-            __LINE__,
-            __FILE__
-            );
 
     ret->release_callback = release_callback;
     ret->release_callback_context = release_callback_context;
