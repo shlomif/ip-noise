@@ -185,6 +185,8 @@ sub parse_move_to
 {
     my $stream = shift;
 
+    my $this_state_name = shift;
+
     parse_constant_char($stream, "{");
     
     # The keys to the %move_tos hash are the state names converted to 
@@ -255,12 +257,28 @@ sub parse_move_to
         $move_tos{$state_lc} = { 'state' => $state, 'prob' => $prob };
     }
 
-    if (($sum < 1 - $float_delta) || ($sum > 1 + $float_delta))
+    if (($sum > 1 + $float_delta))
     {
         die IP::Noise::C::Parser::Exception->new(
             'text' => "Proabibilities in move_to do not sum to 1",
             'line' => $stream->get_line_num(),
             );
+    }
+
+    if ($sum < 1)
+    {
+        if (exists($move_tos{lc($this_state_name)}))
+        {
+            $move_tos{lc($this_state_name)}->{'prob'} += (1 - $sum);
+        }
+        else
+        {
+            $move_tos{lc($this_state_name)} = 
+                { 
+                    'state' => $this_state_name,
+                    'prob' => (1 - $sum),
+                };
+        }
     }
 
     # Convert the hash to mixed-case
@@ -517,7 +535,7 @@ sub parse_state
         }
         elsif ($id eq "move_to")
         {
-            $move_to = parse_move_to($stream)
+            $move_to = parse_move_to($stream, $state_name)
         }
         else
         {
