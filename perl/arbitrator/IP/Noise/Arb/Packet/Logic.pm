@@ -111,7 +111,9 @@ sub is_in_ip_filter
         {
             if ($port == -1)
             {
-                # Do nothing
+                # This protocol does not have a port, so we don't care about
+                # the port specification.
+                return 1;
             }
             else
             {
@@ -186,7 +188,7 @@ sub is_in_chain_filter
 
     my $data = $self->{'data'};
 
-    my $chain = $self->{'data'}->{'chains'}->[$chain_index];    
+    my $chain = $data->{'chains'}->[$chain_index];    
 
     if (! is_in_ip_filter(
         $chain->{'source'}, 

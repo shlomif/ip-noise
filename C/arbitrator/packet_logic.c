@@ -85,6 +85,181 @@ int compare_prob_and_delay_points(
     }
 }
 
+static int is_in_ip_filter(
+    ip_noise_ip_spec_t * ip_filter,
+    struct in_addr ip_proto,
+    int port
+    )
+{
+    unsigned char * ip_bytes;
+    unsigned int ip;
+    unsigned int spec_ip;
+    ip_noise_ip_spec_t * spec;
+    int netmask_width;
+
+    ip_bytes = (unsigned char*)&ip_proto;
+
+    ip = (((unsigned int)ip_bytes[0])<<24) |
+         (((unsigned int)ip_bytes[1])<<16) |
+         (((unsigned int)ip_bytes[2])<<8)  |
+         (((unsigned int)ip_bytes[3]))     ; 
+        
+    if (ip_filter == NULL)
+    {
+        return 1;
+    }
+    spec = ip_filter;
+    while (spec != NULL)
+    {
+        netmask_width = spec->net_mask;
+
+        ip_bytes = (unsigned char*)&(spec->ip);
+        
+        spec_ip = (((unsigned int)ip_bytes[0])<<24) |
+                  (((unsigned int)ip_bytes[1])<<16) |
+                  (((unsigned int)ip_bytes[2])<<8)  |
+                  (((unsigned int)ip_bytes[3]))     ;
+        
+        if ((spec_ip >> netmask_width) == (ip >> netmask_width))
+        {
+            if (port == -1)
+            {
+                return 1;
+            }
+            else
+            {
+                int i;
+                for( i=0 ; i < spec->num_port_ranges ; i++)
+                {
+                    if ((spec->port_ranges[i].start <= port) &&
+                        (port <= spec->port_ranges[i].end))
+                    {
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        spec = spec->next;
+    }
+    return 0;
+}
+
+static int is_in_chain_filter(
+    ip_noise_arbitrator_packet_logic_t * self,
+    int chain_index,
+    ip_noise_packet_info_t * packet_info
+    )
+{
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_chain_t * chain;
+    int bit, byte, offset;
+    int len_type;
+    int p_l;
+
+    data = self->data;
+
+    chain = data->chains[chain_index];
+
+    if (! 
+        is_in_ip_filter(
+            chain->filter->source,
+            packet_info->source_ip,
+            packet_info->source_port
+            )
+        )
+    {
+        return 0;
+    }
+
+    if (! 
+        is_in_ip_filter(
+            chain->filter->dest,
+            packet_info->dest_ip,
+            packet_info->dest_port
+            )
+        )
+    {
+        return 0;
+    }
+
+    offset = packet_info->tos;
+    byte = offset >> 3;
+    bit = offset & 0x7;
+    if (! (chain->filter->tos[byte] & (1<<bit)))
+    {
+        return 0;
+    }
+
+    offset = packet_info->protocol;
+    byte = offset >> 3;
+    bit = offset & 0x7;
+    if (! (chain->filter->protocols[byte] & (1<<bit)))
+    {
+        return 0;
+    }
+
+    len_type = chain->filter->which_packet_len;
+
+    p_l = packet_info->length;
+
+    switch(len_type)
+    {
+        case IP_NOISE_WHICH_PACKET_LEN_DONT_CARE:
+        {
+            /* Do Nothing */
+        }
+        break;
+
+        case IP_NOISE_WHICH_PACKET_LEN_GT:
+        {
+            if (! (p_l >= chain->filter->min_packet_len))
+            {
+                return 0;
+            }
+        }
+        break;
+        
+        case IP_NOISE_WHICH_PACKET_LEN_LT:
+        {
+            if (! (p_l <= chain->filter->max_packet_len))
+            {
+                return 0;
+            }            
+        }
+        break;
+
+        case IP_NOISE_WHICH_PACKET_LEN_BETWEEN:
+        {
+            if (! ((p_l <= chain->filter->max_packet_len) && (p_l >= chain->filter->min_packet_len)))
+            {
+                return 0;
+            }
+        }
+        break;
+        
+        case IP_NOISE_WHICH_PACKET_LEN_NOT_BETWEEN:
+        {
+            if ( ((p_l <= chain->filter->max_packet_len) && (p_l >= chain->filter->min_packet_len)))
+            {
+                return 0;
+            }
+            
+        }
+        break;
+
+        default:
+        {
+            printf("Uknown len_type == %i!\n", len_type);
+            exit(-1);
+        }
+        break;
+    }
+
+    
+    return 1;                
+}
+
 #define prob_delta 0.00000000001
 
 static ip_noise_verdict_t chain_decide(
@@ -237,6 +412,8 @@ static ip_noise_verdict_t chain_decide(
         
         ret.action = IP_NOISE_VERDICT_DELAY;
         ret.delay_len = delay;
+
+        return ret;
     }
     else
     {
