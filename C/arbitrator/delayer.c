@@ -13,6 +13,13 @@
 #include "delayer.h"
 #include "pqueue.h"
 
+/*
+ * ip_noise_timeval_cmp()
+ *
+ * This function compares priority queue elements according to their time.
+ * It operates the same as the qsort()/bsearch() callbacks.
+ * 
+ * */
 #ifndef __KERNEL__
 static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 {
