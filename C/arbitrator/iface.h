@@ -139,7 +139,17 @@ struct ip_noise_chain_filter_struct
 typedef struct ip_noise_chain_filter_struct ip_noise_chain_filter_t;
 
 
+#ifdef __KERNEL__
+struct ip_noise_arbitrator_switcher_timer_data_struct
+{
+    int chain_index;
+    void * self;
+};
 
+typedef struct ip_noise_arbitrator_switcher_timer_data_struct 
+    ip_noise_arbitrator_switcher_timer_data_t;
+
+#endif
 
 struct ip_noise_chain_struct
 {
@@ -158,6 +168,7 @@ struct ip_noise_chain_struct
 
 #ifdef __KERNEL__
     struct timer_list timer;
+    ip_noise_arbitrator_switcher_timer_data_t timer_data;
 #endif
 };
 

@@ -266,9 +266,6 @@ void ip_noise_arbitrator_data_clear_all(ip_noise_arbitrator_data_t * data)
 
     for(a=0;a<data->num_chains;a++)
     {
-#ifdef __KERNEL__
-        del_timer(&(data->chains[a]->timer));
-#endif
         chain_free(data->chains[a]);
     }
 
@@ -277,8 +274,22 @@ void ip_noise_arbitrator_data_clear_all(ip_noise_arbitrator_data_t * data)
     ip_noise_str2int_dict_reset(data->chain_names);    
 }
 
+#ifdef __KERNEL__
+static void our_del_timers(ip_noise_arbitrator_data_t * data)
+{
+    int a;
+    for(a=0;a<data->num_chains;a++)
+    {
+        del_timer(&(data->chains[a]->timer));
+    }
+}
+#endif
+
 void ip_noise_arbitrator_data_free(ip_noise_arbitrator_data_t * data)
 {
+#ifdef __KERNEL__
+    our_del_timers(data);
+#endif
     ip_noise_arbitrator_data_clear_all(data);
     ip_noise_str2int_dict_free(data->chain_names);
     free(data->chains);

@@ -81,13 +81,6 @@ ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
 }
 
 #ifdef __KERNEL__
-struct timer_data_struct
-{
-    int chain_index;
-    ip_noise_arbitrator_switcher_t * self;
-};
-
-typedef struct timer_data_struct timer_data_t;
 
 static void switch_chain(
     ip_noise_arbitrator_switcher_t * self, 
@@ -101,14 +94,14 @@ static int calc_chain_delay(
 
 static void timer_function(unsigned long ul_data)
 {
-    timer_data_t * timer_data;
+    ip_noise_arbitrator_switcher_timer_data_t * timer_data;
     ip_noise_arbitrator_data_t * data;
     ip_noise_arbitrator_switcher_t * self;
     int chain_index;
     struct timer_list * timer;
     ip_noise_rwlock_t * data_lock;
 
-    timer_data = (timer_data_t*)ul_data;
+    timer_data = (ip_noise_arbitrator_switcher_timer_data_t*)ul_data;
     self = timer_data->self;
     chain_index = timer_data->chain_index;
 
@@ -162,7 +155,7 @@ void ip_noise_arbitrator_switcher_reinit(
     {
 #ifdef __KERNEL__
         struct timer_list * timer;
-        timer_data_t * timer_data;
+        ip_noise_arbitrator_switcher_timer_data_t * timer_data;
 #endif
         printf("Inputting %i!\n", chain_index);
 
@@ -177,7 +170,7 @@ void ip_noise_arbitrator_switcher_reinit(
         timer = &(data->chains[chain_index]->timer);
         init_timer(timer);
         timer->expires = jiffies + (HZ * 100 / 1000);
-        timer_data = malloc(sizeof(timer_data_t));
+        timer_data = &(data->chains[chain_index]->timer_data);
         timer_data->self = self;
         timer_data->chain_index = chain_index;
         timer->data = (unsigned long)timer_data;
