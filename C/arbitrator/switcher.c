@@ -192,56 +192,63 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     return event;
 }
 
-void ip_noise_arbitrator_switcher_loop(
+static void ip_noise_arbitrator_switcher_poll(
     ip_noise_arbitrator_switcher_t * self
     )
 {
-    ip_noise_flags_t * flags;
-    ip_noise_arbitrator_data_t * data;
     ip_noise_rwlock_t * data_lock;
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_flags_t * flags;
     ip_noise_arbitrator_switcher_event_t current_time_pseudo_msg, * event;
-    int chain_index;
     struct timezone tz;
+    int chain_index;
 
-    flags = self->flags;
     data = self->data;
     data_lock = data->lock;
+    flags = self->flags;
     
-    while (! *(self->terminate_ptr))
+    ip_noise_rwlock_down_read(data_lock);
+
+    if (flags->reinit_switcher)
     {
-        ip_noise_rwlock_down_read(data_lock);
+        printf("Switcher : reinit()!\n");
+        reinit(self);
+        flags->reinit_switcher = 0;
+    }
+    gettimeofday(&(current_time_pseudo_msg.tv), &tz);
 
-        if (flags->reinit_switcher)
+    
+    while (!PQueueIsEmpty(&(self->pq)))
+    {
+        event = PQueuePeekMinimum(&(self->pq));
+        if (ip_noise_timeval_cmp (event, &current_time_pseudo_msg, NULL) < 0)
         {
-            printf("Switcher : reinit()!\n");
-            reinit(self);
-            flags->reinit_switcher = 0;
+            PQueuePop(&(self->pq));
+            chain_index = event->chain;
+            free(event);
+            
+            switch_chain(self, chain_index);
+            PQueuePush(
+                &(self->pq), 
+                get_new_switch_event(self, chain_index)
+                );
         }
-        gettimeofday(&(current_time_pseudo_msg.tv), &tz);
-
-        
-        while (!PQueueIsEmpty(&(self->pq)))
+        else
         {
-            event = PQueuePeekMinimum(&(self->pq));
-            if (ip_noise_timeval_cmp (event, &current_time_pseudo_msg, NULL) < 0)
-            {
-                PQueuePop(&(self->pq));
-                chain_index = event->chain;
-                free(event);
-                
-                switch_chain(self, chain_index);
-                PQueuePush(
-                    &(self->pq), 
-                    get_new_switch_event(self, chain_index)
-                    );
-            }
-            else
-            {
-                break;
-            }
-        }        
+            break;
+        }
+    }        
 
-        ip_noise_rwlock_up_read(data_lock);
+    ip_noise_rwlock_up_read(data_lock);    
+}
+
+void ip_noise_arbitrator_switcher_loop(
+    ip_noise_arbitrator_switcher_t * self
+    )
+{            
+    while (! *(self->terminate_ptr))
+    {   
+        ip_noise_arbitrator_switcher_poll(self);
 
         usleep(50000);
     }

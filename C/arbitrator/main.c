@@ -13,6 +13,7 @@
 #include "switcher.h"
 #include "packet_logic.h"
 
+#define DEBUG
 
 static void die(struct ipq_handle * h)
 {
@@ -152,7 +153,7 @@ static void * release_packets_thread_func(void * void_context)
 
     while (! (*terminate) )
     {
-        ip_noise_delayer_poll(delayer);
+        ip_noise_delayer_loop(delayer);
         usleep(500);
     }
 
@@ -344,7 +345,9 @@ int main(int argc, char * argv[])
                 ip_noise_message_t * msg_with_time;
                 struct timezone tz;
 #ifdef DEBUG
+#if 0
                 static int num = 0;
+#endif
 #endif
 
                 msg_with_time = malloc(sizeof(ip_noise_message_t));

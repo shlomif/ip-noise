@@ -17,6 +17,7 @@ extern "C" {
 struct ip_noise_delayer_struct
 {
     pthread_mutex_t mutex;
+    pthread_cond_t cond;
     PQUEUE pq;
     void (*release_callback)(ip_noise_message_t * m, void * context);
     void * release_callback_context;
@@ -36,7 +37,7 @@ void ip_noise_delayer_delay_packet(
     int delay_len
     );
 
-void ip_noise_delayer_poll(
+void ip_noise_delayer_loop(
     ip_noise_delayer_t * delayer
     );
 

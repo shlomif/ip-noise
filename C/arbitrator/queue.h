@@ -29,6 +29,7 @@ struct ip_noise_messages_queue_struct
     ip_noise_message_t * head;
     ip_noise_message_t * tail;
     pthread_mutex_t mutex;
+    pthread_cond_t cond;
     int num_msgs;
 };
 

@@ -48,6 +48,7 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 }
 
 extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+extern const pthread_cond_t ip_noise_global_initial_cond_constant;
 
 ip_noise_delayer_t * ip_noise_delayer_alloc(
     void (*release_callback)(ip_noise_message_t * m, void * context),
@@ -58,12 +59,14 @@ ip_noise_delayer_t * ip_noise_delayer_alloc(
 
     ret = malloc(sizeof(ip_noise_delayer_t));
 
-    ret->mutex = ip_noise_global_initial_mutex_constant;
-
     ret->release_callback = release_callback;
     ret->release_callback_context = release_callback_context;
 
+    ret->mutex = ip_noise_global_initial_mutex_constant;
     pthread_mutex_init(&(ret->mutex), NULL);
+
+    ret->cond = ip_noise_global_initial_cond_constant;
+    pthread_cond_init(&(ret->cond), NULL);
 
     PQueueInitialise(&(ret->pq), 10000, 0, ip_noise_timeval_cmp, NULL );
 
@@ -78,6 +81,7 @@ void ip_noise_delayer_delay_packet(
     )
 {
     ip_noise_delayer_pq_element_t * elem;
+    ip_noise_delayer_pq_element_t * min_msg;
     
     tv.tv_usec += delay_len * 1000;
     if (tv.tv_usec > 1000000)
@@ -92,34 +96,81 @@ void ip_noise_delayer_delay_packet(
     elem->tv = tv;
 
     pthread_mutex_lock(&(delayer->mutex));
+
+    min_msg = PQueuePeekMinimum(&(delayer->pq));
+    
     PQueuePush(&(delayer->pq), elem);
+
+    if ((min_msg == NULL) ||
+        (elem->tv.tv_sec < min_msg->tv.tv_sec) || 
+        (
+            (elem->tv.tv_sec == min_msg->tv.tv_sec) &&
+            (elem->tv.tv_usec < min_msg->tv.tv_usec)
+        )
+       )
+    {
+        pthread_cond_signal(&(delayer->cond));
+    }
     pthread_mutex_unlock(&(delayer->mutex));
 }
 
-void ip_noise_delayer_poll(
+void ip_noise_delayer_loop(
     ip_noise_delayer_t * delayer
     )
 {
     struct timezone tz;
+    struct timespec ts_to_wait_for;
+    int cond_wait_status;
 
     ip_noise_delayer_pq_element_t current_time_pseudo_msg, * msg;
 
-    pthread_mutex_lock(&(delayer->mutex));
-    gettimeofday(&(current_time_pseudo_msg.tv), &tz);
-
-    while (!PQueueIsEmpty(&(delayer->pq)))
+    while (1)
     {
-        /* See if the message should have been sent by now. */
-        msg = PQueuePeekMinimum(&(delayer->pq));
-        if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) < 0)
+        pthread_mutex_lock(&(delayer->mutex));
+        gettimeofday(&(current_time_pseudo_msg.tv), &tz);
+
+        while (!PQueueIsEmpty(&(delayer->pq)))
         {
-            delayer->release_callback(msg->m, delayer->release_callback_context);
-            PQueuePop(&(delayer->pq));
+            /* See if the message should have been sent by now. */
+            msg = PQueuePeekMinimum(&(delayer->pq));
+            if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) < 0)
+            {
+                delayer->release_callback(msg->m, delayer->release_callback_context);
+                PQueuePop(&(delayer->pq));
+            }
+            else
+            {
+                break;
+            }       
         }
-        else
-        {
-            break;
-        }       
+        do {
+            
+            ts_to_wait_for.tv_sec = msg->tv.tv_sec;
+            ts_to_wait_for.tv_nsec = msg->tv.tv_usec * 1000;
+            if (PQueueIsEmpty(&(delayer->pq)))
+            {
+                pthread_cond_wait(
+                    &(delayer->cond), 
+                    &(delayer->mutex)
+                    );
+                cond_wait_status = 0;
+            }
+            else
+            {
+                cond_wait_status = pthread_cond_timedwait(
+                    &(delayer->cond), 
+                    &(delayer->mutex),
+                    &ts_to_wait_for
+                    );
+            }
+                                    
+            if (cond_wait_status == 0)
+            {
+                /* We were signalled from the outside */
+                msg = PQueuePeekMinimum(&(delayer->pq));            
+            }
+        } while (cond_wait_status == 0);
+        
+        pthread_mutex_unlock(&(delayer->mutex));
     }
-    pthread_mutex_unlock(&(delayer->mutex));
 }
