@@ -1,0 +1,155 @@
+The Development Workstation:
+----------------------------
+
+* Local Web-server is running.
+
+* X-Windows is running. ( we will have some problems once we switch to
+the bigger and better screen)
+
+* Very crappy temporary screen, but I can successfully work on it
+by accessing it through VNC from the nearby workstation which has a better
+screen.
+
+* SMB mounting of the home-directory of comnet 
+(The Computer Networks Lab server) is working. 
+
+* CVS server is running and operational on the local workstation.
+
+* Everything I can think of, from KDE to gvim to bash, was customized to 
+match my whims.
+
+* Sound card is working. (I don't think we'll need it much, but the music 
+sure is nice)
+
+* The Win2000 partition is not defined, but technically still present on the
+hard-disk. I believe that with some effort we can define it by knowing what
+the start and end sectors are. In any case, we don't need Windows for the time 
+being and we can always use one of the network workstations.
+
+Com-Net Account:
+----------------
+
+* HTML site is on. -
+    http://comnet.technion.ac.il/~cn1w02/
+
+* SSH/Telnet account is active. (only SSH version 2, though)
+
+* Login via the NT domain is working.
+
+Mailing-List:
+-------------
+
+* Created a mailing list of ip-noise@iglu.org.il.
+
+* Should be archived at http://www.mail-archive.com/ip-noise@iglu.org.il/.
+Archive is now activated.
+
+BerliOS Project:
+----------------
+
+* I opened a BerliOS project for it under the id of "ip-noise". Those who
+wish to become members of this project:
+
+1. Register at http://developer.berlios.de/
+2. Send me an E-mail and I'll add them to the project.
+
+In any case, the project's page is:
+
+http://developer.berlios.de/projects/ip-noise
+
+* Remote BerliOS CVS is operational.
+
+* The BerliOS web-site now mirrors the Technion's one.
+    http://ip-noise.berlios.de/
+
+* We may activate some of the other services BerliOS offers us (Bug Tracking? 
+Mailing Lists? Patch Manager? Web Forums? ) later, but they
+are most suitable for projects whose developers are not concentrated in 
+one place, which is not exactly the case for us.
+
+Code:
+-----
+
+1. We have written a complete compiler and translator for the arbitrator's
+configuration language in perl. It is available on the site.
+
+2. We have written a fully-functional packet handler in Perl. I don't suppose 
+it can handle very high loads, but it is still good for inspiration.
+
+3. We have started converting the packet handler to C. So far, we have a
+framework that allows for arbitrary interception and delay of packets. We are
+now working on implementing the full-fledged arbitrator.
+
+Documents:
+----------
+
+We have several documents available:
+
+1. A "Dokh Ifyun" of the project. Not too much of interest here, but 
+we had to write it in order to get a workstation:
+
+http://comnet.technion.ac.il/~cn1w02/docs/ip_noise.spec.zip
+
+2. A not-entirely-complete description of the Syntax that the user will work
+with the packet arbitrator:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Syntax_Description.txt
+
+3. A description of the Architecture of the IP-Noise Engine Framework (the perl
+one):
+
+http://comnet.technion.ac.il/~cn1w02/docs/Architecture.txt
+
+4. A description of the proposed Arbitrator's Architecture:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Arbitrator_Architecture.txt
+
+5. A description of the protocol that the compiler will use to talk 
+to the arbitrator:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Protocol.txt
+
+6. The Mid-Term Presentation
+
+http://comnet.technion.ac.il/~cn1w02/docs/Mid-Term.ppt
+
+Describes the project in general lines.
+
+
+---
+
+All of the documents are text files except for the "Dokh Ifyun" which
+is written in Hebrew MS-Word, but is also available as PostScript and the
+Mid-Term presentation which is a MS PowerPoint document. 
+
+Road-Map:
+=========
+
+Our plan for now is this:
+
+Finish converting the packet handler to C:
+-------------------------------------------------
+
+This will require some work, but it's definitely an inevitable thing that
+should be done. We anticipate that a lot of time will be spent dealing
+with C's idiosyncrasies, which were not encountered when programming in Perl.
+
+By the time we have this task finished, the simulator will be able to handle
+at least medium loads of IP traffic.
+
+Adapt the C code to run in kernel-mode:
+---------------------------------------
+
+After we have a fully functional noise simulator written in C running in
+user-land, we plan to port the code to be a set of kernel modules. Omer
+Mussa'ev said in a mail message that user-level code that relies on IP-Queue, 
+can only handle loads of up to 30 Mbps. Thus, converting the code to run 
+in the kernel may be inevitable if we want to have good performance.
+
+We're still don't know exactly what mechanisms are available for us in the
+kernel as we didn't work in kernel mode too much. For instance, we may have
+to rip the code of GNU libc in order to extract a portable code that can 
+calculate the ln() function for us. This is just a simple example that working
+at the kernel is much more difficult than doing everything in user-land.
+
+
