@@ -24,17 +24,23 @@ extern "C" {
  
 #define IP_NOISE_MESSAGE_BUFSIZE 0x20000
 
+#ifndef __KERNEL__
 struct ip_noise_message_struct
 {
-#ifndef __KERNEL__
+
     char message[IP_NOISE_MESSAGE_BUFSIZE];
-#endif
+
     ip_noise_ipq_packet_msg_t * m;
     struct timeval tv;
     struct ip_noise_message_struct * next;
 };
 
 typedef struct ip_noise_message_struct ip_noise_message_t;
+#else
+typedef ip_noise_ipq_packet_msg_t ip_noise_message_t;
+#endif
+
+
 
 #ifndef __KERNEL__
 

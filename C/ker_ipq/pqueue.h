@@ -21,7 +21,29 @@ extern "C" {
 
 #include "jhjtypes.h"
 
+#include "queue.h"
+
+#ifdef __KERNEL__
+typedef unsigned long ip_noise_time_t;
+#else
+typedef struct timeval ip_noise_time_t;
+#endif
+    
+#ifndef __KERNEL__
 typedef void * pq_element_t;
+#else
+
+struct ip_noise_delayer_pq_element_struct
+{
+    ip_noise_message_t m;
+    ip_noise_time_t tv;
+};
+
+typedef struct ip_noise_delayer_pq_element_struct ip_noise_delayer_pq_element_t;
+
+
+typedef ip_noise_delayer_pq_element_t pq_element_t; 
+#endif
 
 typedef struct _PQUEUE
 {
@@ -30,7 +52,7 @@ typedef struct _PQUEUE
     pq_element_t * Elements; /* pointer to void pointers */
     /* pq_rating_t MaxRating; - biggest element possible */
     int IsAscendingHeap; /* true if the heap should be sorted with the maximum scoring elements first */
-    int (*cmp)(void *, void *, void *); /* A comparison function for comparing
+    int (*cmp)(pq_element_t, pq_element_t, void *); /* A comparison function for comparing
                                           the elements */
     void * context;     /* A context for the comparison function */
 } PQUEUE;
@@ -51,19 +73,19 @@ void PQueueInitialise(
     int32 MaxElements, 
     /* pq_rating_t MaxRating, */
     int bIsAscending,
-    int (*cmp)(void * v1, void * v2, void * context),
+    int (*cmp)(pq_element_t, pq_element_t, void * context),
     void * context
     );
 
 void PQueueFree( PQUEUE *pq );
 
-int PQueuePush( PQUEUE *pq, void *item/* pq_rating_t*/);
+int PQueuePush( PQUEUE *pq, pq_element_t item/* pq_rating_t*/);
 
 int PQueueIsEmpty( PQUEUE *pq );
 
-void *PQueuePop( PQUEUE *pq);
+pq_element_t PQueuePop( PQUEUE *pq);
 
-void * PQueuePeekMinimum( PQUEUE * pq);
+pq_element_t PQueuePeekMinimum( PQUEUE * pq);
 
 #define PGetRating(elem) ((elem).rating)
 

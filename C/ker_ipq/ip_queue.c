@@ -150,39 +150,17 @@ typedef struct wrapper_struct wrapper_t;
 
 static void release_handler(ip_noise_message_t * e, void * context)
 {
-    nf_reinject(e->m->skb, e->m->info, NF_ACCEPT);
-    kfree(e->m);
-    kfree(e);
+    nf_reinject(e->skb, e->info, NF_ACCEPT);
 }
 
 static int ipq_enqueue(ipq_queue_t *q,
                        struct sk_buff *skb, struct nf_info *info)
 {
-	ipq_queue_element_t *e;
     double prob;
 #if 0
 	int status;
 #endif
 	
-	e = kmalloc(sizeof(*e), GFP_ATOMIC);
-	if (e == NULL) {
-		printk(KERN_ERR "ip_queue_ker: OOM in enqueue\n");
-		return -ENOMEM;
-	}
-
-    /* Default Verdict */
-	e->verdict = NF_DROP;
-	e->info = info;
-	e->skb = skb;
-
-	if (e->info->hook == NF_IP_LOCAL_OUT) {
-		struct iphdr *iph = skb->nh.iph;
-
-		e->rt_info.tos = iph->tos;
-		e->rt_info.daddr = iph->daddr;
-		e->rt_info.saddr = iph->saddr;
-	}
-
 	spin_lock_bh(&q->lock);
     
     if (q->flushing || q->terminate)
@@ -196,18 +174,16 @@ static int ipq_enqueue(ipq_queue_t *q,
     prob = ip_noise_rand_rand_in_0_1(rand_gen);
     if (prob < 0.5)
     {       
-        nf_reinject(e->skb, e->info, NF_ACCEPT);
-        kfree(e);
+        nf_reinject(skb, info, NF_ACCEPT);
     }
     else if (prob < 0.7)
     {
-        nf_reinject(e->skb, e->info, NF_DROP);
-        kfree(e);
+        nf_reinject(skb, info, NF_DROP);
     }
     else
     {
         int num_millisecs;
-        ip_noise_message_t * m;
+        ip_noise_message_t m;
 
         /* Determine the delay in msecs */
         num_millisecs = ip_noise_rand_rand15(rand_gen) % 3000;
@@ -228,10 +204,10 @@ static int ipq_enqueue(ipq_queue_t *q,
         }
         tv.tv_sec += num_millisecs / 1000;        
 #endif
-        m = malloc(sizeof(ip_noise_message_t));
-        m->m = e;
+        m.skb = skb;
+        m.info = info;
 
-        ip_noise_delayer_delay_packet(delayer, m, num_millisecs);
+        ip_noise_delayer_delay_packet(delayer, &m, num_millisecs);
         
 #if 0
         init_timer(mytimer);
@@ -247,7 +223,6 @@ static int ipq_enqueue(ipq_queue_t *q,
     return 0;
 
 free_drop:
-	kfree(e);
 	return -EBUSY;
 }
 

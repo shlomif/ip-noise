@@ -12,20 +12,6 @@
 #include "delayer.h"
 #include "pqueue.h"
 
-#ifdef __KERNEL__
-typedef unsigned long ip_noise_time_t;
-#else
-typedef struct timeval ip_noise_time_t;
-#endif
-
-struct ip_noise_delayer_pq_element_struct
-{
-    ip_noise_message_t * m;
-    ip_noise_time_t tv;
-};
-
-typedef struct ip_noise_delayer_pq_element_struct ip_noise_delayer_pq_element_t;
-
 #ifndef __KERNEL__
 static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 {
@@ -60,19 +46,13 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
     }    
 }
 #else
-static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
+static int ip_noise_timeval_cmp (pq_element_t m1, pq_element_t m2, void * context)
 {
-    ip_noise_delayer_pq_element_t * m1;
-    ip_noise_delayer_pq_element_t * m2;
-
-    m1 = (ip_noise_delayer_pq_element_t * )p_m1;
-    m2 = (ip_noise_delayer_pq_element_t * )p_m2;
-    
-    if (m1->tv > m2->tv)
+    if (m1.tv > m2.tv)
     {
         return 1;
     }
-    else if (m1->tv < m2->tv)
+    else if (m1.tv < m2.tv)
     {
         return -1;
     }
@@ -147,7 +127,12 @@ static void ip_noise_delayer_timer_function(ip_noise_delayer_t * delayer)
 
 static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
 {
-    ip_noise_delayer_pq_element_t current_time_pseudo_msg, * msg;
+    ip_noise_delayer_pq_element_t current_time_pseudo_msg;
+#ifndef __KERNEL__
+    ip_noise_delayer_pq_element_t * msg;
+#else
+    ip_noise_delayer_pq_element_t msg;
+#endif
 
 #ifndef __KERNEL__
     gettimeofday(&(current_time_pseudo_msg.tv), &tz);
@@ -159,15 +144,21 @@ static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
     {
         /* See if the message should have been sent by now. */
         msg = PQueuePeekMinimum(&(delayer->pq));
+#ifndef __KERNEL__
         if (msg == NULL)
+#else
+        if (msg.tv == 0)
+#endif
         {
             break;
         }
-        if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) <= 0)
+        if (ip_noise_timeval_cmp(msg, current_time_pseudo_msg, NULL) <= 0)
         {
-            delayer->release_callback(msg->m, delayer->release_callback_context);
+            delayer->release_callback(&(msg.m), delayer->release_callback_context);
             PQueuePop(&(delayer->pq));
-            free(msg);
+#ifndef __KERNEL__
+            free(msg)
+#endif
         }
         else
         {
@@ -180,7 +171,7 @@ static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
     {
         init_timer(&(delayer->current_timer));
         
-        delayer->current_timer.expires = msg->tv;
+        delayer->current_timer.expires = msg.tv;
         delayer->current_timer.data = (unsigned long)delayer;
         delayer->current_timer.function = (void (*) (unsigned long))ip_noise_delayer_timer_function;
         add_timer(&(delayer->current_timer));
@@ -198,8 +189,13 @@ void ip_noise_delayer_delay_packet(
     int delay_len
     )
 {
+#ifndef __KERNEL__
     ip_noise_delayer_pq_element_t * elem;
     ip_noise_delayer_pq_element_t * min_msg;
+#else
+    pq_element_t elem;
+    pq_element_t min_msg;
+#endif
     ip_noise_time_t current_time;
 #ifdef __KERNEL__
     unsigned long tv;
@@ -219,10 +215,15 @@ void ip_noise_delayer_delay_packet(
     tv = current_time + ((HZ * delay_len) / 1000);
 #endif
 
+#ifndef __KERNEL__
     elem = (ip_noise_delayer_pq_element_t *)malloc(sizeof(ip_noise_delayer_pq_element_t ));
 
     elem->m = m;
     elem->tv = tv;
+#else
+    elem.m = *m;
+    elem.tv = tv;
+#endif
 
     pthread_mutex_lock(&(delayer->mutex));
 
@@ -230,7 +231,13 @@ void ip_noise_delayer_delay_packet(
     
     PQueuePush(&(delayer->pq), elem);
 
-    if ((min_msg == NULL) ||
+    if (
+#ifndef __KERNEL__
+        (min_msg == NULL) 
+#else
+        (min_msg.tv == 0)
+#endif
+        ||
 #ifndef __KERNEL__
         (elem->tv.tv_sec < min_msg->tv.tv_sec) || 
         (
@@ -244,8 +251,8 @@ void ip_noise_delayer_delay_packet(
             (min_msg->tv.tv_usec < current_time.tv_usec)
         )
 #else
-        (elem->tv < min_msg->tv) ||
-        (min_msg->tv < current_time)
+        (elem.tv < min_msg.tv) ||
+        (min_msg.tv < current_time)
 #endif
        )
     {

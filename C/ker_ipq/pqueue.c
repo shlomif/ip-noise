@@ -37,7 +37,7 @@ void PQueueInitialise(
     PQUEUE *pq, 
     int32 MaxElements,
     int bIsAscending,
-    int (*cmp)(void * v1, void * v2, void * context),
+    int (*cmp)(pq_element_t v1, pq_element_t v2, void * context),
     void * context    
     )
 {
@@ -63,7 +63,7 @@ void PQueueInitialise(
    returns TRUE if succesful, FALSE if fails. (You fail by filling the pqueue.)
    PGetRating is a function which returns the rating of the item you're adding for sorting purposes */
 
-int PQueuePush( PQUEUE *pq, void *item)
+int PQueuePush( PQUEUE *pq, pq_element_t item)
 {
     uint32 i;
 
@@ -141,7 +141,7 @@ int PQueuePush( PQUEUE *pq, void *item)
 
 }
 
-void * PQueuePeekMinimum( PQUEUE * pq)
+pq_element_t PQueuePeekMinimum( PQUEUE * pq)
 {
     return pq->Elements[ PQ_FIRST_ENTRY ];
 }
@@ -168,7 +168,7 @@ void PQueueFree( PQUEUE *pq )
 
 /* remove the first node from the pqueue and provide a pointer to it */
 
-void *PQueuePop( PQUEUE *pq)
+pq_element_t PQueuePop( PQUEUE *pq)
 {
     int32 i;
     int32 child;
@@ -178,7 +178,13 @@ void *PQueuePop( PQUEUE *pq)
      
     if( PQueueIsEmpty( pq ) )
     {
+#ifndef __KERNEL__
         return NULL;
+#else
+        pq_element_t ret;
+        ret.tv = 0;
+        return ret;
+#endif
     }
 
     pMaxElement = pq->Elements[PQ_FIRST_ENTRY];
