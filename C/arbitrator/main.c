@@ -217,6 +217,11 @@ static void * arb_switcher_thread_func(void * context)
 }
 #endif
 
+/*
+ * What the main() function does is initialize all the objects, 
+ * inter-connect them and start all of their threads.
+ *
+ * */
 #ifndef __KERNEL__
 int main(int argc, char * argv[])
 #else
@@ -229,9 +234,8 @@ ip_noise_arbitrator_packet_logic_t * main_init_module(
     int status;
 
     unsigned char message[IP_NOISE_MESSAGE_BUFSIZE];
-#endif
     struct ipq_handle * h;
-#ifndef __KERNEL__
+
     ip_noise_messages_queue_t * packets_to_arbitrate_queue;
 #endif
     int terminate = 0;
@@ -288,7 +292,14 @@ ip_noise_arbitrator_packet_logic_t * main_init_module(
     packets_to_arbitrate_queue = ip_noise_messages_queue_alloc();
 #endif
 
-    delayer = ip_noise_delayer_alloc(ip_noise_delayer_release_function, (void *)h);
+    delayer = ip_noise_delayer_alloc(
+            ip_noise_delayer_release_function, 
+#ifndef __KERNEL__
+            (void *)h
+#else
+            NULL
+#endif            
+            );
     
     release_packets_context = malloc(sizeof(ip_noise_release_packets_thread_context_t));
     release_packets_context->delayer = delayer;
@@ -355,8 +366,8 @@ ip_noise_arbitrator_packet_logic_t * main_init_module(
     arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
 #ifndef __KERNEL__
     arbitrator_context->queue = packets_to_arbitrate_queue ;
-#endif
     arbitrator_context->h = h;
+#endif    
     arbitrator_context->terminate = &terminate;
     arbitrator_context->delayer = delayer;
     arbitrator_context->data = data_ptr;
