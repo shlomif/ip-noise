@@ -269,6 +269,9 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
     int i,s,d;
     int * sources;
     int * dests;
+    param_t param;
+    int ok;
+    ip_noise_prob_t * move_to_probs;
 
     ip_noise_chain_t * chain;
 
@@ -282,7 +285,13 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
     sources = malloc(sizeof(sources[0]) * num_sources);
     for(i=0;i<num_sources;i++)
     {
-        sources[i] = read_param_type(self, PARAM_TYPE_STATE).state;
+        ok = (read_param_type(self, PARAM_TYPE_STATE, &param));
+        if (ok < 0)
+        {
+            free(sources);
+            return -1;
+        }                
+        sources[i] = param.state;
         if (sources[i] >= chain->num_states)
         {
             free(sources);
@@ -293,7 +302,14 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
     dests = malloc(sizeof(dests[0]) * num_dests);
     for(i=0;i<num_dests;i++)
     {
-        dests[i] = read_param_type(self, PARAM_TYPE_STATE).state;
+        ok = (read_param_type(self, PARAM_TYPE_STATE, &param));
+        if (ok < 0)
+        {
+            free(sources);
+            free(dests);
+            return -1;
+        }                        
+        dests[i] = param.state;
         if (dests[i] >= chain->num_states)
         {
             free(sources);
@@ -302,6 +318,25 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
         }
     }
 
+    move_to_probs = malloc(num_sources*num_dests*sizeof(ip_noise_prob_t));
+
+    for(s=0;s<num_sources;s++)
+    {
+        for(d=0;d<num_dests;d++)
+        {
+            ok = read_param_type(self, PARAM_TYPE_PROB, &param);
+            if (ok < 0)
+            {
+                free(move_to_probs);
+                free(sources);
+                free(dests);
+                return -1;
+            }
+            move_to_probs[num_dests*s+d] = param.prob;
+        }
+    }
+
+    
     /*
      * TODO: add sanity check that the sum of the dests in any source
      *  equals the present sum.
@@ -311,9 +346,16 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
     {
         for(d=0;d<num_dests;d++)
         {
-            chain->states[sources[s]]->move_tos[dests[d]].comulative_prob = read_param_type(self, PARAM_TYPE_PROB).prob;
+            chain->states[sources[s]]->move_tos[dests[d]].comulative_prob = move_to_probs[num_dests*s+d];
         }
     }
+
+    /*
+     * I think I'm getting too used to garbage collection... That's Good!
+     * */
+    free(sources);
+    free(dests);
+    free(move_to_probs);
 
 	return 0;
 }

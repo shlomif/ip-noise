@@ -39,24 +39,42 @@ static int read_int(
     )
 {
     unsigned char buffer[4];
+    int ok;
+    int ret;
     
-    ip_noise_conn_read(self->conn, buffer, 4);
+    ok = ip_noise_conn_read(self->conn, buffer, 4);
+    if (ok < 0)
+    {
+        return -1;
+    }
 
-    return (       buffer[0] | 
+    ret = (       buffer[0] | 
             (((int)buffer[1]) << 8)  | 
             (((int)buffer[2]) << 16) | 
             (((int)buffer[3]) << 24) );
+    if (ret < 0)
+    {
+        ret = 0;
+    }
+    return ret;
 }
 
-static unsigned short read_uint16(
+static int read_uint16(
     ip_noise_arbitrator_iface_t * self
     )
 {
     unsigned char buffer[2];
+    int ok;
     
-    ip_noise_conn_read(self->conn, buffer, 2);
+    ok = ip_noise_conn_read(self->conn, buffer, 2);
 
-    return (                  buffer[0]          | 
+    if (ok < 0)
+    {
+        return -1;
+    }
+    
+
+    return (int)(                  buffer[0]          | 
             (((unsigned short)buffer[1]) << 8)
            );
 }
@@ -236,13 +254,14 @@ static ip_noise_state_t * get_state(ip_noise_arbitrator_iface_t * self, int chai
     return chain->states[state_index];
 }
 
-param_t read_param_type(
+int read_param_type(
     ip_noise_arbitrator_iface_t * self,
-    param_type_t param_type
+    param_type_t param_type,
+    param_t * ret
     )
 {
     ip_noise_conn_t * conn;
-    param_t ret;
+    int ok;
 
     conn = self->conn;
 
@@ -250,14 +269,22 @@ param_t read_param_type(
     {
         case PARAM_TYPE_STRING:
         {
-            ip_noise_conn_read(conn, ret.string, sizeof(ret.string));
-            ret.string[IP_NOISE_ID_LEN-1] = '\0';
+            ok = ip_noise_conn_read(conn, ret->string, sizeof(ret->string));
+            if (ok < 0)
+            {
+                return -1;
+            }
+            ret->string[IP_NOISE_ID_LEN-1] = '\0';
         }
         break;
 
         case PARAM_TYPE_INT:
         {
-            ret._int = read_int(self);
+            ret->_int = read_int(self);
+            if (ret->_int < 0)
+            {
+                return -1;
+            }
         }
         break;
 
@@ -269,8 +296,12 @@ param_t read_param_type(
 
             if (which == 2)
             {
-                ret.chain = self->last_chain;
+                ret->chain = self->last_chain;
             }
+            else if (which < 0)
+            {
+                return -1;
+            }           
             else
             {
                 printf("Uknown chain which %i!\n", which);
@@ -288,12 +319,20 @@ param_t read_param_type(
             if (which == 0)
             {
                 int index = read_int(self);
+                if (index < 0)
+                {
+                    return -1;
+                }
 
-                ret.state = index;
+                ret->state = index;
             }
             else if (which == 2)
             {
-                ret.state = self->last_state;
+                ret->state = self->last_state;
+            }
+            else if (which < 0)
+            {
+                return -1;
             }
             else
             {
@@ -307,12 +346,16 @@ param_t read_param_type(
         case PARAM_TYPE_PROB:
         {
             double d;
-            ip_noise_conn_read(conn, (char *)&d, sizeof(d));
+            ok = ip_noise_conn_read(conn, (char *)&d, sizeof(d));
+            if (ok < 0)
+            {
+                return -1;
+            }
             if ((d < 0) || (d > 1))
             {
                 d = 0;
             }
-            ret.prob = d;
+            ret->prob = d;
         }
         break;
 
@@ -321,11 +364,15 @@ param_t read_param_type(
             int delay;
 
             delay = read_int(self);
-            if (delay <= 0)
+            if (delay < 0)
+            {
+                return -1;
+            }
+            if (delay == 0)
             {
                 delay = 1000;
             }
-            ret.delay_type = delay;            
+            ret->delay_type = delay;            
         }
         break;
 
@@ -333,17 +380,22 @@ param_t read_param_type(
         {
             int delay_type = read_int(self);
 
+            if (delay_type < 0)
+            {
+                return -1;
+            }
+
             if (delay_type == 0)
             {
-                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_EXP;
+                ret->delay_function_type = IP_NOISE_DELAY_FUNCTION_EXP;
             }
             else if (delay_type == 1)
             {
-                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR;
+                ret->delay_function_type = IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR;
             }
             else 
             {
-                ret.delay_function_type = IP_NOISE_DELAY_FUNCTION_NONE;
+                ret->delay_function_type = IP_NOISE_DELAY_FUNCTION_NONE;
             }
         }
         break;
@@ -370,8 +422,18 @@ param_t read_param_type(
 
             while (memcmp(&ip, &terminator, sizeof(ip)) != 0)
             {
-                ip_noise_conn_read(conn, (char*)&ip, 4);
+                ok = ip_noise_conn_read(conn, (char*)&ip, 4);
+                if (ok < -1)
+                {                   
+                    ip_spec_free(head);
+                    return -1;
+                }
                 netmask = read_int(self);
+                if (netmask < 0)
+                {
+                    ip_spec_free(head);
+                    return -1;
+                }
                 max_num_port_ranges = 16;
                 port_ranges = malloc(sizeof(port_ranges[0])*max_num_port_ranges);
                 num_port_ranges = 0;
@@ -410,7 +472,7 @@ param_t read_param_type(
             {
                 free(port_ranges);
             }
-            ret.ip_filter = head;
+            ret->ip_filter = head;
         }
         break;
 
@@ -428,8 +490,22 @@ param_t read_param_type(
 
             do 
             {
-                prob = read_param_type(self, PARAM_TYPE_PROB).prob;
+                param_t param;
+                int ok;
+                
+                ok = read_param_type(self, PARAM_TYPE_PROB, &param);
+                if (ok < 0)
+                {
+                    free(points.points);
+                    return -1;
+                }
+                prob = param.prob;
                 delay = read_int(self);
+                if (delay < 0)
+                {
+                    free(points.points);
+                    return -1;
+                }
 
                 points.points[points.num_points].prob = prob;
                 points.points[points.num_points].delay = delay;
@@ -444,34 +520,47 @@ param_t read_param_type(
 
             points.points = realloc(points.points, sizeof(points.points[0])*points.num_points);
 
-            ret.split_linear_points = points;
+            ret->split_linear_points = points;
         }
         break;
 
         case PARAM_TYPE_BOOL:
         {
-            ret.bool = (read_int(self) != 0);
+            int bool = read_int(self);
+            if (bool < 0)
+            {
+                return -1;
+            }
+            ret->bool = (bool != 0);
         }
         break;
 
         case PARAM_TYPE_WHICH_PACKET_LENGTH:
         {
             int index = read_int(self);
-
-            if ((index < 0) || (index > 4))
+            
+            if (index < 0)
             {
-                ret.which_packet_length = IP_NOISE_WHICH_PACKET_LEN_DONT_CARE;
+                return -1;
+            }
+            else if ((index > 4))
+            {
+                ret->which_packet_length = IP_NOISE_WHICH_PACKET_LEN_DONT_CARE;
             }
             else
             {
-                ret.which_packet_length = index;
+                ret->which_packet_length = index;
             }
         }
         break;
 
         case PARAM_TYPE_LAMBDA:
         {
-            ret.lambda = read_int(self);
+            ret->lambda = read_int(self);
+            if (ret->lambda < 0)
+            {
+                return -1;
+            }
         }
         break;
         
@@ -483,7 +572,29 @@ param_t read_param_type(
         break;
     }
 
-    return ret;
+    return 0;
+}
+
+static void free_param_type(
+    ip_noise_arbitrator_iface_t * self,
+    param_type_t param_type,
+    param_t * param
+    )
+{
+    switch (param_type)
+    {
+        case PARAM_TYPE_IP_FILTER:
+        {
+            ip_spec_free(param->ip_filter);
+        }
+        break;
+
+        case PARAM_TYPE_SPLIT_LINEAR_POINTS:
+        {
+            free(param->split_linear_points.points);
+        }
+        break;
+    }
 }
 
 
@@ -592,6 +703,7 @@ void ip_noise_arbitrator_iface_loop(
     param_t out_params[4];
     int a;
     int ret_code;
+    int ok;
 
     flags = self->flags;
     data_lock = self->data->lock;
@@ -614,6 +726,12 @@ void ip_noise_arbitrator_iface_loop(
         {
             opcode = read_opcode(self);
 
+            if (opcode < -1)
+            {
+                self->_continue = 0;
+                continue;
+            }
+
             opcode_record.opcode = opcode;
 
             record = bsearch(
@@ -634,7 +752,18 @@ void ip_noise_arbitrator_iface_loop(
             /* Read the parameters from the line */
             for(a=0;a<record->num_params;a++)
             {
-                params[a] = read_param_type(self, record->params[a]);
+                ok = read_param_type(self, record->params[a], &params[a]);
+                if (ok < 0)
+                {
+                    int i;
+                    /* Free the previous parameters that were read from the line*/
+                    for(i=0;i<a;i++)
+                    {
+                        free_param_type(self, record->params[a], &params[a]);
+                    }
+                    self->_continue = 0;
+                    goto end_of_loop;
+                }                    
             }
 
             ret_code = record->handler(self, params, out_params);
@@ -649,6 +778,8 @@ void ip_noise_arbitrator_iface_loop(
                     out_params[a]
                     );
             }
+
+            end_of_loop:
         }
         
         

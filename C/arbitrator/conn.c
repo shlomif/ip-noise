@@ -52,5 +52,14 @@ void ip_noise_conn_write(ip_noise_conn_t * conn, char * data, int len)
 
 int ip_noise_conn_read(ip_noise_conn_t * conn, char * data, int how_much)
 {
-    return read(conn->in, data, how_much);
+    int num_bytes_read;
+    num_bytes_read = read(conn->in, data, how_much);
+    if (num_bytes_read < how_much)
+    {
+        return -1;
+    }
+    else
+    {
+        return num_bytes_read;
+    }
 }
