@@ -4,9 +4,9 @@ Chain Default {
         move_to = {
             1 = A
         }
-        delay = 0
+        delay = 1
         stable_delay = 0
-        delay_type = U(1000,1010)
+        delay_type = U(5000,5000)
         time_factor = 100000
     }
 }

@@ -46,7 +46,7 @@ while (select($rout = $rin, undef, undef, 200.0)) {
 	    print "$count time=" . time() . "\n";
     }
     $count++;
-    #print "Received Message: \"$rtime\"!\n";
+    print "Received Message: \"$rtime\"!\n";
 }
 
 

@@ -392,8 +392,16 @@ static ip_noise_verdict_t chain_decide(
                 y1 = searched[0].delay;
                 x2 = searched[1].prob;
                 y2 = searched[1].delay;
-
-                delay_double = (((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
+                
+                /* Overcoming division by zero */
+                if (x2-x1 < prob_delta)
+                {
+                    delay_double = (y1+y2)/2;
+                }
+                else
+                {
+                    delay_double = (((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
+                }
                 /* delay = (int)(((prob-x1)*y1+(x2-prob)*y2)/(x2-x1)); */
                 delay = (int)delay_double;               
             }
