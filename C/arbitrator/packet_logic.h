@@ -1,6 +1,11 @@
 #ifndef __IP_NOISE_PACKET_LOGIC_H
 #define __IP_NOISE_PACKET_LOGIC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "verdict.h"
 #include "queue.h"
 #include "iface.h"
@@ -26,6 +31,11 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
     ipq_packet_msg_t * msg
     );
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifndef __IP_NOISE_PACKET_LOGIC_H */
 

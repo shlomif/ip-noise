@@ -1,7 +1,12 @@
 
 
-#ifndef __IP_NOISE_SWITCHER
-#define __IP_NOISE_SWITCHER
+#ifndef __IP_NOISE_SWITCHER_H
+#define __IP_NOISE_SWITCHER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #include "iface.h"
 #include "rand.h"
@@ -29,4 +34,9 @@ extern void ip_noise_arbitrator_switcher_loop(
     );
 
 
-#endif /* #ifndef __IP_NOISE_SWITCHER */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* #ifndef __IP_NOISE_SWITCHER_H */

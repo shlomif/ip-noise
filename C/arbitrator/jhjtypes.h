@@ -22,4 +22,5 @@ typedef unsigned short uint16;
 typedef signed char int8;
 typedef unsigned char uint8;
 
+
 #endif /* #ifdef __JHJTYPES_H */

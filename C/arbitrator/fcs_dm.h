@@ -16,6 +16,16 @@
 extern "C" {
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
 #include <stddef.h>
 
 
@@ -40,6 +50,16 @@ int SFO_merge_large_and_small_sorted_arrays
     int (*compare) (const void *, const void *, void *),
     void * context
 );
+
+#ifdef __cplusplus
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
 
 #ifdef __cplusplus
 }

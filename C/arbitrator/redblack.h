@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.1 2001-09-10 08:47:31 shlomif Exp $
+ * RCS $Id: redblack.h,v 1.2 2001-09-18 09:15:52 shlomif Exp $
  */
 
 /*
@@ -24,7 +24,14 @@
 /* Header file for redblack.c, should be included by any code that 
 ** uses redblack.c since it defines the functions 
 */ 
- 
+
+#ifndef __IP_NOISE_REDBLACK_H
+#define __IP_NOISE_REDBLACK_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ident  "@(#)redblack.h 1.4     95/06/12" 
  
 /* Modes for rblookup */
@@ -79,6 +86,11 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: not supported by cvs2svn $
+ * Revision 1.1  2001/09/10 08:47:31  shlomif
+ *
+ *
+ * Several files added.
+ *
  * Revision 1.4  2000/06/06 14:43:43  damo
  * Added all the rbwalk & rbopenlist stuff. Fixed up malloc instead of sbrk.
  * Added two new examples
@@ -95,4 +107,12 @@ void rbcloselist(RBLIST *);
  * Initial import of files. Versions are now all over the place. Oh well
  *
  */
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* #ifndef __IP_NOISE_REDBLACK_H */
+
 

@@ -2,6 +2,11 @@
 #ifndef __IP_NOISE_IFACE_H
 #define __IP_NOISE_IFACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -198,6 +203,11 @@ extern void ip_noise_arbitrator_iface_loop(
 extern ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(
         void
         );
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifndef __IP_NOISE_IFACE_H */
 

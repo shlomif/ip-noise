@@ -2,6 +2,11 @@
 #ifndef __IP_NOISE_RWLOCK_H
 #define __IP_NOISE_RWLOCK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <pthread.h>
 
 struct ip_noise_rwlock_struct
@@ -45,5 +50,10 @@ extern void ip_noise_rwlock_down_write ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_up_read ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_up_write ( ip_noise_rwlock_t * lock );
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*#ifndef __IP_NOISE_RWLOCK_H */

@@ -3,6 +3,11 @@
 #ifndef __IP_NOISE_QUEUE_H
 #define __IP_NOISE_QUEUE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <linux/netfilter.h>
 #include <libipq.h>
 
@@ -37,6 +42,11 @@ ip_noise_message_t * ip_noise_messages_queue_dequeue(ip_noise_messages_queue_t *
 
 void ip_noise_messages_queue_enqueue(ip_noise_messages_queue_t * queue, ip_noise_message_t * msg);
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifndef __IP_NOISE_QUEUE_H */
 

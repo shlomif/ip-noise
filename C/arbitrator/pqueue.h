@@ -14,6 +14,11 @@
 #ifndef __PQUEUE_H
 #define __PQUEUE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "jhjtypes.h"
 
 typedef void * pq_element_t;
@@ -61,5 +66,10 @@ void *PQueuePop( PQUEUE *pq);
 void * PQueuePeekMinimum( PQUEUE * pq);
 
 #define PGetRating(elem) ((elem).rating)
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifdef __PQUEUE_H */

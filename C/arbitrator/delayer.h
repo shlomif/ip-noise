@@ -2,6 +2,11 @@
 #ifndef __IP_NOISE_DELAYER_H
 #define __IP_NOISE_DELAYER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <linux/netfilter.h>
 #include <libipq.h>
 #include <sys/time.h>
@@ -34,4 +39,9 @@ void ip_noise_delayer_delay_packet(
 void ip_noise_delayer_poll(
     ip_noise_delayer_t * delayer
     );
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* #ifndef __IP_NOISE_DELAYER_H */
