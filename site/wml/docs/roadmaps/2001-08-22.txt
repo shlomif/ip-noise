@@ -1,0 +1,203 @@
+I decided to take a moment and sum up what Roy and I have achieved so
+far and what is our roadmap for the future. So far, progress has been
+hampered by the fact that Roy had Milu'im, but we still achieved to do several
+things. Here is a small report of our current status:
+
+The Development Workstation:
+----------------------------
+
+* Local Web-server is running.
+
+* X-Windows is running. ( we will have some problems once we switch to
+the bigger and better screen)
+
+* Very crappy temporary screen, but I can successfully work on it
+by accessing it through VNC from the nearby workstation which has a better
+screen.
+
+* SMB mounting of the home-directory of comnet 
+(The Computer Networks Lab server) is working. 
+
+* CVS server is running and operational on the local workstation.
+
+* Everything I can think of, from KDE to gvim to bash, was customized to match my whims.
+
+* Soundcard is working. (I don't think we'll need it much, but the music 
+sure is nice)
+
+* The Win2000 partition is not defined, but technically still present on the
+hard-disk. I believe that with some effort we can define it by knowing what
+the start and end sectors are. In any case, we don't need Windows for the time 
+being and we can always use a network workstation.
+
+Com-Net Account:
+----------------
+
+* HTML site is on. -
+    http://comnet.technion.ac.il/~cn1w02/
+
+* SSH/Telnet account is active. (only SSH version 2, though)
+
+* Login via the NT domain is working.
+
+Mailing-List:
+-------------
+
+* Created a mailing list of ip-noise@iglu.org.il.
+
+* Should be archived at http://www.mail-archive.com/ip-noise@iglu.org.il/.
+Archive is not active yet from some reason.
+
+BerliOS Project:
+----------------
+
+* I opened a BerliOS project for it under the id of "ip-noise". Those who
+wish to become members of this project:
+
+1. Register at http://developer.berlios.de/
+2. Send me an E-mail and I'll add them to the project.
+
+In any case, the project's page is:
+
+http://developer.berlios.de/projects/ip-noise
+
+* Remote BerliOS CVS is operational.
+
+* The BerliOS web-site just contains a link to the web-site at the Technion.
+    http://ip-noise.berlios.de/
+
+* We may activate some of the other services BerliOS offers us (Bug Tracking? 
+Mailing Lists? Patch Manager? Web Forums? ) later, but they
+are most suitable for projects whose developers are not concentrated in 
+one place, which is not exactly the case for us.
+
+Code:
+-----
+
+We have written an engine in Perl that can retrieve packets off the kernel
+and then send them away, drop them or delay them to arbitrary delays. The
+arbitrator that is available at the moment is is a simple state-less 
+arbitrator, which does not resemble our conception of the final arbitrator 
+at all.
+
+Available at:
+
+http://comnet.technion.ac.il/~cn1w02/download/IP-Noise-Engine-perl-0.1.5.tar.gz
+
+The design includes three threads, one of which is the arbitrator's. For the
+final design we plan to have two more arbitrator specific threads:
+
+One to modify the current state of all the Markovian chains, and the second
+to listen for requests of incremental changes from the user, and execute them.
+
+Documents:
+----------
+
+We have several documents available:
+
+1. A "Dokh Ifyun" of the project. Not too much of interest here, but 
+we had to write it in order to get a workstation:
+
+http://comnet.technion.ac.il/~cn1w02/docs/ip_noise.spec.zip
+
+2. A not-entirely-complete description of the Syntax that the user will work
+with the packet arbitrator:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Syntax_Description.txt
+
+3. A description of the Architecture of the IP-Noise Engine Framework (the perl
+one):
+
+http://comnet.technion.ac.il/~cn1w02/docs/Architecture.txt
+
+4. A description of the proposed Arbitrator's Architecture:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Arbitrator_Architecutre.txt
+
+5. A description of the protocol that the compiler will use to talk 
+to the arbitrator:
+
+http://comnet.technion.ac.il/~cn1w02/docs/Protocol.txt
+
+---
+
+All of the documents are text files except for the "Dokh Ifyun" which
+is written in Hebrew MS-Word, but is also available as PostScript. Note, that
+the contents of all the documents are not final and subject to change as we
+progress in the project.
+
+
+Web-site:
+---------
+
+The web-site is working and functional, but does not look very attractive. 
+We have recently started experimenting with a tool called "Web Meta Language" 
+that enables to easily generate complex HTML code. With it, we may be able 
+to maintain a better site.
+
+The BerliOS site at the moment just links to this site, not mirrors it, which
+is another problem which I believe can be easily resolved with WML.
+
+Road-Map:
+=========
+
+Our plan for now is this:
+
+Writing a compiler:
+-------------------
+
+1. Write a compiler (in perl) to compile the syntax of the noise definition
+language to commands of the protocol that is understood by the arbitrator.
+
+We plan to keep the compiler written in Perl up till the end of the
+project because:
+
+1. Parsing, Analyzing, etc. is much better done in Perl.
+
+2. We figure that modifying the behaviour of the noise simulator is not
+a real-time task, so nothing bad will happen if it is written in Perl.
+
+3. We can always convert it to C later, if such a need arises.
+
+
+Writing an Arbitrator in Perl:
+------------------------------
+
+Roy and I decided that we are going to write the first working version of 
+the Arbitrator as Perl code. We realize that we cannot expect to process
+heavy loads of packets in real-time this way. However, that way we will be
+able to write the code quickly without having to meddle with C's
+idiosyncrecies, and we would have a good idea of a proper architecture for
+the C code.
+
+The Arbitrator would be integrated into the existing perl code, to yield
+a fully functional (albiet very slow) noise simulator written in Perl.
+
+Convert the Arbitrator and Engine to C:
+---------------------------------------
+
+Naturally, we are not going to keep everything in Perl, so the next logical
+step would be to convert them to C. We would probably stick to ANSI C so
+the code would compile faster. (g++ is quite slow)
+
+We have to make sure not to rely too much on the stanard C library, or else
+the code will not be very ready for the kernel. (see the next section) Thus,
+it is proposed that we will use wrappers for such functions wherever possible,
+and possibly write our own for the kernel.
+
+Adapt the C code to run in kernel-mode:
+---------------------------------------
+
+After we have a fully functional noise simulator written in C running in
+user-land, we plan to port the code to be a set of kernel modules. Omer
+Mussaev said in a mail message that user-level code that relies on IP-Queue, 
+can only handle loads of up to 30 Mbps. Thus, converting the code to run 
+in the kernel may be inevitable if we want to have a good performance.
+
+We're still don't know exactly what mechanisms are available for us in the
+kernel as we didn't work in kernel mode too much. For instance, we may have
+to rip the code of GNU libc in order to extract a portable code that can 
+calculate the ln() function for us. This is just a simple example that working
+at the kernel is much more difficult than doing everything in user-land.
+
+

@@ -1,0 +1,282 @@
+
+State - If 0 is transmitted - <int32> - index
+        If 1 is transmitted - <string> - its name
+        <string> is string_len+1 bytes that terminate with a NULL character.
+        string_len should be 127 bytes or so.
+
+Chain - If 0 is transmitted - <int32> - index
+        If 1 - <string> - its name
+
+Return Values - 0 - OK
+                1 - Wrong Input
+                
+Packet Range - start=<int16> end=<int16> 
+               If start > end then it's a terminator.
+
+Packet Ranges Specifier - <Packet Range> <Packet Range> .... <Terminator>
+
+IP Component - ip=<int32> 
+               netmask_width=<int32> 
+               inverse=<bool> 
+               <Packet Ranges Specifier>
+
+IP Component Terminator - ip=255.255.255.255 but there is still a netmask
+and a packet range specifier for parity.
+
+IP Filter - <IP Component> <IP Component> <IP Component> <Terminator>
+
+Split Linear Specifier Token : 
+    prob=<Probability Type>
+    delay=<Delay Type>
+
+    terminator (last element) is when prob=1.
+
+Split Linear Specifier:
+    <Split Linear Token> <Split Linear Token> ... <Terminator>
+
+Delay Type - any of:
+    1. Exponential   0x0
+    2. Split Linear  0x1
+    
+
+Protocol Operations:
+
+
+* Define a new chain.
+
+    Input: <0x0000> chain_name=<string>
+    Output : <RetValue> chain_number=<int32>
+
+    Note: even if RetValue indicates failure we still broadcast the
+    chain number, which should be ignored by the front-end.
+
+* Define a new state in a chain.
+
+    Input: <0x0001> chain=<Chain> state_name=<State>
+    Output : <RetValue> state_number=<int32>
+
+* Define the move probabilities between states @source to states @dest.
+(by using a matrix of inputs) inside a chain.
+
+    Input: <0x0002> 
+           chain=<Chain> 
+           scalar(@source)=<int32> 
+           scalar(@dest)=<int32> 
+           $source[0]=<State>
+           $source[1]=<State>
+           .
+           .
+           $dest[0]=<State>
+           $dest[1]=<State>
+           $dest[2]=<State>
+           probs($s -> $d)=<Probability Type> (scalar(@source)*scalar(@dest) of them)
+
+    Return: <RetValue>
+
+* Chain Filters:
+    - Set source to something.
+        Input: <0x0003>
+               chain=<Chain>
+               filter=<IP Packet Filter>
+        Output:
+            <RetValue>
+            
+    
+    
+    - Set dest to something
+        Input: <0x0004>
+               chain=<Chain>
+               filter=<IP Packet Filter>
+        Output:
+            <RetValue>
+        
+    - Enable/Disable Protocol X.
+        Input: <0x0005>
+              chain=<Chain>
+              protocol_id=<int32>
+                - If = 256 then all protocols should be enabled or disabled.
+              enable_or_disable=<bool>
+        Output:
+            <RetValue>
+        
+    - Set TOS Precedence Bits
+        Input: <0x0006>
+               chain=<Chain>
+               Precedence = <int16>
+        Output:
+            <RetValue>
+            
+    - Set TOS bits mask
+        Input: <0x0007>
+            chain=<Chain>
+            tos_bits_mask=<int16>
+        Output:
+            <RetValue>
+
+    - Set Min. packet length
+        Input: <0x0008>
+               chain=<Chain>
+               Min_Packet_Length=<int16>
+        Output:
+            <RetValue>
+            
+    - Set Max. packet length
+        Input: <0x0009>
+               chain=<Chain>
+               Max_Packet_Length=<int16>
+        Output:
+            <RetValue>
+
+    - Set Which packet length
+        Input: <0x000a>
+               chain=<Chain>
+               Which_Packet-Length=<int16>
+        Output:
+            <RetValue>
+                             Can be - 0 - don't care.
+                             1 - Greater than min 
+                             2 - Lower than max
+                             3 - Between min and max
+                             4 - Not between min and max.
+
+* Retrieve the index of the chain (by name).
+        Input: <0x000b>
+            chain=<Chain>
+            
+        Output:
+            <RetValue> 
+            chain#=<int32>
+
+* Retrieve the index of a state within a chain (by name).
+        Input: <0x000c>
+            chain=<Chain>
+        Output:
+            <RetValue> 
+            state_index=<int32>
+
+* Retrieve the move probabilities between @source and @dest.
+        Input: <0x000d>
+               chain=<Chain>
+               scalar(@source)=<int32> 
+               scalar(@dest)=<int32> 
+               $source[0]=<State>
+               $source[1]=<State>
+               .
+               .
+               $dest[0]=<State>
+               $dest[1]=<State>
+               $dest[2]=<State>
+        Output:
+               <RetValue>
+               prob[$s][$d]=<Probability Type> for each source and dest.
+
+* Set the drop/delay prob of a state.
+        Input: <0x000e>
+               chain=<Chain>
+               state=<State>
+               drop_prob=<Probability Type>
+               delay_prob=<Probability Type>
+        Output:
+            <RetValue>
+
+* Set the delay function type of a state.
+        Input: <0x000f>
+               chain=<Chain>
+               state=<State>
+               delay_type=<Delay Type>
+        Output:
+            <RetValue>
+
+* Set the split-linear delay function of a state.
+        Input: <0x0010>
+               chain=<Chain>
+               state=<State>
+               split_linear=<Split Linear Spec>
+        Output:
+            <RetValue>
+               
+
+* Set the delay function's lambda. (in case it is Exponential).
+        Input: <0x0011>
+               chain=<Chain>
+               state=<State>
+               lambda=<lambda_type>
+        Output:
+            <RetValue>
+
+* Set the time factor of a state.
+        Input: <0x00013>
+               chain=<Chain>
+               state=<State>
+               time_factor=<Delay Type>
+        Output:
+            <RetValue>
+               
+
+* Set the stable delay probability of a state. (we mean that packets are sent
+in the order in which they were received).
+        Input: <0x0014>
+               chain=<Chain>
+               state=<State>
+               prob=<Probability Type>
+        Output:
+            <RetValue>
+               
+
+* Delete a state from a chain.
+        Input: <0x0015>
+               chain=<Chain>
+               state=<State>
+        Output:
+            <RetValue>
+
+
+* Delete an entire chain.
+        Input: <0x0016>
+               chain=<Chain>
+        Output:
+               <RetValue>
+
+* Set a chain's current state.
+        Input: <0x0017>
+               chain=<Chain>
+               state=<State>
+        Output:
+               <RetValue>
+
+* Dump all the information of all the chains.
+        Input: <0x0018>
+        Output: 
+            <RetValue>
+            num_chains=<int32>
+            @chains=@<Output_Chain> where 
+                Output_Chain=
+                    name=<string>
+                    current_state=<int32>
+                    time_of_last_packet=<Time Type> where
+                        Time Type=
+                            sec=<int32>
+                            usec=<int32>
+                    filter_protocols=<Bitmask of 32 bytes>
+                    filter_tos_precedence=<int16>
+                    filter_tos_bits=<int16>
+                    filter_min_packet_len=<int16>
+                    filter_max_packet_len=<int16>
+                    filter_which_packet_len=<int16>
+                    filter_source_ip_spec=<IP Specification>
+                    filter_dest_ip_spec=<IP Specification>
+                    states_num=<int32>
+                    @states=@<Output_State> where
+                        Output_State=
+                            drop_prob=<Probability Type>
+                            delay_prob=<Probability Type>
+                            delay_type=<Delay Function Type>
+                            delay_type_param= Depends on delay_type:
+                                If Exponential=
+                                    lambda=<lambda_type>
+                                If Split-linear=
+                                    split_linear_spec=<Split Linear Spec>
+                            time_factor=<Delay Type>
+                            stable_delay_prob=<Probability Type>
+                           
+

@@ -1,0 +1,20 @@
+<html>
+<head>
+<title>{#SUBJECT_LOC#}</title>
+<link rel="StyleSheet" href="$(ROOT)/style.css" type="text/css">
+</head>
+<body>
+
+<h1>{#SUBJECT_LOC#}</h1>
+{#BODY#}
+
+</body>
+</html>
+
+<define-tag subject>
+{#SUBJECT_LOC#:%0:##}
+</define-tag>
+
+#   per default we are in body
+{#BODY#:
+

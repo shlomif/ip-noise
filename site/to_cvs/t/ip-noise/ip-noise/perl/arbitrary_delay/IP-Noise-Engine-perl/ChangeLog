@@ -1,0 +1,20 @@
+Version 0.1.3:
+--------------
+
+* Initiated threads for the thread functions of main_mt.pl
+
+* Placed the packet arbitrator under its own thread.
+
+* Made sure that the packet arrival time will be decided at the main 
+script.
+
+Version 0.1.2
+-------------
+
+* First release to be documented in this change log.
+
+* Msg class, Delayer class, Packet::Logic class. 
+
+* Packet::Logic contains a simple, incomplete, state-less, 
+rule-based arbitrating system.
+
