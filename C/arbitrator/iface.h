@@ -155,6 +155,10 @@ struct ip_noise_chain_struct
     struct timeval last_packet_release_time;
 
     ip_noise_str2int_dict state_names;
+
+#ifdef __KERNEL__
+    struct timer_list timer;
+#endif
 };
 
 typedef struct ip_noise_chain_struct ip_noise_chain_t;
@@ -208,12 +212,14 @@ struct ip_noise_arbitrator_iface_struct
     pthread_t write_poll_conn_thread;
 #endif
 #endif
+    void * switcher;
 };
 
 typedef struct ip_noise_arbitrator_iface_struct ip_noise_arbitrator_iface_t;
 
 extern ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     ip_noise_arbitrator_data_t * * data,
+    void * switcher,
     ip_noise_flags_t * flags
     );
 

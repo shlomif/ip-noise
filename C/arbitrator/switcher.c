@@ -80,7 +80,60 @@ ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
     return self;
 }
 
-static void reinit(
+#ifdef __KERNEL__
+struct timer_data_struct
+{
+    int chain_index;
+    ip_noise_arbitrator_switcher_t * self;
+};
+
+typedef struct timer_data_struct timer_data_t;
+
+static void switch_chain(
+    ip_noise_arbitrator_switcher_t * self, 
+    int chain_index
+    );
+
+static int calc_chain_delay(
+    ip_noise_arbitrator_switcher_t * self,
+    int chain_index
+    );
+
+static void timer_function(unsigned long ul_data)
+{
+    timer_data_t * timer_data;
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_arbitrator_switcher_t * self;
+    int chain_index;
+    struct timer_list * timer;
+    ip_noise_rwlock_t * data_lock;
+
+    timer_data = (timer_data_t*)ul_data;
+    self = timer_data->self;
+    chain_index = timer_data->chain_index;
+
+    data = *(self->data);
+    data_lock = data->lock;
+
+    ip_noise_rwlock_down_read(data_lock);
+
+    switch_chain(self, chain_index);
+
+    timer = &(data->chains[chain_index]->timer);
+    init_timer(timer);
+    timer->expires = jiffies + (HZ * calc_chain_delay(self, chain_index) / 1000);
+    timer->data = (unsigned long)timer_data;
+    timer->function = timer_function;
+    add_timer(timer);
+
+    ip_noise_rwlock_up_read(data_lock); 
+}
+
+#endif
+
+
+
+void ip_noise_arbitrator_switcher_reinit(
     ip_noise_arbitrator_switcher_t * self
     )
 {
@@ -107,14 +160,29 @@ static void reinit(
 
     for(chain_index = 0; chain_index < data->num_chains ; chain_index++)
     {
+#ifdef __KERNEL__
+        struct timer_list * timer;
+        timer_data_t * timer_data;
+#endif
         printf("Inputting %i!\n", chain_index);
-#ifndef __KERNEL__        
+
         data->chains[chain_index]->current_state = 0;
+#ifndef __KERNEL__        
         event = malloc(sizeof(ip_noise_arbitrator_switcher_event_t));
         event->tv = tv;
         event->chain = chain_index;
 
         PQueuePush(&(self->pq), event);
+#else
+        timer = &(data->chains[chain_index]->timer);
+        init_timer(timer);
+        timer->expires = jiffies + (HZ * 100 / 1000);
+        timer_data = malloc(sizeof(timer_data_t));
+        timer_data->self = self;
+        timer_data->chain_index = chain_index;
+        timer->data = (unsigned long)timer_data;
+        timer->function = timer_function;
+        add_timer(timer);       
 #endif
     }    
 }
@@ -164,8 +232,8 @@ static void switch_chain(
 
 #define prob_delta 0.00000000001
 
-static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
-    ip_noise_arbitrator_switcher_t * self, 
+static int calc_chain_delay(
+    ip_noise_arbitrator_switcher_t * self,
     int chain_index
     )
 {
@@ -175,12 +243,8 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     int time_factor;
     double prob;
     int length;
-    struct timeval tv;
-#ifndef __KERNEL__
-    struct timezone tz;
-#endif
-    ip_noise_arbitrator_switcher_event_t * event;    
 
+    
     data = *(self->data);
     chain = data->chains[chain_index];
     current_state = chain->current_state;
@@ -196,7 +260,25 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     
     length = (int)((-log(prob))*time_factor);
 
+    return length;
+}
+        
+#ifndef __KERNEL__
+static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
+    ip_noise_arbitrator_switcher_t * self, 
+    int chain_index
+    )
+{
+    int length;
+    struct timeval tv;
+#ifndef __KERNEL__
+    struct timezone tz;
+#endif
+    ip_noise_arbitrator_switcher_event_t * event;    
+
     gettimeofday(&tv, &tz);
+
+    length = calc_chain_delay(self, chain_index);
 
     tv.tv_usec += length*1000;
 
@@ -213,6 +295,7 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
 
     return event;
 }
+#endif
 
 #ifndef __KERNEL__
 static void ip_noise_arbitrator_switcher_poll(
@@ -235,7 +318,7 @@ static void ip_noise_arbitrator_switcher_poll(
     if (flags->reinit_switcher)
     {
         printf("Switcher : reinit()!\n");
-        reinit(self);
+        ip_noise_arbitrator_switcher_reinit(self);
         flags->reinit_switcher = 0;
     }
     gettimeofday(&(current_time_pseudo_msg.tv), &tz);
@@ -262,14 +345,14 @@ static void ip_noise_arbitrator_switcher_poll(
         }
     }        
 
-    ip_noise_rwlock_up_read(data_lock);    
+    ip_noise_rwlock_up_read(data_lock); 
 }
 
 
 void ip_noise_arbitrator_switcher_loop(
     ip_noise_arbitrator_switcher_t * self
     )
-{            
+{ 
     while (! *(self->terminate_ptr))
     {   
         ip_noise_arbitrator_switcher_poll(self);

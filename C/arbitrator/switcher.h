@@ -33,7 +33,9 @@ extern void ip_noise_arbitrator_switcher_loop(
     ip_noise_arbitrator_switcher_t * self
     );
 
-
+extern void ip_noise_arbitrator_switcher_reinit(
+    ip_noise_arbitrator_switcher_t * self
+    );
 
 #ifdef __cplusplus
 }

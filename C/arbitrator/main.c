@@ -307,25 +307,8 @@ int main_init_module()
     data = ip_noise_arbitrator_data_alloc();
     data_ptr = malloc(sizeof(*data_ptr));
     *data_ptr = data;
-    
+
     flags.reinit_switcher = 1;
-
-    arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, &flags);
-
-#ifndef __KERNEL__
-    check = pthread_create(
-        &arb_iface_thread,
-        NULL,
-        arb_iface_thread_func,
-        (void *)arb_iface
-        );
-
-    if (check != 0)
-    {
-        fprintf(stderr, "Could not create the arbitrator interface thread!\n");
-        exit(-1);
-    }
-#endif
 
     arb_switcher = ip_noise_arbitrator_switcher_alloc(data_ptr, &flags, &terminate);
 
@@ -343,6 +326,24 @@ int main_init_module()
         exit(-1);
     }
 #endif
+
+    arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, arb_switcher, &flags);
+
+#ifndef __KERNEL__
+    check = pthread_create(
+        &arb_iface_thread,
+        NULL,
+        arb_iface_thread_func,
+        (void *)arb_iface
+        );
+
+    if (check != 0)
+    {
+        fprintf(stderr, "Could not create the arbitrator interface thread!\n");
+        exit(-1);
+    }
+#endif
+
 
     arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
 #ifndef __KERNEL__

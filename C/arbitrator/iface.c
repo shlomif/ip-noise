@@ -22,6 +22,7 @@
 
 #include "read.h"
 #include "fcs_dm.h"
+#include "switcher.h"
 
 #ifdef __KERNEL__
 #define exit(error_value) 
@@ -265,6 +266,9 @@ void ip_noise_arbitrator_data_clear_all(ip_noise_arbitrator_data_t * data)
 
     for(a=0;a<data->num_chains;a++)
     {
+#ifdef __KERNEL__
+        del_timer(&(data->chains[a]->timer));
+#endif
         chain_free(data->chains[a]);
     }
 
@@ -1049,6 +1053,7 @@ struct file_operations ip_noise_fops = {
 #endif
 ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     ip_noise_arbitrator_data_t * * data,
+    void * switcher,
     ip_noise_flags_t * flags
     )
 {
@@ -1060,6 +1065,8 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     self->flags = flags;
     
     self->last_chain = -1;
+
+    self->switcher = switcher;
 
 #ifdef __KERNEL__
     Major = register_chrdev(0, "ip_noise_arb_iface", &ip_noise_fops);
@@ -1230,6 +1237,9 @@ static void close_connection(
         ip_noise_rwlock_down_write(data_lock);
         ip_noise_arbitrator_data_free(*(self->data));
         *(self->data) = self->data_copy;
+#ifdef __KERNEL__
+        ip_noise_arbitrator_switcher_reinit(self->switcher);
+#endif
         ip_noise_rwlock_up_write(data_lock);
 #if 0
         /* Release the data for others to use */
