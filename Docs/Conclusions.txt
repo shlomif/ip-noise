@@ -162,10 +162,10 @@ Internet to get help with his project.
 Exceptions should be used with care
 -----------------------------------
 
-Exceptions are Evil (with a capital "E") in C++, much less in C. We decided
-not to use them due to the fact that C does not have garbage collection and
-because it may mean our code will be killed due to an exception that was not
-caught.
+Exceptions are Evil (with a capital "E") in C++, much less in ANSI C. We 
+decided not to use them due to the fact that C does not have garbage 
+collection and because it may mean our code will be killed due to 
+an exception that was not caught.
 
 In Perl, however, which supports exceptions, and has garbage collection, we
 used exceptions extensively. We did not use them in the arbitrator and the 
