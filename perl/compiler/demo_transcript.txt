@@ -9,14 +9,21 @@ Before:
 
 2. Log in on NT WS and open several CMD windows.
 
-3. On comnet 17/18, ssh into vipe twice. (/usr/local/bin/ssh)
+3. On NT WS, ssh into vipe twice. (/usr/local/bin/ssh)
 
-4. On comnet 17/18, ssh into t2.
+4. On NT WS, ssh into t2.
 
 5. On NT WS, open a netscape window with 
 http://132.68.52.118/ip-noise/
 
+Preparation:
+------------
 
+* Compile the ip-noise-arb.o without UML.
+
+* As root run ~project/bin/enable_ker_ipq.sh
+
+* /sbin/insmod ip-noise-arb.o
 
 Always Accept:
 --------------
@@ -43,21 +50,21 @@ On NT WS run "perl client.pl 20000 1000".
 Block TCP:
 ----------
 
-On NT WS type: "ping -s 132.68.52.118 50"
+On NT WS type: "ping -t 132.68.52.118"
 
 Reload netscape to show that TCP does not work.
 
 Block ICMP:
 ---------
 
-On NT WS type: "ping -s 132.68.52.118 50"
+On NT WS type: "ping -t 132.68.52.118"
 
 Reload netscape to show that TCP works.
 
 Block HTTP:
 ------------
 
-Reload netscape to show that TCP works.
+Reload netscape to show that |HHTTP does not works.
 Run perl test.pl 20000 1000
 /usr/local/bin/ssh project@132.68.52.118.
 
@@ -69,6 +76,6 @@ Complete Scenario:
 
 2. On the second one, run "ping -s 50 132.68.52.118"  - noisy drop=1
 
-3. On t2, run ping -s 132.68.52.118. - noisy drop=1
+3. On t2, run /usr/sbin/ping -s 132.68.52.118. - noisy drop=1
 
 
