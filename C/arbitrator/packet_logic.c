@@ -430,6 +430,9 @@ static ip_noise_verdict_t chain_decide(
                time of the last packet and adding the delay. */
 
             last_tv = chain->last_packet_release_time;
+
+            /* Add the delay to last_tv to get the time in which the next
+             * packet has to be release */
 #ifndef __KERNEL__
             last_tv.tv_usec += delay*1000;
             if (last_tv.tv_usec > 1000000)
@@ -441,6 +444,7 @@ static ip_noise_verdict_t chain_decide(
             last_tv += ((delay * HZ) / 1000);
 #endif
 
+            /* Calculate the relative delay from the current time */
 #ifndef __KERNEL__
             delay = (last_tv.tv_sec - tv.tv_sec) * 1000 + ((last_tv.tv_usec-tv.tv_usec) / 1000);
 #else
@@ -453,6 +457,7 @@ static ip_noise_verdict_t chain_decide(
             }        
         }
 
+        /* Calculate the time in which this packet is to be released */
 #ifndef __KERNEL__
         tv.tv_usec += delay * 1000;
         if (tv.tv_usec > 1000000)
@@ -477,7 +482,15 @@ static ip_noise_verdict_t chain_decide(
     }
 }
     
-
+/*
+ * This function calls chain_decide for each one of the chains and accumulate
+ * their verdicts. The rules for this accumulation are:
+ *
+ * 1. If one chain decides to drop the packet, then the packet will be 
+ *      dropped.
+ * 2. Else, the delay of the packet is the sum of the total delays of all
+ *      the chains.
+ * */
 static ip_noise_verdict_t decide(
     ip_noise_arbitrator_packet_logic_t * self,
     ip_noise_packet_info_t * packet_info
@@ -516,14 +529,7 @@ static ip_noise_verdict_t decide(
             else if (global_verdict.action == IP_NOISE_VERDICT_ACCEPT)
             {
                 global_verdict = chain_verdict;
-                global_verdict.flag = IP_NOISE_VERDICT_FLAG_PROCESSED;                
-            }
-            else
-            {
-                printf("Unknown global_verdict.action %i!\n", global_verdict.action);
-#ifndef __KERNEL__
-                exit(-1);
-#endif
+                global_verdict.flag = IP_NOISE_VERDICT_FLAG_PROCESSED; 
             }
         }
         else if (chain_verdict.action == IP_NOISE_VERDICT_ACCEPT)
@@ -532,13 +538,6 @@ static ip_noise_verdict_t decide(
             {
                 global_verdict.flag = IP_NOISE_VERDICT_FLAG_PROCESSED;
             }
-        }
-        else
-        {
-            printf("Unknown chain_verdict.action %i!\n", chain_verdict.action);
-#ifndef __KERNEL__
-            exit(-1);
-#endif
         }
     }
 #if 0
