@@ -339,6 +339,8 @@ sub chain_decide
                 
                 $delay = int((($prob-$x1)*$y1+($x2-$prob)*$y2)/($x2-$x1));
             }
+
+            #print "Generic Delay = $delay\n";
         }
 
         my $do_a_stable_delay_prob = $self->{'rand'}->rand_in_0_1();
@@ -360,22 +362,30 @@ sub chain_decide
             # packet will be released. It is calculated by taking the release
             # time of the last packet and adding the delay.
             my ($last_sec, $last_usec) = @{$chain->{'last_packet_release_time'}}{'sec','usec'};
+            #print "P::L : \$last_sec = $last_sec ; \$last_usec = $last_usec ; \$sec = $sec ; \$usec = $usec\n";
 
             $last_usec += $delay * 1000;
             if ($last_usec > 1000000)
             {
                 $last_sec += int($last_usec/1000000);
-                $last_usec %= 10000000;
+                $last_usec %= 1000000;
             }
             # Calculate a modified delay
             $delay = ($last_sec-$sec)*1000+int(($last_usec-$usec)/1000);
+            
+            # If the last packet was already sent, we should send this one,
+            # now.
+            if ($delay < 0)
+            {
+                $delay = 0;
+            }
         }
 
         $usec += $delay * 1000;
         if ($usec > 1000000)
         {
             $sec += int($usec/1000000);
-            $usec %= 10000000;
+            $usec %= 1000000;
         }
         $chain->{'last_packet_release_time'} = 
             { 
@@ -495,8 +505,8 @@ sub decide_what_to_do_with_packet
 
         $verdict = $self->decide($packet_info);
 
-        my $d = Data::Dumper->new([ $verdict, $packet_info], [ "\$verdict", "\$packet_info"]);
-        print $d->Dump();
+        #my $d = Data::Dumper->new([ $verdict, $packet_info], [ "\$verdict", "\$packet_info"]);
+        #print $d->Dump();
        
 
         $data_lock->up_read();        

@@ -190,9 +190,9 @@ while (! $terminate)
 {
     my $msg = $ip_queue->get_message();
 
-    print "IPQ: Received a message! (" . 
-        $packets_to_arbitrate_queue->pending() . 
-        ")\n";
+    #print "IPQ: Received a message! (" . 
+    #    $packets_to_arbitrate_queue->pending() . 
+    #    ")\n";
     my ($sec, $usec) = gettimeofday();
 
     # We have to do something so it won't overflow...

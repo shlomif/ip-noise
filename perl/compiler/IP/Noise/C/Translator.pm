@@ -490,7 +490,16 @@ sub load_arbitrator
 
         print "Chain ID =  ",  $chain->{'id'} , "!\n";
 
-        foreach my $state_name (keys(%{$chain->{'states'}}))
+        # Make sure that the "Start" state (if exists) is the first state 
+        # transmitted to the arbitrator.
+        my @state_names = (keys(%{$chain->{'states'}}));
+
+        if (grep { lc($_) eq "start" } @state_names)
+        {
+            @state_names = ((grep { lc($_)  eq "start" } @state_names), (grep { lc($_) ne "start" } @state_names));
+        }
+
+        foreach my $state_name (@state_names)
         {
             my $state = $chain->{'states'}->{$state_name};
             

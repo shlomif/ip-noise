@@ -61,7 +61,7 @@ sub delay_packet
     # Check if delay_by is only composed of digits
     if ($delay_by !~ /^\d+$/)
     {
-        die "\$delay_by must be a positive number!\n";
+        die "\$delay_by must be a positive integer!\n";
     }
 
     my $delay_to_usec = $usec + $quantom * $delay_by;
