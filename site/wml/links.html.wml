@@ -88,3 +88,22 @@ perl bindings for the user-space IP filtering. Good for experiencing.
 Filtering Packets in user-space using the QUEUE directive</a>
 </p>
 
+<h2>Perl-Related</h2>
+
+<p>
+<a href="http://aspn.activestate.com/ASPN/Reference/Products/ASPNTOC-ACTIVEPERL-002">
+The Perl Man Pages
+</a> - can be used for perl learning and reference. However, a-priory 
+knowledge of other programming languages is required.
+</p>
+
+<p>
+<a href="http://vipe.technion.ac.il/~shlomif/lecture/Perl/Newbies/">
+Perl for Perl Newbies</a> - a lecture series which I gave to the Haifa
+Linux Club.
+</p>
+
+<p>
+<a href="http://packages.debian.org/unstable/devel/perl-byacc.html">Perl
+Berkeley Yacc</a> - A version of byacc with support for generating perl code.
+</p>
