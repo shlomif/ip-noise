@@ -6,7 +6,7 @@ INCLUDES = conn.h delayer.h fcs_dm.h iface.h packet_logic.h pqueue.h queue.h ran
 OBJECTS_PROTO = conn.o delayer.o fcs_dm.o ip_queue.o k_stdlib.o main.o packet_logic.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o text_queue_in.o text_queue_out.o
 
 #CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT -D__KERNEL__ -DMODULE -DLINUX -I/usr/src/linux/include/ -g -Wall
-UML = 0
+UML = 1
 
 ifeq ($(UML),1)
 	CFLAGS =  -g -Wall -I/home/project/Download/unpack/User-Mode-Linux/kernel/linux/include -I/home/project/Download/unpack/User-Mode-Linux/kernel/linux/arch/um/include -U__i386__ -DMODULE -D__KERNEL__ -DUM_FASTCALL -DNESTING=0 -D__arch_um__ -DSUBARCH="i386" -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT  

@@ -213,8 +213,6 @@ static ip_noise_arbitrator_data_t *
     new = malloc(sizeof(ip_noise_arbitrator_data_t));
     new->max_num_chains = old->max_num_chains;
     new->num_chains = old->num_chains;
-    printf("max_num_chains == %i\n", new->max_num_chains);
-    fflush(stdout);
     new->chains = malloc(new->max_num_chains*sizeof(new->chains[0]));
     for(a = 0 ; a < new->num_chains ; a++)
     {
@@ -677,7 +675,7 @@ int read_param_type(
             {
                 ok = ip_noise_read((char*)&ip, 4);
                 if (ok < 0)
-                {                   
+                {
                     ip_spec_free(head);
                     return ok;
                 }
@@ -733,6 +731,8 @@ int read_param_type(
                     tail->next = malloc(sizeof(ip_noise_ip_spec_t));
                     prev_tail = tail;
                     tail = tail->next;
+                    tail->port_ranges = NULL;
+                    tail->num_port_ranges = 0;
                     tail->next = NULL;
                 }
             }
