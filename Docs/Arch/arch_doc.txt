@@ -37,7 +37,7 @@ verdict.
 The Releaser:
 =============
 
-In user-mode, the releaser is modelled around an infinite loop, in which a
+In user-mode, the releaser is modeled around an infinite loop, in which a
 thread waits for the time of the release of the element with the minimal time 
 to arrive. If an element with a lower time has arrived, the thread is waken up
 prematurely so it can re-schedule its next awakening.
@@ -54,8 +54,8 @@ The Arbitrator:
 
 The arbitrator is split into three logical parts:
 
-1. The User Interface Backend: this interacts with the user-level compiler and
-is used to modify the behaviour of the arbitrator.
+1. The User Interface Back-end: this interacts with the user-level compiler and
+is used to modify the behavior of the arbitrator.
 
 2. Switcher: the purpose of this part is to switch the chains to their new
 states.
@@ -71,14 +71,14 @@ kept from multiple simultaneous access. Not only that, but the interface
 back-end actually duplicates the data, and works on a copy, in order not to
 block the other tasks.
 
-The User-interface Backend:
+The User-interface Back-end:
 ---------------------------
 
-Since data written to the backend is not necessarily received at once in the
+Since data written to the back-end is not necessarily received at once in the
 case of a kernel module, we have performed the communication with the compiler
 using transactions. The data that arrives into the device or named pipe is
-cached. The backend attempts to read data from this cache. If it does not
-succeed in reading enough data to complete the transaction, it rollbacks the
+cached. The back-end attempts to read data from this cache. If it does not
+succeed in reading enough data to complete the transaction, it roll-backs the
 transaction. Else, it commits it, which causes it to be flushed.
 
 The steps in evaluating a transaction are:
@@ -87,9 +87,9 @@ The steps in evaluating a transaction are:
 corresponds to it. 
 
 2. From that record, the parameter types of the opcode's parameters are
-deduced and each paramater is received from the line in its turn.
+deduced and each parameter is received from the line in its turn.
 
-3. The record's handler is called with all the paramters. It performs the
+3. The record's handler is called with all the parameters. It performs the
 actual operation on the data's copy.
 
 4. One record handler reads other data from the line: set_move_probs().
@@ -98,7 +98,7 @@ We could not think of a more elegant way to resolve its needs.
 After the connection had been closed, the interface replaces the data with its 
 data copy and waits for another connection to be opened.
 
-The backend can be found in the modules iface.c and iface_handlers.c of the
+The back-end can be found in the modules iface.c and iface_handlers.c of the
 source code.
 
 The Switcher:
