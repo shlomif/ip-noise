@@ -1,0 +1,141 @@
+Internals:
+----------
+
+There are going to be several Markovian chains, each one with its
+own rules that decide which packets to pass to it. It is possible 
+that a packet would be processed in more than one chain. In this
+case:
+
+1. If one of those chains decided to drop it - the packet would be dropped.
+2. Else, the packet would be delayed for a sum of the delays of the chains.
+
+Each chain will store the time of the last packet that was sent. There is 
+a probability constant in each of its states that determines if the delay 
+is relative to the time of the last packet, or an absolute delay. 
+
+Each one of a chain's states contains the probabilities of the releasing,
+dropping or delaying a packet, as well as the delay function (refer to "Delay
+Functions"). It also contains the probabilities of passing to the other states.
+
+There will always be one special chain called the default chain, which
+determines what to do with packets that did not fit into any other chain, 
+assuming that they indeed did not. If such a chain was not defined by the
+user, it will be initialized to always pass a packet.
+
+Chain Filters:
+--------------
+
+A chain filter may refer to the following specifications:
+
+Source IP Address: a list of subnets, each specified in a similar way
+to that of the Linux fire-walling rules. Each IP or subnet is accompanied
+with a specification of the input port (if appropriate to the protocol).
+
+Examples:
+
+{ 129.28.5.0/24:80,8080-8090 ; 132.68.0.0/16:20-21 }
+
+; - separates IP/Masks/Ports constructs
+, - separate ports
+/ - separate the number of 1's in the net-mask from the IP address.
+
+Destination IP Address: Same syntax as the source IP Address.
+
+Protocol : can be a list of any of TCP, udp, icmp or any other of
+the /etc/protocols protocols, or an inversion of such list.
+
+Type of Service:
+
+can be "tos>23", "tos<24", "12<tos<34" "tos == 34"
+
+Packet Length:
+
+    Can be "l>5000", "l<3000", "200<l<600".
+
+Whole Chains Syntax:
+--------------------
+
+State A {
+   drop = 0.2
+   delay = 0.1
+   delay_type = [!--- A Delay Function ---]
+   time_factor = 500 # This is the time factor to move to the other state
+   stable_delay = 0.2  # This is the probability for a stable delay.
+   move_to = {
+        0.2 = B
+        0.3 = C
+        0.5 = E
+   }    
+}
+
+Chain MyChain {
+    source = ...   #  All of these are optional
+    dest =  ...    #
+    length =       #
+    protocol =     #
+    ToS/QoS =      #
+    
+    State A { 
+        ...
+    }
+    State B { 
+        ...
+    }
+}
+
+Chain default {
+
+}
+
+The identifiers are case-insensitive
+
+Each chain should have a special state called "Start" which is the state
+which the chain would be at the beginning. If it is not defined, the first
+state will be picked at random.
+
+Delay Functions:
+----------------
+
+1. Exponential: With a given Lambda     E(500)
+
+2. Uniform : From t=t_{start} to t=t_{end} U(500,1500)
+
+3. Generic: Define a function from [0,1] using intermediate points. Between
+two points there is a linear interpolation of them. ( a la Spice)
+
+Generic {
+    0 = 500
+    0.1 = 500
+    0.2 = 300
+    0.5 = 0
+    0.8 = 0
+    0.8001 = 1000
+    1      = 2000
+}
+
+Incremental Changes:
+--------------------
+
+It would be possible to modify the arbitrator at run time. 
+
+Thus, a protocol should be defined so that such incremental changes would 
+be possible.
+
+Examples: 
+
+1. Set move_to of State A of Chain MyChain to { 0.2 = B, 0.3 = D, 0.5 =A }
+
+2. Set time_factor of State A of Chain MyChain to 900.
+
+3. Define new Chain Hello as { }.
+
+4. Delete chain MyChain.
+
+5. Override chain Hello as { }.
+
+6. Define new state MyState in Chain Hello as { }
+
+7. Define in chain Hello probabilities of transfer from (A,B,C,D) to 
+(A,B,C,D,E,time_factor) as { ... matrix ... }.
+
+
