@@ -518,8 +518,126 @@ the same line. A state ends with a right curly bracket (<tt>}</tt>)
 which appears on a line of its own.
 </p>
 
+<h4>drop, and delay probs</h4>
+
 <p>
-A state 
+If a <tt>drop</tt> or <tt>delay</tt> field/value pair appears it specifies
+the probability in which a packet will be dropped or delayed when the
+chain is at this state. The values of <tt>drop</tt> and <tt>delay</tt> will
+be assumed to be 0 if not specified, and the rest of the probability will
+be assumed to send the packet as is.
+</p>
+
+<p>
+Example:
+</p>
+
+<p>
+<pre>
+State MyState {
+    drop = 0.2
+    delay = 0.3
+}
+</pre>
+</p>
+
+<p>
+This state drops packets with a probability of 0.2 and delays them with 
+a probability of 0.3
+</p>
+
+<h4>time_factor</h4>
+
+<p>
+The <tt>time_factor</tt> field specifies the time factor (in milliseconds)
+of the state. This will be supplied as input to an exponential delay 
+calculation that will determine the time the state is switched.
+</p>
+
+<h4>move_to's</h4>
+
+<p>
+The <tt>move_to</tt> field specifies the probabilities the state will switch
+to other states. After a state is switched, the next state is determined 
+according to a random value.
+</p>
+
+<p>
+The syntax is <tt>move_to = {</tt> at the first line followed by a list of 
+<tt>[Probability] = [State]</tt> lines followed by a line containing a right
+curly bracket (<tt>}</tt>). If the probabilities sum below 1, the 
+remainder will be assumed to remain in the current state.
+</p>
+
+<p>
+Here's an example:
+</p>
+
+<p>
+<pre>
+State MyState {
+    drop = 0.2
+    delay = 0.1
+    time_factor = 500
+    move_to = {
+        0.2 = AnotherState
+        0.1 = StateWithoutAName
+    }
+}
+</pre>
+</p>
+
+<p>
+This state switched to <tt>AnotherState</tt> with a probability of 0.2,
+and to <tt>StateWithoutAName</tt> with a probability of 0.1, and remains
+at itself with a probability of 0.7.
+</p>
+
+<h4>delay_type</h4>
+
+<p>
+The <tt>delay_type</tt> field specifies the type of the delay. Its value can be
+any of the following:
+</p>
+
+<ol>
+<li>
+Exponential: With a given factor in milliseconds. 
+Marking: <tt>E([factor])</tt>. For example: <tt>E(500)</tt>, or <tt>E(10)</tt>.
+</li>
+
+<li>
+Uniform: Marking: <tt>U([start],[end])</tt>. For example: <tt>U(100,500)</tt>.
+</li>
+
+<li>
+<p>
+Generic: This defines a function from 0 to 1 using intermediate points. 
+The value field should start with <tt>Generic {</tt> and end with 
+a line containing a right curly bracket (<tt>}</tt>). Between them, there are
+<tt>[prob] = [delay]</tt> lines. Note that 0 to 1 will be chosen within the
+probability range allocated for delaying a packet. 
+</p>
+
+<p>
+For example:
+</p>
+
+<p>
+<pre>
+delay_type = Generic {
+    0 = 500
+    0.1 = 500
+    0.2 = 300
+    0.5 = 0
+    0.8 = 0
+    0.8001 = 1000
+    1      = 2000
+}
+</pre>
+</p>
+</li>
+</ol>
 
 </body>
 </html>
