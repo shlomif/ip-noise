@@ -1,0 +1,105 @@
+Msg:
+----
+
+The class Msg is an implementation of a "Heap" element that contains
+the actual IP packet as well as the time (in seconds and microseconds)
+of its arrival. 
+
+There's nothing too interesting there, and the functions are very short
+and trivial. For more information consult the Heap::Elem man page.
+
+Delayer:
+--------
+
+Delayer is a class that handles delaying packets with the possibility
+of different delay lengths and different arrival times. It accepts 
+the packets as is and does not decide how much to delay them itself.
+Moreover, it does not use the IP-Queue interface directly and rather
+uses a callback to release the packets after their delay.
+
+This module has two methods:
+
+delay_packet() - this method accepts a packet, its arrival time
+and the amount of time, in quanta of 1 millisecond, to delay it, 
+and register this packet to be released only at this amount of time 
+at the future.
+
+release_packets_poll_function() - this method should be called periodically
+in order to release those packets whose time has come to be released.
+
+The class uses a priority queue to organize the packets and their release
+times. release_packets_poll_function() constantly peaks the minimal item of 
+the PQ to determine whether its release time has already come. If so, 
+it extracts it out of there.
+
+Packet::Logic:
+--------------
+
+Perhaps should have been named "Packet::Arbitrator" or "Packet::Decide".
+This class determines what to do with a packet. It has one method -
+decide_what_to_do_with_packet() which returns the outcome of the packet.
+This way, a state can be implemented inside the object.
+
+The function should return a reference to a hash that contains the following 
+fields:
+
+'action' - can be of value "accept", "delay", or "drop".
+'delay_len' => applicable only if 'action' is "delay". This is the delay
+in quanta.
+
+At the moment this function implements a simple state-less rule-based noise
+, where the rules are not unlike the IP firewalling rules of the kernel. A
+better description of the format of the rules should be written at a
+certain stage, but is not available now.
+
+main.pl:
+--------
+
+This is a script that use Delayer, Packet::Logic and the IP-Queue interface. 
+However, it can be easily encapsulated in its own class by an experienced
+perl coder.
+
+The script performs a loop in which it:
+1. Gets the next message from the IP-Queue.
+2. Calls release_packets_poll_function to release the appropriately delayed 
+   packets.
+3. Call decide_what_to_do_with_packet() to get its verdict.
+4. Accepts, drops, or queues the packet for delay based on its verdict.
+5. Return to Step #1.
+
+Note that this script relies on a fact that packets constantly arrive 
+at the IP Queue for verification. If not it may get stuck, while some
+packets that need to be released after a significant delay will not be
+released. 
+
+This can be easily solved by putting step #2 on its own thread, but it has
+not been done yet. (Some versions of the perl interpreter do not support 
+multi-threading).
+
+main_mt.pl:
+-----------
+
+This script is similar to main.pl only that it initiates three threads, each
+of which is responsbile for doing one operation:
+
+1. The main thread gets a message from the IP-Queue, stamps it with its
+arrival time and places it inside a (thread-safe) queue.
+
+2. The arbitrator thread gets a message from that queue, and determines what
+to do with it. If it should be dropped or released it does so. If it is to 
+be delayed it invokes the delayer to delay it.
+
+3. The delayed packets' release thread performs an infinite loop in which
+it calls the delayer's release_packets_poll_function() method.
+
+By using this scheme, one can ensure that the delayed packets will be released
+on time, even if the traffic is inconsistent.
+
+    Notes:
+    1. This file requires the perl interpereter to be compiled with 
+       multi-threading support.
+    2. This file contains some duplicate code with main.pl. I'd like to wrap
+       their functionality in a nice object, which can be used by both 
+       the non-threaded script and the threaded script.
+
+

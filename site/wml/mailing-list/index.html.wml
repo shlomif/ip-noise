@@ -1,0 +1,31 @@
+#!wml
+#include 'template.wml'
+
+<subject "Mailing-List Information">
+
+<h2>Subscribing</h2>
+
+<p>
+To subscribe to the mailing-list send an empty message
+to <a href="mailto:ip-noise-subscribe@iglu.org.il">ip-noise-subscribe@iglu.org.il</a>.
+</p>
+
+<h2>Unsubscribing</h2>
+
+<p>
+To unsubscribe to the mailing-list send an empty message
+to <a href="mailto:ip-noise-unsubscribe@iglu.org.il">ip-noise-unsubscribe@iglu.org.il</a>.
+</p>
+
+<h2>Sending E-mail to the list</h2>
+
+<p>
+Send your messages to 
+<a href="mailto:ip-noise@iglu.org.il">ip-noise@iglu.org.il</a>.
+</p>
+
+<h2>Online Messages' Archive</h2>
+
+<a href="http://www.mail-archive.com/ip-noise@iglu.org.il/">
+http://www.mail-archive.com/ip-noise@iglu.org.il/
+</a>

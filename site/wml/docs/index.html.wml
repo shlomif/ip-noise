@@ -1,0 +1,37 @@
+#!wml
+#include 'template.wml'
+
+<subject "IP-Noise Project Documents">
+
+<p>
+<a href="ip_noise.spec.zip">The Project's Specification</a>
+</p>
+
+<p>
+<a href="Syntax_Description.txt">A description of the syntax of the 
+packet arbitrator
+</a>
+</p>
+
+<p>
+<a href="Architecture.txt">A description of the Architecture of the 
+IP-Noise Engine Perl Framework</a> - at the moment it has a very 
+stupid arbitrator. Nevertheless, we plan to keep much of the structure
+in the final product.
+</p>
+
+<p>
+<a href="Arbitrator_Architecture.txt">A description of the Arbitrator's
+Architecture</a>
+</p>
+
+<p>
+<a href="Protocol.txt">A description of the Arbitrator's Protocol</a>
+</p>
+
+<h2>Road-maps</h2>
+
+<p>
+<a href="roadmaps/2001-08-22.txt">22 August, 2001</a>
+</p>
+
