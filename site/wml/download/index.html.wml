@@ -17,15 +17,15 @@ delaying packets for arbitrary delays. It comes with a simple, stateless
 </p>
 
 <p>
-<a href="IP-Noise-Compiler-0.1.2.tar.gz">
-IP-Noise-Compiler-0.1.2.tar.gz
+<a href="IP-Noise-Compiler-0.1.3.tar.gz">
+IP-Noise-Compiler-0.1.3.tar.gz
 </a> - 
 a compiler for the configuration language of the future arbitrator.
 </p>
 
 <p>
-<a href="IP-Noise-Perl-Arbitrator-0.1.2.tar.gz">
-IP-Noise-Perl-Arbitrator-0.1.2.tar.gz
+<a href="IP-Noise-Perl-Arbitrator-0.1.3.tar.gz">
+IP-Noise-Perl-Arbitrator-0.1.3.tar.gz
 </a> - 
 an arbitrator written in Perl, which will be the codebase for the 
 final arbitrator.
