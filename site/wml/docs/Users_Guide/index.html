@@ -1,0 +1,483 @@
+<html>
+<head>
+<title>The IP-Noise Simulator User's Guide</title>
+</head>
+<body bgcolor="white">
+
+<div align="center">
+<h3 class="credits">Computer Networks Laboratory</h3>
+<h3 class="credits">Electrical Engineering Department</h3>
+<h3 class="credits">The Technion - Israel Institute of Technology</h3>
+<br>
+<br>
+<br>
+<h1>The IP-Noise Simulator Users' Guide</h1>
+</div>
+
+<h2>Introduction</h2>
+
+<h3>What is the IP-Noise Simulator</h3>
+
+<p>
+The IP-Noise Simulator is a simulator for TCP/IP networks noise that can run
+on top of a Linux 2.4.x system. It is available in two versions: one as a 
+stand-alone user-level program that can run from the command line. The second 
+one is a kernel module, that should be loaded with <tt>insmod</tt>.
+</p>
+
+<p>
+TCP/IP noise generation involves the deliberate dropping or delaying of 
+packets sent over the TCP/IP network. The simulator can distinguish between the
+various protocols above the IP level and arbitrate them differently 
+accordingly. However, the contents of the packets cannot affect its decision
+in any way.
+</p>
+
+<p>
+Note that it is assumed that the network congestion is independent of what
+occurs in the applications that are tested with the noise. Thus, the load
+of the network does not affect the simulator's behaviour.
+</p>
+
+<h3>When can it prove useful?</h3>
+
+<p>
+We intend the simulator to be used to test the robustness of protocols, and
+see how immune they are to network noise. The simulator is designed to be 
+flexible and simulate various network noise conditions, in a manner that is 
+accurate enough for most needs.
+</p>
+
+<h3>Credits</h3>
+
+<p>
+The project was initiated by Lavy Libman, and was written by Shlomi Fish
+and Roy Glasberg under his supervision. It was conducted with the help and
+resources of the 
+<a href="http://comnet.technion.ac.il/">Computer Networks Lab</a> 
+of <a href="http://www.technion.ac.il/">The Technion</a>.
+</p>
+
+<p>
+We would like to thank the various people in the 
+<a href="http://www.iglu.org.il/">Israeli Group of Linux Users</a> who provided
+important help and input during the various stages of the project: Omer Mussaev,
+Guy Keren, Mulix and others. We would also like to thank the developers of the 
+<a href="http://netfilter.samba.org/">Netfilter</a> firewalling stack of the 
+Linux Kernel 2.4, which gave us most of the necessary kernel functionality,
+and made our work much easier.
+</p>
+
+<p>
+We would also like to thank the FOKUS group for creating and maintaining the 
+<a href="http://developer.berlios.de/">BerliOS</a> service, whose on-line 
+resources we were able to use.
+</p>
+
+<h3>Supported Platforms</h3>
+
+<p>
+The simulator requires a GNU/Linux system running the Linux Kernel version 
+2.4.x. IP-Tables has to be available as a kernel module, as is the 
+IP-Queue module.
+</p>
+
+<h3>License</h3>
+
+<p>
+The translator which is written in Perl is distributed under the MIT X11 
+license. The compiler is distributed under a dual GPL and MIT X11 license except for the following modules:
+</p>
+
+<p>
+<ul>
+
+<li>
+<tt>redblack.c</tt> - derived work which is distributed under the LGPL. (part of the 
+<a href="http://libredblack.sourceforge.net/">libredblack</a> distribution)
+</li>
+
+<li>
+<tt>ip_queue.c</tt> - derived work which is distributed under the GPL. (was derived from
+the module of the same name of the Linux 2.4.x kernel.)
+</li>
+
+</ul>
+</p>
+
+<p>
+The Perl arbitrator is no longer maintained and is only useful as a reference
+implementation. We cannot guarantee that it does not contain bugs. It is 
+distributed under the MIT X11 license.
+</p>
+
+<h2>Installation Instructions</h2>
+
+<h3>Global Instructions</h3>
+
+<h4>Prerequisites</h4>
+
+<p>
+In order to use the simulator, the IP-Tables kernel module must be compiled,
+and available for loading. Specifically, the ip_queue module should be 
+available. perl v. 5.6.1 or later must be available on the 
+system in order to configure the simulator.
+</p>
+
+<p>
+libipq which is part of the iptables userland distribution should be installed 
+and available on the system, as the userland simulator makes use of it.
+</p>
+
+<h4>Compiling the Simulator</h4>
+
+<p>
+Download and unpack the latest distribution. <tt>cd</tt> to the directory 
+<tt>C/arbitrator</tt>. In order to compile the userland simulator type 
+"<tt>make</tt>". 
+</p>
+
+<p>
+In order to compile the kernel module-based simulator type 
+"<tt>make -f Makefile kernel</tt>". In case you don't have 
+an i386-compatible machine, you should edit the file 
+<tt>Makefile.kernel</tt> and change the line "<tt>I386 = 1</tt>" 
+to "<tt>I386 = 0</tt>".
+</p>
+
+<h3>Userland Arbitrator Specific Instructions</h3>
+
+<p>
+Designate a directory in which two named pipes will be put. These pipes will
+be used for communication between the arbitrator and the configuration
+utility. The directory should be accessible both by root and by the user, with
+which you intend to run the configurator (which we recommend 
+should not be root).
+</p>
+
+<p>
+In this directory type the following set of commands as root:
+</p>
+
+<p>
+<pre>
+# pwd
+/ip-noise
+#mkfifo to_arb
+#mkfifo from_arb
+#chown ipnoise.ipnoise to_arb from_arb
+#chmod 600 to_arb from_arb
+#chmod 700 .
+#chown ipnoise.ipnoise .
+</pre>
+</p>
+
+<p>
+<tt>ipnoise.ipnoise</tt> is the user-name and group of the user that will 
+be used to invoke the configurator. Now set the environment variable 
+<tt>IP_NOISE_UM_ARB_CONN_PATH</tt> to the full path of this directory in the
+initial shell scripts of both root and the <tt>ipnoise</tt> user.
+</p>
+
+<h3>Kernel-module Arbitrator Specific Instructions</h3>
+
+<p>
+Under the home directory of the user which will run the module, type the 
+following commands as root: 
+</p>
+
+<p>
+<pre>
+# mknod iface_dev c 254 0
+# chown ipnoise.ipnoise iface_dev
+# chmod 600 iface_dev
+</pre>
+</p>
+
+<p>
+<tt>ipnoise.ipnoise</tt> is the user-name and group of the user which will run
+the configuration utility.
+</p>
+
+<h2>Running the Arbitrator</h2>
+
+<h3>Setting up IP-Tables Rules to Transfer Packets for Noisifying</h3>
+
+<p>
+The simulator intercepts packets from the kernel by means of the IP-Tables
+framework. It receives those packets (and only those packets) that were 
+designated with the <tt>QUEUE</tt> rule. Normally, you would like to configure
+the IP-Tables rules, so that important communication will not be interfered 
+with. Only the ports, protocols and IPs of interest need to be transferred
+to the arbitrator in order to decide their verdict.
+</p>
+
+<p>
+Describing how to set up IP-Tables rules is out of the scope of this article. 
+We refer you to the Internet for further information. However, we will present 
+a script that we use to set up the IP-Tables rules on our Mandrake Linux 8.1 
+system:
+</p>
+
+<p>
+<table border="1">
+<tr>
+<td>
+<pre>
+<FONT color=#0000ff>#!/bin/sh</FONT>
+
+<FONT color=#008b8b>UDP_PORTS</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>67 111 135 137 138 161 513 520 525 631 2571</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+<FONT color=#008b8b>TCP_PORTS</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>6346 6347 5901</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+<FONT color=#008b8b>IFACES</FONT>=<B><FONT color=#a52a2a>&quot;</FONT></B><FONT color=#ff00ff>eth0 lo</FONT><B><FONT color=#a52a2a>&quot;</FONT></B>
+
+<B><FONT color=#a52a2a>for</FONT></B> iface <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$IFACES</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B> 
+    <B><FONT color=#a52a2a>for</FONT></B> port <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$UDP_PORTS</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> udp <FONT color=#6a5acd>--destination-port</FONT> <FONT color=#a020f0>$port</FONT>
+    <B><FONT color=#a52a2a>done</FONT></B>
+    <B><FONT color=#a52a2a>for</FONT></B> port <B><FONT color=#a52a2a>in</FONT></B> <FONT color=#a020f0>$TCP_PORTS</FONT> <B><FONT color=#a52a2a>;</FONT></B> <B><FONT color=#a52a2a>do</FONT></B>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> tcp <FONT color=#6a5acd>--destination-port</FONT> <FONT color=#a020f0>$port</FONT>
+        /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> ACCEPT <B><FONT color=#a52a2a>-p</FONT></B> tcp <FONT color=#6a5acd>--source-port</FONT> <FONT color=#a020f0>$port</FONT>
+    <B><FONT color=#a52a2a>done</FONT></B>
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> tcp
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> udp
+    /sbin/iptables <B><FONT color=#a52a2a>-A</FONT></B> INPUT <B><FONT color=#a52a2a>-i</FONT></B> <FONT color=#a020f0>$iface</FONT> <B><FONT color=#a52a2a>-j</FONT></B> QUEUE <B><FONT color=#a52a2a>-p</FONT></B> icmp
+<B><FONT color=#a52a2a>done</FONT></B>
+</pre>
+</td>
+</tr>
+</table>
+</p>
+
+<p>
+Note that the IP-Noise kernel module replaces the IP-Queue mechanism of the 
+Linux kernel, and both cannot be used simultaneously.
+</p>
+
+<h3>Loading and Unloading the arbitrator</h3>
+
+<h4>Userland Arbitrator</h4>
+
+<p>
+After the IP-Table rules has been set up follow the following steps:
+</p>
+
+<p>
+<ol>
+<li>
+<tt>modprobe ip_queue</tt>
+</li>
+<li>
+As root, cd to the <tt>C/arbitrator</tt> directory of the distribution. 
+There type <tt>./arb</tt> to invoke the arbitrator.
+</li>
+</ol>
+</p>
+
+<p>
+To unload it, simply type <tt>Ctrl+C</tt> at the terminal in which it 
+was invoked.
+</p>
+
+<h4>Kernel-Module Arbitrator</h4>
+
+<p>
+After the IP-Tables rules have been set up, cd to the <tt>C/arbitrator</tt> 
+directory of the distribution as root. There type <tt>insmod ./ip-noise-arb.o</tt>.
+</p>
+
+<p>
+To unload it type <tt>rmmod ip-noise-arb</tt> as root.
+</p>
+
+<h3>Configuring an Arbitrator</h3>
+
+<p>
+To configure an arbitrator one has to prepare a configuration file that
+contains the description of the noise behaviour, in the syntax that was
+defined for this purpose (which will be described below). After the file has
+been prepared, cd to the <tt>perl/compiler</tt> 
+directory of the distribution. Then type <tt>perl tests/translator.pl</tt>
+or <tt>perl tests/ker_translator.pl</tt> (for the userland and kernel-level 
+arbitrators respectively) followed by the path of the configuration file.
+</p>
+
+<h2>Configuration of the Arbitrator - Basic Concepts</h2>
+
+<h3>Markov Chains</h3>
+
+<p>
+Markov chains are similar in concept to state machines, except that the next
+state is determined according to a probability factor rather than the input to
+the state machine. In each iteration, a probability value between 0 and 1 is
+determined randomly (and uniformly) and based on it, the next state is deduced.
+</p>
+
+<p>
+The following figure, displays a sample Markov chain:
+</p>
+
+<p>
+<img src="markov_chain1.png" alt="First Markov Chain">
+</p>
+
+<p>
+As can be seen, after an iteration step, "A" switches to itself with a 
+probabilty of 0.5, and to "B" with a probability of 0.5. "B" and "C" switch
+to themselves and to one another with a various probabilities. One can notice,
+that once the chain leaves "A", it cannot return to it again.
+</p>
+
+<p>
+The sum of the probabilities of the links that emerge out of a certain state
+must be equal to 1, so the chain will always know to which state to go to next. 
+In our implementation of Markov chains, we assumed that in case, the 
+sum of emerging probabilities is less than 1, than the remainder instructs the
+chain to remain in the current state. If the sum of probabilites is greater
+than 1, a compilation-time error will be reported.
+</p>
+
+<p>
+One can model memory-less noise using a Markov chain, in which each state
+dictates a different statistical behaviour of the noise.
+</p>
+
+<h3>Basic Concepts</h3>
+
+<h4>Delay</h4>
+
+<p>
+A packet can be delayed by a certain amount of milliseconds. This delay 
+can be determined randomly, by specifiying a certain type of statistical
+distribution or another.
+</p>
+
+<h4>Drop</h4>
+
+<p>
+One can specify to drop the packet altogether representing a loss of a packet
+along its route.
+</p>
+
+<h4>Accept</h4>
+
+<p>
+One can specify to simply "accept" the packet and send it on its way. For 
+all practical purposes, an accept is treated as a delay of 0.
+</p>
+
+<h4>Exponential Delay</h4>
+
+<p>
+An exponential delay is a distribution of a delay according to the formula
+F(t)=1-e<sup>-&lambda;t</sup>. The lambda factor can be determined by the 
+user.
+</p>
+
+<h4>Generic Delay (or Split-Linear Delay)</h4>
+
+<p>
+This is a generic delay type that can be used to model an arbitrarily complex
+delay function. In it one specifies points along the randomosity factor from 0 
+to 1. For each such point, one specifies the delay at that point. Between
+two adjacent points, one interpolates their end-values linearily.
+</p>
+
+<h4>Uniform Delay</h4>
+
+<p>
+In this delay type, the delay is chosen uniformly between a minimum and a 
+maximum specified by the user.
+</p>
+
+<h4>Stable Delay</h4>
+
+<p>
+A delay can be either stable or non-stable. In a stable delay, the packets 
+are sent on their way at the same order in which they arrived.
+In a non-stable delay, their order may be mixed. One can decide whether
+to issue a stable or non-stable delay by specifiying a probability factor.
+</p>
+
+<h3>How the Arbitration is Done</h3>
+
+<h4>Several Markov Chains</h4>
+
+<p>
+The arbitrator contains several markov chains which are run and processed in 
+parallel. Each chain has a chain filter that specifies which packets it wishes
+to process. When a packet arrives at the arbitrator, it is passed to all the
+chains, except for a special chain which is designated as the default chain. 
+Each chain determines on its own what to do with the packet, without consulting
+the other chains.
+</p>
+
+<p>
+A packet that is not processed by any chain is passed to the default chain, 
+whose filter (if any) is ignored. If more than one chain processed the packet, 
+then the following rules apply:
+</p>
+
+<p>
+<b>1.</b> If the packet was dropped by any chain, then it will be dropped. 
+(i.e: each chain can veto the verdict to a drop)
+</p>
+
+<p>
+<b>2.</b> If none of the chains dropped it, then the delay the packet would
+experience would be the sum of the delays of the chains. 
+(and as previously mentioned, an accept verdict is considered as a 
+delay of length 0)
+</p>
+
+<h4>State Switching</h4>
+
+<p>
+In each chain, the states are switched at exponential times from the time of 
+the last switch. Each state determines the probabilities for a packet being 
+dropped, delayed or accepted and the distribution of the delay. It also 
+determines the probability for a stable delay.
+</p>
+
+<h4>Chain Filters</h4>
+
+<p>
+A chain filter determines which packets are processed by a chain according to 
+their TCP/IP information. The motivation for a chain filter is that different
+parts of the network being modelled may experience different conditions. 
+Therefore, packets need to be treated differently based on their destination,
+source and other TCP/IP properties.
+</p>
+
+<p>
+In the IP-Noise Simulator, packets can be filtered according to the following 
+factors:
+</p>
+
+<p>
+<ol>
+
+<li>
+Source IPs and port combinations.
+</li>
+
+<li>
+Destination IPs and port combinations.
+</li>
+
+<li>
+Packet Length
+</li>
+
+<li>
+Value of the Time of Service field
+</li>
+
+<li>
+The Protocol type above the IP layer (e.g: TCP, UDP, ICMP, OSPF and IGMP).
+</li>
+
+</ol>
+</p>
+
+</body>
+</html>
