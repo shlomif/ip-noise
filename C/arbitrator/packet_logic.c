@@ -47,6 +47,13 @@ extern ip_noise_arbitrator_packet_logic_t *
     return self;
 }
 
+/*
+ *
+ * This function retrieves the packet information (source IP, dest IP,
+ * source port, dest port, TOS, length, etc) from the IP header and
+ * summarizes it inside ret.
+ *
+ * */
 static ip_noise_packet_info_t * get_packet_info(unsigned char * payload)
 {
     ip_noise_packet_info_t * ret;
@@ -165,6 +172,11 @@ static int is_in_ip_filter(
     return 0;
 }
 
+
+/*
+ * Determines whether the packet suits the filter of this particular chain.
+ *
+ * */
 static int is_in_chain_filter(
     ip_noise_arbitrator_packet_logic_t * self,
     int chain_index,
@@ -615,7 +627,8 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
 #endif
                 
         ip_noise_rwlock_up_read(data_lock);
-
+    
+        /* packet_info is malloced */
         free(packet_info);
         
         return verdict;
