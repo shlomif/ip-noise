@@ -1,0 +1,5 @@
+This scenario blocks TCP. ICMP and UDP switch 
+between two states, one of which is normal and 
+the other is noisy.
+
+In the noisy state, some packets are dropped.

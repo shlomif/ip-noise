@@ -1,0 +1,2 @@
+This scenario blocks all flow of ICMP packets, leaving
+only TCP and UDP.

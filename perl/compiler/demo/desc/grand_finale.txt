@@ -1,0 +1,10 @@
+In this scenario, there are three chains: 
+one controls traffic from t2, the other
+traffic of packets vipe whose packet 
+length is less than 100, and the third
+vipe packets whose packet length is 
+greater than 100.
+
+Each chain constantly switches between 
+two states: normal and noisy.
+

@@ -21,6 +21,22 @@ my @stages =
             'id' => "stable_delay",
             'name' => "Stable Delay",
         },
+        {
+            'id' => "icmp_only",
+            'name' => "ICMP Only",
+        },
+        {
+            'id' => "tcp_only",
+            'name' => "TCP Only",
+        },
+        {
+            'id' => "block_http",
+            'name' => "Block HTTP",
+        },
+        {
+            'id' => "grand_finale",
+            'name' => "Complete Scenario",
+        },
     );
 
 
@@ -62,7 +78,7 @@ my $window = new Gtk::Window('toplevel');
 my $main_hbox = Gtk::HBox->new(0, 0);
 #my $geo = Gtk::Gdk::Geometry->new(50,50,50,50);
 #$window->set_geometry_hints($scw, { 'max_width' => 100 }, 0);
-$scw->set_usize(130,0);
+$scw->set_usize(140,0);
 $main_hbox->pack_start($scw, 0, 1, 0);
 $main_hbox->pack_start($right_vbox, 1, 1, 0);
 $main_hbox->show();
