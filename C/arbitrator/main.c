@@ -11,6 +11,7 @@
 #include "verdict.h"
 #include "iface.h"
 #include "switcher.h"
+#include "packet_logic.h"
 
 
 static void die(struct ipq_handle * h)
@@ -54,6 +55,8 @@ struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
     int * terminate;
     struct ipq_handle * h;
     ip_noise_delayer_t * delayer;
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_flags_t * flags;
 };
 
 typedef struct ip_noise_decide_what_to_do_with_packets_thread_context_struct ip_noise_decide_what_to_do_with_packets_thread_context_t;
@@ -69,6 +72,9 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
     static int num;
     ip_noise_verdict_t verdict;
     ip_noise_delayer_t * delayer;
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_flags_t * flags;
+    ip_noise_arbitrator_packet_logic_t * packet_logic;
 
     context = (ip_noise_decide_what_to_do_with_packets_thread_context_t * )void_context;
 
@@ -76,8 +82,13 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
     terminate = context->terminate;
     h = context->h;
     delayer = context->delayer;
+    data = context->data;
+    flags = context->flags;
 
     free(context);
+
+
+    packet_logic = ip_noise_arbitrator_packet_logic_alloc(data, flags);
 
     while (! (*terminate))
     {
@@ -88,7 +99,10 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
             continue;
         }
 
+#if 0
         verdict = decide_what_to_do_with_packet(msg_with_time->m);
+#endif
+        verdict = ip_noise_arbitrator_packet_logic_decide_what_to_do_with_packet(packet_logic, msg_with_time->m);
         
         if (verdict.action == IP_NOISE_VERDICT_ACCEPT)
         {
@@ -240,30 +254,10 @@ int main(int argc, char * argv[])
 
     delayer = ip_noise_delayer_alloc(ip_noise_delayer_release_function, (void *)h);
     
-    arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
-    arbitrator_context->queue = packets_to_arbitrate_queue ;
-    arbitrator_context->h = h;
-    arbitrator_context->terminate = &terminate;
-    arbitrator_context->delayer = delayer;
-
     release_packets_context = malloc(sizeof(ip_noise_release_packets_thread_context_t));
     release_packets_context->delayer = delayer;
     release_packets_context->terminate = &terminate;
     
-
-    check = pthread_create(
-        &decide_what_to_with_packets_thread,
-        NULL,
-        ip_noise_decide_what_to_do_with_packets_thread_func,
-        (void *)arbitrator_context
-        );
-
-    if (check != 0)
-    {
-        fprintf(stderr, "Could not create the arbitrator thread!\n");
-        exit(-1);
-    }
-
     check = pthread_create(
         &release_packets_thread,
         NULL,
@@ -309,6 +303,29 @@ int main(int argc, char * argv[])
         fprintf(stderr, "Could not create the arbitrator switcher thread!\n");
         exit(-1);
     }
+
+    arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
+    arbitrator_context->queue = packets_to_arbitrate_queue ;
+    arbitrator_context->h = h;
+    arbitrator_context->terminate = &terminate;
+    arbitrator_context->delayer = delayer;
+    arbitrator_context->data = data;
+    arbitrator_context->flags = &flags;
+
+
+    check = pthread_create(
+        &decide_what_to_with_packets_thread,
+        NULL,
+        ip_noise_decide_what_to_do_with_packets_thread_func,
+        (void *)arbitrator_context
+        );
+
+    if (check != 0)
+    {
+        fprintf(stderr, "Could not create the arbitrator thread!\n");
+        exit(-1);
+    }
+    
 
 #if 0
     {
