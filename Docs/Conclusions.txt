@@ -109,6 +109,70 @@ jiffies does not even requires a function call. Furthermore, timers are set
 according by jiffies-time, so it saves the overhead of converting from jiffies
 to struct timeval and vice versa.
 
+Don't have too many kernel timers:
+----------------------------------
+
+During the initial version of the kernel module we allocated one timer for
+each packet that was to be delayed. That turned out to be a wonderful way to 
+crash the kernel. 
+
+We strongly recommend to avoid this practice, and to try to allocate one timer
+at a timer, so that each timer handler will allocate the next timer.
+
+(note that we knew we would eventually have to do it the other way, but one
+should know in advance that the kernel cannot handle too many active timers)
+
+Why we did not use Kernel threads:
+----------------------------------
+
+We did not use kernel threads for several reasons, despite the fact that 
+kernel 2.4 supports them well:
+
+1. Most people try to avoid using them inside their kernel modules.
+
+2. The Netfilter architecure parallizes handling the incoming packets for us,
+assuming it is an SMP machine.
+
+3. It would be faster and have less overhead to write the code asynchronously
+rather than having several threads running inside the kernel.
+
+Excessive kmalloc is your enemy
+-------------------------------
+
+If possible use vectors of structs instead of vectors to pointers to structs.
+I.e:
+
+struct mystruct myarray[100];
+struct mystruct * myarray;
+
+That is, assuming mystruct is relatively small. Otherwise, it would probably
+be a better idea to use kmalloc() or your own data allocation system with 
+fixed records.
+
+The Internet is Your Friend
+---------------------------
+
+We found a lot of useful information about programming in kernel-mode, either
+by consulting people of various Linux-related mailing list or by searching
+the web using Google and other resources.
+
+We encourage everyone who reads this document to make liberal use of the
+Internet to get help with his project.
+
+Exceptions should be used with care
+-----------------------------------
+
+Exceptions are Evil (with a capital "E") in C++, much less in C. We decided
+not to use them due to the fact that C does not have garbage collection and
+because it may mean our code will be killed due to an uncatched exception.
+
+In Perl, however, which supports exceptions, and has garbage collection, we
+used exceptions extensively. We did not use them in the arbitrator and the 
+translator, but it made our life when writing the parser easier, because we
+did not have to pass an error code.
+
+We strongly recommend C++ programmers not to use exceptions in their code. But
+programmers of Perl and similiar languages may use them with care.
 
 
 
