@@ -66,21 +66,49 @@ my $desc_text = Gtk::Text->new(undef,undef);
 $desc_text->show();
 
 my $code_text = Gtk::Text->new(undef,undef);
+#$code_text_table->attach($code_text, 0,1,0,1,  [-expand,-fill], [-fill],0,0);
 $code_text->show();
+
+#$code_text->set_line_wrap(undef);
+
+
+if (0)
+{
+my $code_text_table = new Gtk::Table(2,2,0);
+$code_text_table->set_row_spacing(0,2);
+$code_text_table->set_col_spacing(0,2);
+$code_text_table->show();
+
+
+my $code_hscrollbar = Gtk::HScrollbar->new($code_text->hadj);
+$code_text_table->attach($code_hscrollbar, 0, 1,1,2,[-expand,-fill],[-fill],0,0);
+$code_hscrollbar->show;
+
+my $code_vscrollbar = Gtk::VScrollbar->new($code_text->vadj);
+$code_text_table->attach($code_vscrollbar, 1, 2,0,1,[-fill],[-expand,-fill],0,0);
+$code_vscrollbar->show;
+}
+my $code_text_scw = Gtk::ScrolledWindow->new(undef, undef);
+#$code_text_scw->set_policy('-automatic','-automatic');
+$code_text_scw->add($code_text);
+$code_text_scw->show();
 
 my $right_vbox = Gtk::VBox->new(0,0);
 $right_vbox->pack_start($desc_text, 1, 1, 0);
-$right_vbox->pack_start($code_text, 1, 1, 0);
+$right_vbox->pack_start($code_text_scw, 1, 1, 0);
 $right_vbox->show();
 
 my $window = new Gtk::Window('toplevel');
 
-my $main_hbox = Gtk::HBox->new(0, 0);
+#my $main_hbox = Gtk::HBox->new(0, 0);
+my $main_hbox = Gtk::HPaned->new();
 #my $geo = Gtk::Gdk::Geometry->new(50,50,50,50);
 #$window->set_geometry_hints($scw, { 'max_width' => 100 }, 0);
 $scw->set_usize(140,0);
-$main_hbox->pack_start($scw, 0, 1, 0);
-$main_hbox->pack_start($right_vbox, 1, 1, 0);
+#$main_hbox->pack_start($scw, 0, 1, 0);
+#$main_hbox->pack_start($right_vbox, 1, 1, 0);
+$main_hbox->add1($scw);
+$main_hbox->add2($right_vbox);
 $main_hbox->show();
 
 
