@@ -6,7 +6,10 @@
 #include <sys/time.h>
 #include <math.h>
 #else
+#include "k_stdlib.h"
 #include "k_time.h"
+#include "k_stdio.h"
+#include "k_math.h"
 #endif
 
 #include "switcher.h"
@@ -19,6 +22,7 @@ struct ip_noise_arbitrator_switcher_event_struct
 
 typedef struct ip_noise_arbitrator_switcher_event_struct ip_noise_arbitrator_switcher_event_t;
 
+#ifndef __KERNEL__
 static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 {
     ip_noise_arbitrator_switcher_event_t * m1;
@@ -52,6 +56,8 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
     }    
 }
 
+#endif
+
 ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
     ip_noise_arbitrator_data_t * * data,
     ip_noise_flags_t * flags,
@@ -67,7 +73,9 @@ ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
     self->terminate_ptr = terminate_ptr;
     self->rand = ip_noise_rand_alloc(24);
 
+#ifndef __KERNEL__
     PQueueInitialise(&(self->pq), 30, 0, ip_noise_timeval_cmp, NULL);
+#endif
 
     return self;
 }
@@ -78,14 +86,18 @@ static void reinit(
 {
     ip_noise_arbitrator_data_t * data;
     struct timeval tv;
+#ifndef __KERNEL__
     struct timezone tz;
+#endif
     int chain_index;
+#ifndef __KERNEL__ 
     ip_noise_arbitrator_switcher_event_t * event;
-    
+
     while(! PQueueIsEmpty(&(self->pq)))
     {
         free(PQueuePop(&(self->pq)));
     }
+#endif
 
     data = *(self->data);
 
@@ -96,11 +108,14 @@ static void reinit(
     for(chain_index = 0; chain_index < data->num_chains ; chain_index++)
     {
         printf("Inputting %i!\n", chain_index);
+#ifndef __KERNEL__        
         data->chains[chain_index]->current_state = 0;
         event = malloc(sizeof(ip_noise_arbitrator_switcher_event_t));
         event->tv = tv;
         event->chain = chain_index;
+
         PQueuePush(&(self->pq), event);
+#endif
     }    
 }
 
@@ -161,7 +176,9 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     double prob;
     int length;
     struct timeval tv;
+#ifndef __KERNEL__
     struct timezone tz;
+#endif
     ip_noise_arbitrator_switcher_event_t * event;    
 
     data = *(self->data);
@@ -197,6 +214,7 @@ static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
     return event;
 }
 
+#ifndef __KERNEL__
 static void ip_noise_arbitrator_switcher_poll(
     ip_noise_arbitrator_switcher_t * self
     )
@@ -247,6 +265,7 @@ static void ip_noise_arbitrator_switcher_poll(
     ip_noise_rwlock_up_read(data_lock);    
 }
 
+
 void ip_noise_arbitrator_switcher_loop(
     ip_noise_arbitrator_switcher_t * self
     )
@@ -258,3 +277,4 @@ void ip_noise_arbitrator_switcher_loop(
         usleep(50000);
     }
 }
+#endif

@@ -220,7 +220,7 @@ static void * arb_switcher_thread_func(void * context)
 #ifndef __KERNEL__
 int main(int argc, char * argv[])
 #else
-int init_module()
+int main_init_module()
 #endif
 {
     int status;

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #else
 #include "k_stdlib.h"
+#define strncasecmp(a,b,len) (strnicmp((a),(b),(len)))
 #endif
 
 

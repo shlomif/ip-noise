@@ -182,9 +182,10 @@ static int ip_noise_arbitrator_iface_handler_new_chain(ip_noise_arbitrator_iface
 
     if (data->num_chains == data->max_num_chains)
     {
-        data->max_num_chains += 16;
+        int new_max_num_chains = data->max_num_chains + 16;
 
-        data->chains = realloc(data->chains, sizeof(data->chains[0])*data->max_num_chains);        
+        data->chains = ourrealloc(data->chains, sizeof(data->chains[0])*data->max_num_chains, sizeof(data->chains[0]) * new_max_num_chains);
+        data->max_num_chains = new_max_num_chains;
     }
 
     index = data->num_chains;
@@ -224,17 +225,19 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     
     for(a=0;a<chain->num_states;a++)
     {
-        chain->states[a]->move_tos = realloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
+        chain->states[a]->move_tos = ourrealloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states), sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
         chain->states[a]->move_tos[chain->num_states].comulative_prob = 0; 
     }
 
     if (chain->num_states == chain->max_num_states)
     {
-        chain->max_num_states += 16;
-        chain->states = realloc(
+        int new_max_num_states = chain->max_num_states + 16;
+        chain->states = ourrealloc(
                 chain->states,
-                sizeof(chain->states[0])*chain->max_num_states
+                sizeof(chain->states[0])*chain->max_num_states,
+                sizeof(chain->states[0])*new_max_num_states
                 );
+        chain->max_num_states = new_max_num_states;
     }
 
     index = chain->num_states;

@@ -1,3 +1,5 @@
+#ifndef __KERNEL__
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -63,3 +65,5 @@ int ip_noise_conn_read(ip_noise_conn_t * conn, char * data, int how_much)
         return num_bytes_read;
     }
 }
+
+#endif

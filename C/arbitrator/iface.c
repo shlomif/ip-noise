@@ -13,6 +13,7 @@
 #include "rwlock.h"
 
 #include "read.h"
+#include "fcs_dm.h"
 
 #ifdef __KERNEL__
 #define exit(error_value) 
@@ -700,16 +701,17 @@ int read_param_type(
                     }
                     if (num_port_ranges == max_num_port_ranges)
                     {
-                        max_num_port_ranges += 16;
-                        port_ranges = realloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges);
-                    }                    
+                        int new_max_num_port_ranges = max_num_port_ranges+16;
+                        port_ranges = ourrealloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges, sizeof(port_ranges[0])*new_max_num_port_ranges);
+                        max_num_port_ranges = new_max_num_port_ranges;
+                    }
                     port_ranges[num_port_ranges].start = (unsigned short)start;
                     port_ranges[num_port_ranges].end = (unsigned short)end;
                     num_port_ranges++;
                 }
                 /* Realloc port_ranges to have just enough memory to store all
                  * the port ranges */
-                port_ranges = realloc(port_ranges, sizeof(port_ranges[0])*num_port_ranges);
+                port_ranges = ourrealloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges, sizeof(port_ranges[0])*num_port_ranges);
                 if (memcmp(&ip, &terminator, sizeof(ip)) != 0)
                 {
                     tail->ip = ip;
@@ -766,12 +768,13 @@ int read_param_type(
                 points.num_points++;
                 if (points.num_points == max_num_points)
                 {
-                    max_num_points += 16;
-                    points.points = realloc(points.points, sizeof(points.points[0])*max_num_points);
+                    int new_max_num_points = max_num_points + 16;
+                    points.points = ourrealloc(points.points, sizeof(points.points[0])*max_num_points, sizeof(points.points[0])*new_max_num_points);
+                    max_num_points = new_max_num_points;
                 }                
             } while ((prob < 1));
 
-            points.points = realloc(points.points, sizeof(points.points[0])*points.num_points);
+            points.points = ourrealloc(points.points, sizeof(points.points[0])*max_num_points, sizeof(points.points[0])*points.num_points);
 
             ret->split_linear_points = points;
         }
@@ -853,7 +856,7 @@ static void free_param_type(
 
 #include "iface_handlers.c"
 
-static int opcode_compare_wo_context(const void * void_a, const void * void_b)
+static int opcode_compare_w_context(const void * void_a, const void * void_b, void * context)
 {
     operation_t * op_a = (operation_t *)void_a;
     operation_t * op_b = (operation_t *)void_b;
@@ -949,7 +952,7 @@ extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
 #ifdef USE_TEXT_QUEUE_IN
 
 
-
+#ifndef __KERNEL__
 static void * poll_conn(void * void_iface)
 {
     ip_noise_arbitrator_iface_t * self = (ip_noise_arbitrator_iface_t * )void_iface;
@@ -973,11 +976,13 @@ static void * poll_conn(void * void_iface)
 
     return NULL;
 }
+#endif
     
 #endif
 
 #ifdef USE_TEXT_QUEUE_OUT
 
+#ifndef __KERNEL__
 static void * write_poll_conn(void * void_iface)
 {
     ip_noise_arbitrator_iface_t * self = (ip_noise_arbitrator_iface_t * )void_iface;
@@ -998,6 +1003,7 @@ static void * write_poll_conn(void * void_iface)
 
     return NULL;
 }
+#endif
     
 #endif
 
@@ -1016,9 +1022,10 @@ void ip_noise_arbitrator_iface_loop(
     int a;
     int ret_code;
     int ok;
-#ifdef USE_TEXT_QUEUE_OUT
+#if defined(USE_TEXT_QUEUE_OUT) && !defined(__KERNEL__)
     pthread_t write_poll_conn_thread;
 #endif
+    int found;
 
     flags = self->flags;
     data_lock = (*self->data)->lock;
@@ -1035,17 +1042,21 @@ void ip_noise_arbitrator_iface_loop(
         pthread_mutex_init(&(self->text_queue_in_mutex), NULL);
         self->text_queue_in = ip_noise_text_queue_in_alloc();
 
+#ifndef __KERNEL__
         {
             pthread_t thread;
             pthread_create(&thread, NULL, poll_conn, self);
         }
+#endif
 #endif
 #ifdef USE_TEXT_QUEUE_OUT
         self->text_queue_out_mutex = ip_noise_global_initial_mutex_constant;
         pthread_mutex_init(&(self->text_queue_out_mutex), NULL);
         self->text_queue_out = ip_noise_text_queue_out_alloc();
 
+#ifndef __KERNEL__
         pthread_create(&write_poll_conn_thread, NULL, write_poll_conn, self);
+#endif
 #endif
         
 
@@ -1078,15 +1089,17 @@ void ip_noise_arbitrator_iface_loop(
 
             opcode_record.opcode = opcode;
 
-            record = bsearch(
+            record = SFO_bsearch(
                 &opcode_record, 
                 operations, 
                 NUM_OPERATIONS,
                 sizeof(operation_t),
-                opcode_compare_wo_context
+                opcode_compare_w_context,
+                NULL,
+                &found
                 );
 
-            if (record == NULL)
+            if (found == 0)
             {
                 printf("Unknown opcode 0x%x!\n", opcode);
                 write_retvalue(self, 0x2);
@@ -1150,7 +1163,9 @@ void ip_noise_arbitrator_iface_loop(
         }
 
 #ifdef USE_TEXT_QUEUE_OUT
+#ifndef __KERNEL__
         pthread_cancel(write_poll_conn_thread);
+#endif
 #endif
         
         flags->reinit_switcher = 1;
