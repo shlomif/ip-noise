@@ -89,6 +89,12 @@ my %transactions =
         'params' => [ "chain", "int", "bool" ],
         'out_params' => [],
     },
+    'set_tos' =>
+    {
+        'opcode' => 0x6,
+        'params' => [ "chain", "int", "bool" ],
+        'out_params' => [],
+    },
     'set_drop_delay_prob' =>
     {
         'opcode' => 0x0E,
@@ -587,6 +593,48 @@ sub load_arbitrator
                     die ("The arbitrator refused to " . 
                         ($include_or_exclude ? "enable" : "disable") .
                         " the protocol $p!\n");
+                }
+            }
+        }
+
+        if ($chain->{'tos_spec'}->{'type'} ne "all")
+        {
+            print "Uploading TOS!\n";
+
+            my $include_or_exclude = $chain->{'tos_spec'}->{'type'} eq "only";
+
+            if ($include_or_exclude)
+            {
+                ($ret_value, $other_args) =
+                    $self->transact(
+                        "set_tos",
+                        LAST_CHAIN,
+                        64,
+                        0
+                        );
+
+                if ($ret_value != 0)
+                {
+                    die ("The arbitrator refused to disable " . 
+                        "all the tos bits!\n");
+                }
+            }
+            foreach my $p (keys(%{$chain->{'tos_spec'}->{'tos'}}))
+            {
+                print "Setting TOS bit $p!\n";
+                ($ret_value, $other_args) =
+                    $self->transact(
+                        "set_tos",
+                        LAST_CHAIN,
+                        $p,
+                        $include_or_exclude
+                        );
+                
+                if ($ret_value != 0)
+                {
+                    die ("The arbitrator refused to " . 
+                        ($include_or_exclude ? "enable" : "disable") .
+                        " the tos bit $p!\n");
                 }
             }
         }

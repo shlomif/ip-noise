@@ -82,6 +82,11 @@ my %operations =
         'params' => [ "chain", "int", "bool" ],
         'handler' => \&handler_set_protocol,
     },
+    0x6 =>
+    {
+        'params' => [ "chain", "int", "bool" ],
+        'handler' => \&handler_set_tos,
+    },
     0x19 =>
     {
         'params' => [],
@@ -159,6 +164,7 @@ sub handler_new_chain
             'source' => { 'type' => "none" },
             'dest' => { 'type' => "none" },
             'protocols' => ("\xFF" x 32),
+            'tos' => ("\xFF" x 8),
         };
     
     my $index = scalar(@{$data->{'chains'}})-1;
@@ -369,7 +375,7 @@ sub handler_set_protocol
     my $index = shift;
     my $enable_or_disable = shift;
 
-    print "Set Protocol [index=$index, enable=$enable_or_disable!\n";
+    print "Set Protocol [index=$index, enable=$enable_or_disable]!\n";
 
     my $data = $self->{'data'};
 
@@ -386,6 +392,32 @@ sub handler_set_protocol
 
     return 0;    
 }
+
+sub handler_set_tos
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $index = shift;
+    my $enable_or_disable = shift;
+
+    print "Set TOS Bits [index=$index, enable=$enable_or_disable]!\n";
+
+    my $data = $self->{'data'};
+
+    my $chain = $data->{'chains'}->[$chain_index];
+
+    if ($index > 63)
+    {
+        $chain->{'tos'} = ($enable_or_disable ? "\xFF" : "\x00") x 8;
+    }
+    else
+    {
+        vec($chain->{'tos'}, $index, 1) = $enable_or_disable;
+    }
+
+    return 0;    
+}
+
 
 sub read_param_type
 {

@@ -653,6 +653,8 @@ sub parse_protocols_list
 {
     my $stream = shift;
 
+    my $is_tos = shift;
+
     my %ret = ();
 
     my $orig_line = $stream->peak_line();
@@ -678,10 +680,10 @@ sub parse_protocols_list
         $prot = lc($prot);
         if ($prot =~ /^\d+$/)
         {
-            if ($prot > 255)
+            if ($prot > ($is_tos ? 63 : 255))
             {
                 die IP::Noise::C::Parser::Exception->new(
-                    'text' => "Protocol number greater than 255",
+                    'text' => (($is_tos ? "TOS" : "Protocol") . " number greater than 255"),
                     'line' => $stream->get_line_num(),
                     'context' => $orig_line,
                 );
@@ -698,7 +700,7 @@ sub parse_protocols_list
             else
             {
                 die IP::Noise::C::Parser::Exception->new(
-                    'text' => "Unknown Protocol \"$prot\"",
+                    'text' => ("Unknown " . ($is_tos ? "tos" : "protocol") . " \"$prot\""),
                     'line' => $stream->get_line_num(),
                     'context' => $orig_line,
                 );
@@ -709,7 +711,7 @@ sub parse_protocols_list
     return 
         { 
             'type' => ($invert ? 'exclude' : 'only'), 
-            'protocols' => \%ret,
+            ($is_tos ? 'tos' : 'protocols') => \%ret,
         };
 }
 
@@ -1058,22 +1060,7 @@ sub parse_chain
         elsif ($id eq "tos")
         {
             parse_constant_char($stream, "=");
-            $tos_specifier = parse_range_spec($stream, "tos");
-            # Sanity check to make sure they are not greater than 64
-            foreach my $param (qw(min max equal_to))
-            {
-                if (exists($tos_specifier->{$param}))
-                {
-                    if ($tos_specifier->{$param} > 0x40)
-                    {
-                        die IP::Noise::C::Parser::Exception->new(
-                            'text' => "Packet TOS cannot be greater than 64",
-                            'line' => $stream->get_line_num(),
-                            'context' => $line,
-                        );
-                    }
-                }
-            }
+            $tos_specifier = parse_protocols_list($stream, 1); 
         }
         elsif ($id eq "protocol")
         {

@@ -28,6 +28,7 @@ Chain MyChain {
         time_factor = 800
     }
     protocol = tcp, udp
+    tos = 23, 47
 }
 
 Chain AnotherChain {
