@@ -70,6 +70,16 @@ static void ip_noise_read_commit_proto(ip_noise_arbitrator_iface_t * self)
 
 #endif
 
+#ifdef USE_TEXT_QUEUE_OUT
+static void ip_noise_write_proto(ip_noise_arbitrator_iface_t * self,
+    char * buf,
+    int len)
+{
+    pthread_mutex_lock(&(self->text_queue_out_mutex));
+    ip_noise_text_queue_out_input_bytes(self->text_queue_out, buf, len);
+    pthread_mutex_unlock(&(self->text_queue_out_mutex));
+}
+#endif
 
 static int read_int(
     ip_noise_arbitrator_iface_t * self
@@ -687,7 +697,7 @@ static void write_int(
     {
         buffer[a] = ((retvalue>>(a*8))&0xFF);
     }
-    ip_noise_conn_write(self->conn, buffer, 4);
+    ip_noise_write(buffer, 4);
 }
 
 
@@ -743,9 +753,13 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     return self;
 }
 
+#if defined(USE_TEXT_QUEUE_IN)||defined(USE_TEXT_QUEUE_OUT)
+extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+#endif
+
 #ifdef USE_TEXT_QUEUE_IN
 
-extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+
 
 static void * poll_conn(void * void_iface)
 {
@@ -773,6 +787,31 @@ static void * poll_conn(void * void_iface)
     
 #endif
 
+#ifdef USE_TEXT_QUEUE_OUT
+
+static void * write_poll_conn(void * void_iface)
+{
+    ip_noise_arbitrator_iface_t * self = (ip_noise_arbitrator_iface_t * )void_iface;
+    char buffer[1];
+    int ret;
+    
+    while (1)
+    {
+        pthread_mutex_lock(&(self->text_queue_in_mutex));
+        ret = ip_noise_text_queue_out_write_bytes(self->text_queue_out, buffer, 1);
+        pthread_mutex_unlock(&(self->text_queue_in_mutex));
+        
+        if (ret == 1)
+        {
+            ip_noise_conn_write(self->conn, buffer, 1);
+        }
+    }
+
+    return NULL;
+}
+    
+#endif
+
 
 
 void ip_noise_arbitrator_iface_loop(
@@ -788,6 +827,9 @@ void ip_noise_arbitrator_iface_loop(
     int a;
     int ret_code;
     int ok;
+#ifdef USE_TEXT_QUEUE_OUT
+    pthread_t write_poll_conn_thread;
+#endif
 
     flags = self->flags;
     data_lock = self->data->lock;
@@ -808,6 +850,13 @@ void ip_noise_arbitrator_iface_loop(
             pthread_t thread;
             pthread_create(&thread, NULL, poll_conn, self);
         }
+#endif
+#ifdef USE_TEXT_QUEUE_OUT
+        self->text_queue_out_mutex = ip_noise_global_initial_mutex_constant;
+        pthread_mutex_init(&(self->text_queue_out_mutex), NULL);
+        self->text_queue_out = ip_noise_text_queue_out_alloc();
+
+        pthread_create(&write_poll_conn_thread, NULL, write_poll_conn, self);
 #endif
         
 
@@ -905,7 +954,10 @@ void ip_noise_arbitrator_iface_loop(
 
             end_of_loop:
         }
-        
+
+#ifdef USE_TEXT_QUEUE_OUT
+        pthread_cancel(write_poll_conn_thread);
+#endif
         
         flags->reinit_switcher = 1;
 

@@ -24,6 +24,12 @@ enum IP_NOISE_READ_ERROR_CODES
 #define ip_noise_read(buf, len) (ip_noise_conn_read(self->conn, (buf), (len)))
 
 #endif
+
+#ifdef USE_TEXT_QUEUE_OUT
+#define ip_noise_write(buf, len) (ip_noise_write_proto(self, (buf), (len)))
+#else
+#define ip_noise_write(buf, len) (ip_noise_conn_write(self->conn, (buf), (len)))
+#endif
             
 #ifdef __cplusplus
 };

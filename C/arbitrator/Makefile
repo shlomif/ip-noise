@@ -5,11 +5,13 @@ INCLUDES = conn.h delayer.h fcs_dm.h iface.h packet_logic.h pqueue.h queue.h ran
 
 OBJECTS_PROTO = conn.o delayer.o fcs_dm.o main.o packet_logic.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o text_queue_in.o text_queue_out.o
 
+CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT -g -Wall
+
 $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
-	gcc -DUSE_TEXT_QUEUE_IN -g -Wall -c $<
+	gcc $(CFLAGS) -c $<
 
 iface.o: iface.c iface_handlers.c $(INCLUDES)
-	gcc -DUSE_TEXT_QUEUE_IN -g -Wall -c iface.c
+	gcc $(CFLAGS) -c iface.c
 
 OBJECTS = $(OBJECTS_PROTO) iface.o
 
