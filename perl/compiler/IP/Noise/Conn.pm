@@ -1,4 +1,7 @@
-# This class serves as a connection to the arbitrator
+# This class serves as a connection to/from the arbitrator
+# 
+# Or if new() is passed one it can be the a similar connection for
+# the arbitrator
 package IP::Noise::Conn;
 
 use strict;

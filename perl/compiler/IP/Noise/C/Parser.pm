@@ -629,8 +629,6 @@ sub parse_range_spec
     # TODO : Add "5 < l", "10 > l" , etc.
 }
 
-# TODO: Add more comments starting from here to the EOF.
-
 my %protocol_names = 
 (
     'tcp' => 6,
@@ -640,6 +638,11 @@ my %protocol_names =
     'ospf' => 89,
 );
 
+# This function parses a prtocol list. A protocol list is a comma-separated
+# list of protcols above the IP that are accepted (or excluded) by this
+# filter.
+#
+# They could be the names of the protocols or their numeric IP indexes.
 sub parse_protocols_list
 {
     my $stream = shift;
@@ -648,8 +651,12 @@ sub parse_protocols_list
 
     my $orig_line = $stream->peak_line();
     my $line = $orig_line;
+
+    # If set, this flag will tell the arbitrator to exclude 
+    # the protocols from this chain.
     my $invert = 0;
 
+    # Strip all whitespaces.
     $line =~ s/\s//g;
 
     if ($line =~ /^\!/)
@@ -679,6 +686,7 @@ sub parse_protocols_list
         {
             if (exists($protocol_names{$prot}))
             {
+                # Mark the protocol number of this protocol name
                 $ret{$protocol_names{$prot}} = 1;
             }
             else
@@ -688,7 +696,6 @@ sub parse_protocols_list
                     'line' => $stream->get_line_num(),
                     'context' => $orig_line,
                 );
-            
             }
         }
     }
@@ -700,6 +707,8 @@ sub parse_protocols_list
         };
 }
 
+# This function parses an IP/Port Specification. Consult the 
+# Syntax_Description.txt document for its syntax.
 sub parse_ip_spec
 {
     my $stream = shift;
@@ -707,20 +716,26 @@ sub parse_ip_spec
     my $orig_line = $stream->peak_line();
     my $line = $orig_line;
     
+    # Strip all whitespace
     $line =~ s/\s//g;
 
     my @components = split(/;/, $line);
-
-    my @ip_filters = ();
     
+    # This array would be filled with the IP filters and returned.
+    my @ip_filters = ();
+   
     foreach my $ip_filter (@components)
     {
         my $ip = $ip_filter;
+        # The default net mask width is enough to accept one IP.
         my $net_mask_width = 1;
+        
         my @port_ranges = ();
 
+        # Strip everything from the first slash or colon onwards.
+        # Up to there the IP address should be present
         $ip =~ s/(\/|:).*$//;
-        if ($ip =~ /^\d+\.\d+\.\d+\.\d+/)
+        if ($ip =~ /^\d+\.\d+\.\d+\.\d+$/)
         {
             my @ip_components = split(/\./, $ip);
             foreach my $c (@ip_components)
@@ -744,11 +759,11 @@ sub parse_ip_spec
                 );
         }
 
-
         my $rest_of_ip_filter = $ip_filter;
 
         $rest_of_ip_filter =~ s/^\d+\.\d+\.\d+\.\d+//;
-
+        
+        # Parse the netmask width
         if ($rest_of_ip_filter =~ /^\//)
         {
             $rest_of_ip_filter =~ s/^\///;
@@ -774,7 +789,8 @@ sub parse_ip_spec
                 );
             }
         }
-
+        
+        # Parse the port ranges.
         if ($rest_of_ip_filter =~ /^\:/)
         {
             $rest_of_ip_filter =~ s/^\://;
@@ -840,6 +856,9 @@ sub parse_ip_spec
                         );                                        
                 }
             }
+
+            # Convert the port bitmask into as many port ranges as needed,
+            # by doing a run-length-encoding
             my $port = 0;
             while ($port < 0x10000)
             {
@@ -858,23 +877,38 @@ sub parse_ip_spec
                 {
                     $port++;
                 }
-                push @port_ranges, { 'start' => $start_port, 'end' => ($port-1) };
+                push @port_ranges, 
+                    { 
+                        'start' => $start_port, 
+                        'end' => ($port-1) 
+                    };
             }
         }
         
+        # If no ports were set, make a port range for all of the ports.
         if (scalar(@port_ranges) == 0)
         {
             push @port_ranges, { 'start' => 0, 'end' => 65535 };
         }
-        push @ip_filters, {
-            'ip' => $ip,
-            'ports' => \@port_ranges,
-            'netmask_width' => $net_mask_width,            
-        };
+
+        # Add the IP-Filter
+        
+        push @ip_filters, 
+            {
+                'ip' => $ip,
+                'ports' => \@port_ranges,
+                'netmask_width' => $net_mask_width,
+            }
+            ;
     }
 
     return { 'type' => 'pass', 'filters' => \@ip_filters};
 }
+
+
+# TODO: Add more comments starting from here to the EOF.
+
+
 
 sub parse_chain
 {
