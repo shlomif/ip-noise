@@ -840,6 +840,7 @@ int read_param_type(
                 points.points[points.num_points].delay = delay;
 
                 points.num_points++;
+                /* Check if we have exceeded the limit and if so - resize */
                 if (points.num_points == max_num_points)
                 {
                     int new_max_num_points = max_num_points + 16;
