@@ -736,7 +736,7 @@ sub parse_ip_spec
     {
         my $ip = $ip_filter;
         # The default net mask width is enough to accept one IP.
-        my $net_mask_width = 1;
+        my $net_mask_width = 0;
         
         my @port_ranges = ();
 

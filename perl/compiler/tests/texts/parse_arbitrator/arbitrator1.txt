@@ -15,7 +15,7 @@ Chain Vipe {
             0.5 = A 
             0.5 = B
         }
-        drop = 0.1
+        drop = 0
         delay = 0.9
 
         delay_type = E(500)
@@ -28,14 +28,22 @@ Chain Vipe {
             0.1 = A
             0.9 = B
         }
-        drop = 0.5
+        drop = 0
         delay = 0.5
         
         time_factor = 5000
         delay_type = E(100)
     }
-
-    source = 132.69.253.254/16
     
+    # source works
+    # dest works
+    # length works
+    # protocol works
+    # tos works
+    #
+    # TODO: TOS - should be checked
+    source = 132.68.52.118
+
+    tos = 1 
 }
 
