@@ -289,7 +289,7 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
         if (ok < 0)
         {
             free(sources);
-            return -1;
+            return ok;
         }                
         sources[i] = param.state;
         if (sources[i] >= chain->num_states)
@@ -307,7 +307,7 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
         {
             free(sources);
             free(dests);
-            return -1;
+            return ok;
         }                        
         dests[i] = param.state;
         if (dests[i] >= chain->num_states)
@@ -330,7 +330,7 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
                 free(move_to_probs);
                 free(sources);
                 free(dests);
-                return -1;
+                return ok;
             }
             move_to_probs[num_dests*s+d] = param.prob;
         }

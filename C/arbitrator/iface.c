@@ -7,6 +7,8 @@
 #include "iface.h"
 #include "rwlock.h"
 
+#include "read.h"
+
 enum IP_NOISE_RET_VALUE_T
 {
     IP_NOISE_RET_VALUE_OK = 0,
@@ -33,12 +35,6 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
     return data;
 }
 
-enum IP_NOISE_READ_ERROR_CODES
-{
-    IP_NOISE_READ_OK = 0,
-    IP_NOISE_READ_CONN_TERM = -1,
-    IP_NOISE_READ_NOT_FULLY = -2,
-};
 
 static int read_int(
     ip_noise_arbitrator_iface_t * self
@@ -48,10 +44,10 @@ static int read_int(
     int ok;
     int ret;
     
-    ok = ip_noise_conn_read(self->conn, buffer, 4);
+    ok = ip_noise_read(buffer, 4);
     if (ok < 0)
     {
-        return -1;
+        return ok;
     }
 
     ret = (       buffer[0] | 
@@ -72,11 +68,11 @@ static int read_uint16(
     unsigned char buffer[2];
     int ok;
     
-    ok = ip_noise_conn_read(self->conn, buffer, 2);
+    ok = ip_noise_read(buffer, 2);
 
     if (ok < 0)
     {
-        return -1;
+        return ok;
     }
     
 
@@ -275,10 +271,10 @@ int read_param_type(
     {
         case PARAM_TYPE_STRING:
         {
-            ok = ip_noise_conn_read(conn, ret->string, sizeof(ret->string));
+            ok = ip_noise_read(ret->string, sizeof(ret->string));
             if (ok < 0)
             {
-                return -1;
+                return ok;
             }
             ret->string[IP_NOISE_ID_LEN-1] = '\0';
         }
@@ -289,7 +285,7 @@ int read_param_type(
             ret->_int = read_int(self);
             if (ret->_int < 0)
             {
-                return -1;
+                return ret->_int;
             }
         }
         break;
@@ -306,7 +302,7 @@ int read_param_type(
             }
             else if (which < 0)
             {
-                return -1;
+                return which;
             }           
             else
             {
@@ -327,7 +323,7 @@ int read_param_type(
                 int index = read_int(self);
                 if (index < 0)
                 {
-                    return -1;
+                    return index;
                 }
 
                 ret->state = index;
@@ -338,7 +334,7 @@ int read_param_type(
             }
             else if (which < 0)
             {
-                return -1;
+                return which;
             }
             else
             {
@@ -352,10 +348,10 @@ int read_param_type(
         case PARAM_TYPE_PROB:
         {
             double d;
-            ok = ip_noise_conn_read(conn, (char *)&d, sizeof(d));
+            ok = ip_noise_read((char *)&d, sizeof(d));
             if (ok < 0)
             {
-                return -1;
+                return ok;
             }
             if ((d < 0) || (d > 1))
             {
@@ -388,7 +384,7 @@ int read_param_type(
 
             if (delay_type < 0)
             {
-                return -1;
+                return delay_type;
             }
 
             if (delay_type == 0)
@@ -416,7 +412,7 @@ int read_param_type(
             int num_port_ranges;
             int max_num_port_ranges;
             ip_noise_port_range_t * port_ranges;
-            unsigned short start, end;
+            int start, end;
             
             
             head = malloc(sizeof(ip_noise_ip_spec_t));
@@ -428,17 +424,17 @@ int read_param_type(
 
             while (memcmp(&ip, &terminator, sizeof(ip)) != 0)
             {
-                ok = ip_noise_conn_read(conn, (char*)&ip, 4);
-                if (ok < -1)
+                ok = ip_noise_read((char*)&ip, 4);
+                if (ok < 0)
                 {                   
                     ip_spec_free(head);
-                    return -1;
+                    return ok;
                 }
                 netmask = read_int(self);
                 if (netmask < 0)
                 {
                     ip_spec_free(head);
-                    return -1;
+                    return netmask;
                 }
                 max_num_port_ranges = 16;
                 port_ranges = malloc(sizeof(port_ranges[0])*max_num_port_ranges);
@@ -446,7 +442,20 @@ int read_param_type(
                 while (1)
                 {
                     start = read_uint16(self);
+                    if (start < 0)
+                    {
+                        free(port_ranges);
+                        ip_spec_free(head);
+                        return start;
+                    }
                     end = read_uint16(self);
+                    if (end < 0)
+                    {
+                        free(port_ranges);
+                        ip_spec_free(head);
+                        return end;
+                    }
+                            
                     if (start > end)
                     {
                         break;
@@ -456,8 +465,8 @@ int read_param_type(
                         max_num_port_ranges += 16;
                         port_ranges = realloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges);
                     }                    
-                    port_ranges[num_port_ranges].start = start;
-                    port_ranges[num_port_ranges].end = end;
+                    port_ranges[num_port_ranges].start = (unsigned short)start;
+                    port_ranges[num_port_ranges].end = (unsigned short)end;
                     num_port_ranges++;
                 }
                 /* Realloc port_ranges to have just enough memory to store all
@@ -503,14 +512,14 @@ int read_param_type(
                 if (ok < 0)
                 {
                     free(points.points);
-                    return -1;
+                    return ok;
                 }
                 prob = param.prob;
                 delay = read_int(self);
                 if (delay < 0)
                 {
                     free(points.points);
-                    return -1;
+                    return delay;
                 }
 
                 points.points[points.num_points].prob = prob;
@@ -535,7 +544,7 @@ int read_param_type(
             int bool = read_int(self);
             if (bool < 0)
             {
-                return -1;
+                return bool;
             }
             ret->bool = (bool != 0);
         }
@@ -547,7 +556,7 @@ int read_param_type(
             
             if (index < 0)
             {
-                return -1;
+                return index;
             }
             else if ((index > 4))
             {
@@ -565,7 +574,7 @@ int read_param_type(
             ret->lambda = read_int(self);
             if (ret->lambda < 0)
             {
-                return -1;
+                return ret->lambda;
             }
         }
         break;
@@ -732,9 +741,14 @@ void ip_noise_arbitrator_iface_loop(
         {
             opcode = read_opcode(self);
 
-            if (opcode < 0)
-            {
+            if (opcode == IP_NOISE_READ_CONN_TERM)
+            {                
                 self->_continue = 0;
+                continue;
+            }
+            else if (opcode == IP_NOISE_READ_NOT_FULLY)
+            {
+                ip_noise_read_rollback();
                 continue;
             }
 
@@ -767,7 +781,15 @@ void ip_noise_arbitrator_iface_loop(
                     {
                         free_param_type(self, record->params[a], &params[a]);
                     }
-                    self->_continue = 0;
+                    
+                    if (ok == IP_NOISE_READ_CONN_TERM)
+                    {
+                        self->_continue = 0;
+                    }
+                    else if (ok == IP_NOISE_READ_NOT_FULLY)
+                    {
+                        ip_noise_read_rollback();
+                    }
                     goto end_of_loop;
                 }                    
             }
@@ -784,6 +806,8 @@ void ip_noise_arbitrator_iface_loop(
                     out_params[a]
                     );
             }
+
+            ip_noise_read_commit();
 
             end_of_loop:
         }
