@@ -909,6 +909,8 @@ sub parse_ip_spec
 # TODO: Add more comments starting from here to the EOF.
 
 
+# This function parses an entire chain starting from after the "Chain"
+# keyword
 
 sub parse_chain
 {
@@ -931,21 +933,45 @@ sub parse_chain
         $stream->read_next_line();
 
         my $line = $stream->peak_line();
-
+        
+        # Clear leading whitespace.
         $line =~ s/^\s+//;
         # { - to satisfy gvim
 
         if ($line =~ /}/)
         {
+            # This is the end of the chain, so let's return it.
+            
             # Some Sanity Checks
             
             # Check that the move_to's move only to defined states
+
+            # Make a list of all the state which are being move into
+            # in %states.
             my %all_move_tos = 
                 (map 
                     { 
-                        map { lc($_) => 1 } keys(%{$_->{'move_to'}}) 
+                        
+                        my $state = $_;
+                        
+                        (
+                            # Make a hash whose keys are the move_to's
+                            # lower cased, and its values contain state and
+                            # mixed-case information.
+                            map 
+                            { 
+                                lc($_) => 
+                                    { 
+                                        'mixed-case' => $_ ,
+                                        'state' => $state,
+                                    }
+                            } 
+                            keys(%{$state->{'move_to'}})
+                        ) ;
                     } 
                     values(%states)
+                    # The above map operation will join all the hashes into
+                    # one big hash.
                 );
 
             foreach my $key (keys(%all_move_tos))
@@ -955,14 +981,16 @@ sub parse_chain
                     die IP::Noise::C::Parser::Exception->new(
                         'text' => "There is a moves to an undefined state",
                         'line' => $stream->get_line_num(),
-                        'context' => $key,
+                        'context' => ($all_move_tos{$key}->{'state'} . "." . $all_move_tos{$key}->{'mixed-case'}),
                     );
                 }
             }
             
             # Make the hash entries have mixed case.
             my %states_to_ret = (map { $_->{'name'} => $_ } values(%states));
+            
 
+            # Return the final chain.
             return {
                 'name' => $chain_name,
                 'states' => \%states_to_ret, 
@@ -973,12 +1001,15 @@ sub parse_chain
                 'dest' => $dest,
             };
         }
-
+        
+        # The line is empty so skip to the next line.
         if ($line eq "")
         {
             next;
         }
+        
 
+        # Parse the chain's parameter.
         my $id = parse_id_string($stream);
 
         $id = lc($id);
@@ -1064,18 +1095,23 @@ sub parse_chain
     }
 }
 
+# This function parses an entire arbitrator.
 sub parse_arbitrator
 {
     my $stream = shift;
 
     my %chains;
 
+    # We scan the whole file, so I put _eof() as the condition and
+    # read_next_line() as the iterator
     for(; (! $stream->_eof()) ; $stream->read_next_line())
     {
         my $line = $stream->peak_line();
-
+        
+        # Strip leading whitespace.
         $line =~ s/^\s+//;
 
+        # If the line is empty, then skip to the next line.
         if ($line eq "")
         {
             next;
@@ -1109,6 +1145,8 @@ sub parse_arbitrator
                 );
         }
     }
+
+    # Make the hash entries have mixed case.
     my %chains_to_ret = (map { $_->{'name'} => $_ } values(%chains));
 
     return { 'chains' => \%chains_to_ret };
