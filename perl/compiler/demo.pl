@@ -23,11 +23,11 @@ my @stages =
         },
         {
             'id' => "icmp_only",
-            'name' => "ICMP Only",
+            'name' => "Block TCP",
         },
         {
             'id' => "tcp_only",
-            'name' => "TCP Only",
+            'name' => "Block ICMP",
         },
         {
             'id' => "block_http",
