@@ -1,8 +1,4 @@
 * Add a CSS stylesheet
 
-* Add numbers to the sections an subsections
-
-* Create a contents file
-
 * Convert the figures to SVG (?)
 
