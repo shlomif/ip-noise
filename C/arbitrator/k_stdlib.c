@@ -1,6 +1,10 @@
 
 #include "k_stdlib.h"
 
+#ifdef min
+#undef min
+#endif
+
 #ifndef min
 #define min(a,b) (((a)<(b)) ? (a) : (b))
 #endif

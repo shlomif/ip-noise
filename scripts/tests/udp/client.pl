@@ -6,6 +6,7 @@ use Sys::Hostname;
 use Time::HiRes qw(usleep);
 
 my $delay_in_usecs = shift || 20_000;
+my $num_packets = shift || 100;
 
 
 my ( $count, $hisiaddr, $hispaddr, $histime,
@@ -43,10 +44,10 @@ $SIG{TERM} = sub {
 
 $hisiaddr = inet_aton($host)    || die "unknown host";
 $hispaddr = sockaddr_in($port, $hisiaddr);
-for($count=0;$count<200_000;$count++)
+for($count=0;$count<$num_packets;$count++)
 {
     my $msg = pack("A40", sprintf("%s", $count));
-    #print "Sending \"$msg\"!\n";
+    print "Sending \"$msg\"!\n";
     #if ($count % 100 == 0)
     #{
     #    print "Sending \"$msg\"!\n";
@@ -60,4 +61,4 @@ for($count=0;$count<200_000;$count++)
     #usleep(20000);
     #usleep(200000);
 }
-print $count;
+print $count, "\n";

@@ -10,9 +10,9 @@ DEBUG = 0
 CC = kgcc
 
 ifeq ($(DEBUG),1)
-	#OPT_FLAGS = -g
+	OPT_FLAGS = -g
 else
-	OPT_FLAGS = -g -O2
+	OPT_FLAGS = -O2
 endif
 
 CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT $(OPT_FLAGS) -Wall

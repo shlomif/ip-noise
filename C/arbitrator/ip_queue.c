@@ -366,12 +366,13 @@ static int ipq_get_info(char *buffer, char **start, off_t offset, int length)
 
 extern ip_noise_arbitrator_packet_logic_t * main_init_module(void);
 
+static ip_noise_arbitrator_packet_logic_t * packet_logic;
+
 static int __init init(void)
 {
 	int status = 0;
 	struct proc_dir_entry *proc;
-    ip_noise_arbitrator_packet_logic_t * packet_logic;
-
+    
     packet_logic = main_init_module();
 
     delayer = ip_noise_delayer_alloc(release_handler, NULL);
@@ -399,11 +400,19 @@ static int __init init(void)
 
 static void __exit fini(void)
 {
+    printf("fini 1\n");
 	unregister_sysctl_table(ipq_sysctl_header);
+    printf("fini 2\n");
 	proc_net_remove(IPQ_PROC_FS_NAME);
+    printf("fini 3\n");
 	unregister_netdevice_notifier(&ipq_dev_notifier);
+    printf("fini 4\n");
 	ipq_destroy_queue(nlq);
+    printf("fini 5\n");
     ip_noise_delayer_destroy(delayer);
+    printf("fini 6\n");
+    ip_noise_arbitrator_data_free(*(packet_logic->data));
+    printf("fini 7\n");
 }
 
 MODULE_DESCRIPTION("IPv4 in-kernel packet queue handler");

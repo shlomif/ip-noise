@@ -8,10 +8,10 @@ OBJECTS_PROTO = conn.o delayer.o fcs_dm.o ip_queue.o k_stdlib.o main.o packet_lo
 #CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT -D__KERNEL__ -DMODULE -DLINUX -I/usr/src/linux/include/ -g -Wall
 UML = 0
 
-DEBUG = 0
+DEBUG = 1
 
 ifeq ($(DEBUG),1)
-	OPT_FLAGS = -g
+	OPT_FLAGS = -g -O2
 else
 	OPT_FLAGS = -O2
 endif
@@ -23,7 +23,7 @@ COMMON_FLAGS_POST = -DMODULE -D__KERNEL__ -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_O
 ifeq ($(UML),1)
 	#UML_BASE_DIR = /home/shlomi/Download/unpack/kernel/User-Mode-Linux/kernel/linux
 	#UML_BASE_DIR = /home/project/Download/unpack/User-Mode-Linux/kernel/linux
-	UML_BASE_DIR = /home/project/Download/unpack/User-Mode-Linux/kernel/2.4.7/linux
+	UML_BASE_DIR = /home/project/Download/unpack/User-Mode-Linux/kernel/2.4.9/linux
 	CFLAGS = $(COMMON_FLAGS_PRE) -I$(UML_BASE_DIR)/include -I$(UML_BASE_DIR)/arch/um/include -U__i386__ -DUM_FASTCALL -DNESTING=0 -D__arch_um__ -DSUBARCH="i386" $(COMMON_FLAGS_POST)
 else
 	CFLAGS = $(COMMON_FLAGS_PRE) -I/usr/src/linux/include $(COMMON_FLAGS_POST)

@@ -102,6 +102,16 @@ ip_noise_delayer_t * ip_noise_delayer_alloc(
 
 void ip_noise_delayer_destroy(ip_noise_delayer_t * delayer)
 {
+#ifdef __KERNEL__
+    pthread_mutex_lock(&(delayer->mutex));
+    if (delayer->current_timer_initialized)
+    {
+        del_timer(&(delayer->current_timer));
+        delayer->current_timer_initialized = 0;
+    }
+    pthread_mutex_unlock(&(delayer->mutex));
+#endif
+    
     pthread_mutex_destroy(&(delayer->mutex));
 #ifndef __KERNEL__
     pthread_cond_destroy(&(delayer->cond));
