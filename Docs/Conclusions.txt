@@ -175,5 +175,44 @@ did not have to pass an error code.
 We strongly recommend C++ programmers not to use exceptions in their code. But
 programmers of Perl and similar languages may use them with care.
 
+The Virtue of Comments and Meaningful Variable Names:
+-----------------------------------------------------
+
+When we worked together on our computer assignments for the Technion course 
+"Structure of Operating Systems", we had a very good coding methodology: 
+we commented our code as we wrote it, sometimes even writing a comment
+before we wrote the code. This resulted in a very well commented code. 
+Unfortunately, for this project we were anxious to finish it in time for 
+the end of the Summer semester, so we did not added too many comments in the
+code.
+
+Shlomi encountered a previous place where he wrote a relatively organized code
+, which was found hard to understand by a fellow programmer, due to its lack
+of comments. Therefore, he spent part of the time between two stable releases 
+of it to add a lot of comments to the code.
+
+We also spent some time adding comments a posteriori, mostly in places we saw
+fit to explain. Nevertheless, our original methodology is usually the best
+approach.
+
+Another issue that should be considered is having meaningful variable names. 
+Comments are by no means an excuse not to have them, as meaningful variable 
+names help the reader and maintainer follow the code. In this case, we were
+consistent with this strategy in this project and in the two other cases
+we mentioned.
+
+References:
+
+/* You Are Expected to Understand This */ - a "Freshmeat" editorial with many
+comments (including one by Shlomi Fish).
+
+http://freshmeat.net/articles/view/238/
+
+The Freecell Solver Homepage - Shlomi's project which was mentioned here.
+
+http://vipe.technion.ac.il/~shlomif/freecell-solver/
+
+
+
 
 
