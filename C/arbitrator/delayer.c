@@ -1,7 +1,12 @@
 
+#ifndef __KERNEL__
 #include <stdlib.h>
 #include <sys/time.h>
 #include <pthread.h>
+#else
+#include "k_stdlib.h"
+#include "k_time.h"
+#endif
 
 #include "delayer.h"
 #include "pqueue.h"
@@ -48,7 +53,9 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 }
 
 extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+#ifndef __KERNEL__
 extern const pthread_cond_t ip_noise_global_initial_cond_constant;
+#endif
 
 ip_noise_delayer_t * ip_noise_delayer_alloc(
     void (*release_callback)(ip_noise_message_t * m, void * context),
@@ -65,8 +72,10 @@ ip_noise_delayer_t * ip_noise_delayer_alloc(
     ret->mutex = ip_noise_global_initial_mutex_constant;
     pthread_mutex_init(&(ret->mutex), NULL);
 
+#ifndef __KERNEL__
     ret->cond = ip_noise_global_initial_cond_constant;
     pthread_cond_init(&(ret->cond), NULL);
+#endif
 
     PQueueInitialise(&(ret->pq), 10000, 0, ip_noise_timeval_cmp, NULL );
 
@@ -109,11 +118,14 @@ void ip_noise_delayer_delay_packet(
         )
        )
     {
+#ifndef __KERNEL__
         pthread_cond_signal(&(delayer->cond));
+#endif
     }
     pthread_mutex_unlock(&(delayer->mutex));
 }
 
+#ifndef __KERNEL__
 void ip_noise_delayer_loop(
     ip_noise_delayer_t * delayer
     )
@@ -167,10 +179,11 @@ void ip_noise_delayer_loop(
             if (cond_wait_status == 0)
             {
                 /* We were signalled from the outside */
-                msg = PQueuePeekMinimum(&(delayer->pq));            
+                msg = PQueuePeekMinimum(&(delayer->pq));
             }
         } while (cond_wait_status == 0);
         
         pthread_mutex_unlock(&(delayer->mutex));
     }
 }
+#endif

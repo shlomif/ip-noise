@@ -7,10 +7,21 @@
 extern "C" {
 #endif
 
-
+#ifndef __KERNEL__
 #include <linux/netfilter.h>
 #include <libipq.h>
+#include <sys/time.h>
+#else
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/time.h>
 
+#include "k_ipq.h"
+#include "k_pthread.h"
+#endif
+
+
+    
 #define IP_NOISE_MESSAGE_BUFSIZE 0x20000
 
 struct ip_noise_message_struct
@@ -23,6 +34,7 @@ struct ip_noise_message_struct
 
 typedef struct ip_noise_message_struct ip_noise_message_t;
 
+#ifndef __KERNEL__
 
 struct ip_noise_messages_queue_struct
 {
@@ -43,6 +55,7 @@ ip_noise_message_t * ip_noise_messages_queue_dequeue(ip_noise_messages_queue_t *
 
 void ip_noise_messages_queue_enqueue(ip_noise_messages_queue_t * queue, ip_noise_message_t * msg);
 
+#endif
 
 
 #ifdef __cplusplus

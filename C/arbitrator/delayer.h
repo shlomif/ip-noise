@@ -7,9 +7,13 @@ extern "C" {
 #endif
 
 
+#ifndef __KERNEL__
 #include <linux/netfilter.h>
 #include <libipq.h>
 #include <sys/time.h>
+#else
+#include "k_pthread.h"
+#endif
 
 #include "queue.h"
 #include "pqueue.h"
@@ -17,7 +21,9 @@ extern "C" {
 struct ip_noise_delayer_struct
 {
     pthread_mutex_t mutex;
+#ifndef __KERNEL__
     pthread_cond_t cond;
+#endif
     PQUEUE pq;
     void (*release_callback)(ip_noise_message_t * m, void * context);
     void * release_callback_context;

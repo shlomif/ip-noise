@@ -1,3 +1,4 @@
+#ifndef __KERNEL__
 #include <linux/netfilter.h>
 #include <libipq.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#endif
 
 #include "queue.h"
 #include "delayer.h"
@@ -12,6 +14,11 @@
 #include "iface.h"
 #include "switcher.h"
 #include "packet_logic.h"
+
+#ifdef __KERNEL__
+#include <linux/version.h>
+#include "k_ipq.h"
+#endif
 
 #define DEBUG
 
