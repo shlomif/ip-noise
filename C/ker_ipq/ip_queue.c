@@ -65,7 +65,6 @@ typedef struct ipq_queue {
 } ipq_queue_t;
 
 static ip_noise_rand_t * rand_gen;
-pthread_mutex_t protect_timers_mutex;
 static ip_noise_delayer_t * delayer;
 /****************************************************************************
  *
@@ -193,31 +192,10 @@ static int ipq_enqueue(ipq_queue_t *q,
             num_millisecs = 100;
         }
 
-#if 0
-        gettimeofday(&tv, &tz);
-
-        tv.tv_usec += (num_millisecs % 1000) * 1000;
-        if (tv.tv_usec > 1000000)
-        {
-            tv.tv_sec += (tv.tv_usec / 1000000);
-            tv.tv_usec %= 1000000;
-        }
-        tv.tv_sec += num_millisecs / 1000;        
-#endif
         m.skb = skb;
         m.info = info;
 
-        ip_noise_delayer_delay_packet(delayer, &m, num_millisecs);
-        
-#if 0
-        init_timer(mytimer);
-        mytimer->expires = jiffies + (HZ * num_millisecs) / 1000;
-        mytimer->data = (unsigned long)w;
-        mytimer->function = release_handler;
-        pthread_mutex_lock(&protect_timers_mutex);
-        add_timer(mytimer);
-        pthread_mutex_unlock(&protect_timers_mutex);
-#endif
+        ip_noise_delayer_delay_packet(delayer, &m, num_millisecs);       
     } 
     
     return 0;
@@ -386,8 +364,6 @@ static int __init init(void)
 
     printf("ipq_ker_q: delayer=%p\n", delayer);
 
-    pthread_mutex_init(&protect_timers_mutex, NULL);
-	
 	nlq = ipq_create_queue(netfilter_receive,
 	                       &status, &sysctl_maxlen);
 	if (nlq == NULL) {
@@ -408,7 +384,6 @@ static int __init init(void)
 
 static void __exit fini(void)
 {
-    pthread_mutex_destroy(&protect_timers_mutex);
     ip_noise_rand_free(rand_gen);
 
 	unregister_sysctl_table(ipq_sysctl_header);
