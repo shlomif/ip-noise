@@ -35,7 +35,7 @@
 #include <net/sock.h>
 #include <net/route.h>
 
-#include <linux/netfilter_ipv4/ip_queue.h>
+#include <linux/netfilter_ipv4/libipq.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 
 #include "queue.h"

@@ -292,7 +292,7 @@ ip_noise_arbitrator_packet_logic_t * main_init_module(
     printf("(c) 2001\n");
 
 #ifndef __KERNEL__
-    h = ipq_create_handle(0);
+    h = ipq_create_handle(0, PF_INET);
     if (h == NULL)
     {
         die(h);

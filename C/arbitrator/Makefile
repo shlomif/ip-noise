@@ -5,9 +5,9 @@ INCLUDES = conn.h delayer.h fcs_dm.h iface.h ourrealloc.h packet_logic.h pqueue.
 
 OBJECTS_PROTO = conn.o delayer.o fcs_dm.o main.o packet_logic.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o text_queue_in.o text_queue_out.o
 
-DEBUG = 0
+DEBUG = 1
 
-CC = kgcc
+CC = gcc
 
 ifeq ($(DEBUG),1)
 	OPT_FLAGS = -g
@@ -30,3 +30,4 @@ arb: $(OBJECTS)
 
 clean:
 	rm -f arb $(OBJECTS)
+
