@@ -14,6 +14,7 @@ enum IP_NOISE_RET_VALUE_T
     IP_NOISE_RET_VALUE_UNKNOWN_OPCODE = 2,
     IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE = 3,
     IP_NOISE_RET_VALUE_SPLIT_LINEAR_SET_POINTS_ON_OTHER_TYPE = 4,
+    IP_NOISE_RET_VALUE_VALUE_OUT_OF_RANGE = 5,
 };
 
 ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
@@ -45,6 +46,19 @@ static int read_int(
             (((int)buffer[1]) << 8)  | 
             (((int)buffer[2]) << 16) | 
             (((int)buffer[3]) << 24) );
+}
+
+static unsigned short read_uint16(
+    ip_noise_arbitrator_iface_t * self
+    )
+{
+    unsigned char buffer[2];
+    
+    ip_noise_conn_read(self->conn, buffer, 2);
+
+    return (                  buffer[0]          | 
+            (((unsigned short)buffer[1]) << 8)
+           );
 }
 
 #define read_opcode(self) (read_int(self))
@@ -155,33 +169,30 @@ static void state_free(ip_noise_state_t * state)
     free(state);
 }
 
+static void ip_spec_free(ip_noise_ip_spec_t * spec)
+{
+    ip_noise_ip_spec_t * next_spec;
+
+    while(spec != NULL)
+    {
+        free(spec->port_ranges);
+        next_spec = spec->next;
+        free(spec);
+        spec = next_spec;
+    }
+}
+
 static void chain_free(ip_noise_chain_t * chain)
 {
     int a;
-    ip_noise_ip_spec_t * spec, * next_spec;
 
     for(a=0;a<chain->num_states;a++)
     {
         state_free(chain->states[a]);
     }
     
-    spec = chain->filter->source;
-    while(spec != NULL)
-    {
-        free(spec->port_ranges);
-        next_spec = spec->next;
-        free(spec);
-        spec = next_spec;
-    }
-
-    spec = chain->filter->dest;
-    while(spec != NULL)
-    {
-        free(spec->port_ranges);
-        next_spec = spec->next;
-        free(spec);
-        spec = next_spec;
-    }
+    ip_spec_free(chain->filter->source);
+    ip_spec_free(chain->filter->dest);
 
     free(chain->filter);
 
@@ -335,6 +346,72 @@ param_t read_param_type(
         }
         break;
 
+        case PARAM_TYPE_IP_FILTER:
+        {
+            ip_noise_ip_spec_t * head;
+            ip_noise_ip_spec_t * tail;
+            struct in_addr ip;
+            struct in_addr terminator;
+            int netmask;
+            int num_port_ranges;
+            int max_num_port_ranges;
+            ip_noise_port_range_t * port_ranges;
+            unsigned short start, end;
+            
+            
+            head = malloc(sizeof(ip_noise_ip_spec_t));
+            tail = head;
+            tail->next = NULL;
+
+            memset(&ip, '\x0', sizeof(ip));
+            memset(&terminator, '\xFF', sizeof(terminator));
+
+            while (memcmp(&ip, &terminator, sizeof(ip)) != 0)
+            {
+                ip_noise_conn_read(conn, (char*)&ip, 4);
+                netmask = read_int(self);
+                max_num_port_ranges = 16;
+                port_ranges = malloc(sizeof(port_ranges[0])*max_num_port_ranges);
+                num_port_ranges = 0;
+                while (1)
+                {
+                    start = read_uint16(self);
+                    end = read_uint16(self);
+                    if (start > end)
+                    {
+                        break;
+                    }
+                    if (num_port_ranges == max_num_port_ranges)
+                    {
+                        max_num_port_ranges += 16;
+                        port_ranges = realloc(port_ranges, sizeof(port_ranges[0])*max_num_port_ranges);
+                    }                    
+                    port_ranges[num_port_ranges].start = start;
+                    port_ranges[num_port_ranges].end = end;
+                    num_port_ranges++;
+                }
+                /* Realloc port_ranges to have just enough memory to store all
+                 * the port ranges */
+                port_ranges = realloc(port_ranges, sizeof(port_ranges[0])*num_port_ranges);
+                if (memcmp(&ip, &terminator, sizeof(ip)) != 0)
+                {
+                    tail->ip = ip;
+                    tail->net_mask = netmask;
+                    tail->num_port_ranges = num_port_ranges;
+                    tail->port_ranges = port_ranges;
+                    tail->next = malloc(sizeof(ip_noise_ip_spec_t));
+                    tail = tail->next;
+                    tail->next = NULL;
+                }
+            }
+            if (num_port_ranges != 0)
+            {
+                free(port_ranges);
+            }
+            ret.ip_filter = head;
+        }
+        break;
+
         case PARAM_TYPE_SPLIT_LINEAR_POINTS:
         {
             double prob;
@@ -366,6 +443,12 @@ param_t read_param_type(
             points.points = realloc(points.points, sizeof(points.points[0])*points.num_points);
 
             ret.split_linear_points = points;
+        }
+        break;
+
+        case PARAM_TYPE_BOOL:
+        {
+            ret.bool = (read_int(self) != 0);
         }
         break;
         

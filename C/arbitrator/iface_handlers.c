@@ -322,11 +322,20 @@ static int ip_noise_arbitrator_iface_handler_set_source(ip_noise_arbitrator_ifac
 {
 	int chain_index = params[0].chain;
 	ip_noise_ip_spec_t * source = params[1].ip_filter;
+    
+    ip_noise_chain_t * chain;
 
+    printf("Set Source!\n");
 
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        ip_spec_free(source);
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    chain->filter->source = source;
 
 	return 0;
 }
@@ -338,10 +347,19 @@ static int ip_noise_arbitrator_iface_handler_set_dest(ip_noise_arbitrator_iface_
 	int chain_index = params[0].chain;
 	ip_noise_ip_spec_t * dest = params[1].ip_filter;
 
+    ip_noise_chain_t * chain;
 
+    printf("Set Dest!\n");
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    chain = get_chain(self, chain_index);
 
+    if (chain == NULL)
+    {
+        ip_spec_free(dest);
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
+
+    chain->filter->dest = dest;
 
 	return 0;
 }
@@ -354,10 +372,41 @@ static int ip_noise_arbitrator_iface_handler_set_protocol(ip_noise_arbitrator_if
 	int index = params[1]._int;
 	int enable_or_disable = params[2].bool;
 
+    ip_noise_chain_t * chain;
+    int byte, bit;
 
+    printf("Set Protocol! - (%i,%i)\n", index, enable_or_disable);
+    
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    byte = (index >> 3);
+    bit = (index & 0x7);
+
+    if ((byte < 0) || (byte > sizeof(chain->filter->protocols)))
+    {
+        memset(
+            chain->filter->protocols ,
+            (enable_or_disable?'\xFF':'\x00') ,
+            sizeof(chain->filter->protocols)
+            );
+        
+    }
+    else
+    {
+        if (enable_or_disable)
+        {
+            chain->filter->protocols[byte] |= (1<<bit);
+        }
+        else
+        {
+            chain->filter->protocols[byte] &= (~(1<<bit));
+        }
+    }
 
 	return 0;
 }
@@ -609,11 +658,7 @@ static int ip_noise_arbitrator_iface_handler_clear_all(ip_noise_arbitrator_iface
 
 static int ip_noise_arbitrator_iface_handler_end_connection(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
-
-
-
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
-
+    self->_continue = 0;
 
 	return 0;
 }
