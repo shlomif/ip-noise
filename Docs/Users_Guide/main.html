@@ -479,5 +479,47 @@ The Protocol type above the IP layer (e.g: TCP, UDP, ICMP, OSPF and IGMP).
 </ol>
 </p>
 
+<h2>The Configuration File Syntax</h2>
+
+<h3>General Conventions</h3>
+
+<p>
+Empty lines are ignored. Comments start with the sharp-sign (<tt>#</tt>) and
+extend until the end of the line.
+</p>
+
+<p>
+Identifiers contain letters, underscores and digits, where 
+the first character is not a digit. Identifier are not case-sensitive. 
+</p>
+
+<p>
+Block constructs are declared at one line, in which a left curly bracket 
+(<tt>{</tt>), must appear, and after it, nothing elese. They span several 
+lines, until they are terminated with a right curly bracket (<tt>}</tt>)
+on its own line.
+</p>
+
+<p>
+Blocks contain field names followed by an equal sign (<tt>=</tt>) followed
+by a value. All of which must appear on the same line.
+</p>
+
+<h3>Syntax of a State</h3>
+
+<p>
+A state starts with the <tt>State</tt> keyword, followed by the state name
+followed by a left curly bracket (<tt>{</tt>). The state name is an 
+identifier.</p>
+
+<p>
+The <tt>State</tt> keyword, the name and the <tt>{</tt> must all appear on 
+the same line. A state ends with a right curly bracket (<tt>}</tt>) 
+which appears on a line of its own.
+</p>
+
+<p>
+A state 
+
 </body>
 </html>
