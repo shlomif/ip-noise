@@ -1,0 +1,108 @@
+General Structure:
+==================
+
+The packet handler has three parts: a receiver, an arbitrator and a releaser.
+
+The Receiver: its object is to receive new packets from the 
+IP-Queue mechanism (or its equivalent in kernel mode), stamp them with
+the time in which they were arrived and pass them to the arbitrator.
+
+The Arbitrator: receives packets from the receiver, decides whether to drop,
+release or delay them. If they are dropped or released, it does so immediately.
+Else, it puts the packets in a priority queue for the release to release.
+
+The Releaser: Polls the priority queue in order to release the delayed packets
+on time.
+
+<<< Diagram Here >>>
+
+In the user-mode application, each one of them is implemented in his own 
+thread. However, in the kernel, everything is implemented using call-backs and 
+timers. (see section <SectionRef Why we did not use Kernel threads>).
+
+The Receiver:
+=============
+
+The receiver plugs into the IP-Queue mechanism. It receives packets from it,
+stamps them with the time of their arrival and places them in a queue. The
+queue is a thread safe queue which was implemented in the module queue.c. 
+
+The receiver thread can be found at the end of the main() function in the
+main.c module (for the user-level arbitrator) or in the function ipq_enqueue
+in the ip_queue.c module (for the kernel-mode arbitrator). Note that, in
+kernel mode the receiver does not place the packets in a queue, but rather
+calls the packet logic verdict determination function directly to find its
+verdict.
+
+The Releaser:
+=============
+
+In user-mode, the releaser is modelled around an infinite loop, in which a
+thread waits for the time of the release of the element with the minimal time 
+to arrive. If an element with a lower time has arrived, the thread is waken up
+prematurely so it can re-schedule its next awakening.
+
+In kernel-mode, the releaser has a timer function, which is manipulated in
+much the same manner using the Linux kernel timer functions.
+
+One can find the releaser's code in the module delayer.c. The priority queue
+that is used by it can be found in pqueue.c and is based on the code by
+Justin H. Jones.
+
+The Arbitrator:
+===============
+
+The arbitrator is split into three logical parts:
+
+1. The User Interface Backend: this interacts with the user-level compiler and
+is used to modify the behaviour of the arbitrator.
+
+2. Switcher: the purpose of this part is to switch the chains to their new
+states.
+
+3. Packet Logic: this part does the actual decision of what should be done
+with a packet.
+
+This distinction is kept even in the kernel.
+
+Note that the data structure used by the arbitrator for holding the
+information of the chains and their states, needs to be synchronized to be
+kept from multiple simultaneous access. Not only that, but the interface
+back-end actually duplicates the data, and works on a copy, in order not to
+block the other tasks.
+
+The User-interface Backend:
+---------------------------
+
+Since data written to the backend is not necessarily received at once in the
+case of a kernel module, we have performed the communication with the compiler
+using transactions. The data that arrives into the device or named pipe is
+cached. The backend attempts to read data from this cache. If it does not
+succeed in reading enough data to complete the transaction, it rollbacks the
+transaction. Else, it commits it, which causes it to be flushed.
+
+The steps in evaluating a transaction are:
+
+1. Receiving the opcode and according to it retrieving the record that
+corresponds to it. 
+
+2. From that record, the parameter types of the opcode's parameters are
+deduced and each paramater is received from the line in its turn.
+
+3. The record's handler is called with all the paramters. It performs the
+actual operation on the data's copy.
+
+4. One record handler reads other data from the line: set_move_probs().
+We could not think of a more elegant way to resolve its needs.
+
+After the connection had been closed, the interface replaces the data with its 
+data copy and waits for another connection to be opened.
+
+The backend can be found in the modules iface.c and iface_handlers.c of the
+source code.
+
+The Switcher:
+-------------
+
+The switcher is implemented using a priority queue in user-mode, and using one
+timer for each chain in kernel mode.

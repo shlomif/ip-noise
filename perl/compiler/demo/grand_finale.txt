@@ -4,7 +4,7 @@ Chain Default {
     }
 }
 
-Chain t2_len_lt_100 {
+Chain vipe_len_lt_100 {
     State Start {
         time_factor = 5000
         drop = 0
@@ -20,11 +20,11 @@ Chain t2_len_lt_100 {
         }
     }
     length = l < 100
-    dest = 127.0.0.1 ; 132.68.7.4
-    source = 127.0.0.1 ; 132.68.7.4
+    dest = 127.0.0.1 ; 132.69.253.254
+    source = 127.0.0.1 ; 132.69.253.254
 }
 
-Chain t2_len_gt_100 {
+Chain vipe_len_gt_100 {
     State Start {
         time_factor = 5000
         drop = 0
@@ -34,18 +34,20 @@ Chain t2_len_gt_100 {
     }
     State Noisy {
         time_factor = 5000
-        drop = 1
+        drop = 0
+        delay = 1
+        delay_type = U(1000,1000)
         move_to = {
             0.7 = Start
         }
     }
     length = l > 100
-    dest = 127.0.0.1 ; 132.68.7.4
-    source = 127.0.0.1 ; 132.68.7.4
+    dest = 127.0.0.1 ; 132.69.253.254
+    source = 127.0.0.1 ; 132.69.253.254 
 }
 
 
-Chain vipe {
+Chain t2 {
     State Start {
         time_factor = 5000
         drop = 0
@@ -60,8 +62,8 @@ Chain vipe {
             0.7 = Start
         }
     }
-    dest = 127.0.0.1 ; 132.69.253.254
-    source = 127.0.0.1 ; 132.69.253.254
+    dest = 127.0.0.1 ; 132.68.7.4
+    source = 127.0.0.1 ; 132.68.7.4
 }
 
 
