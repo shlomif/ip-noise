@@ -1,0 +1,45 @@
+Future Improvements:
+--------------------
+
+1. A more powerful IP address Filter. (either in the translator level or the
+arbitrator level).
+
+2. Limits on the number of chains, states, etc.
+
+3. Enhanced Probability Syntax.
+
+4. Chain Disable/Enable.
+
+5. Incremental changes - ?
+
+6. More sanity checks in the translator.
+
+7. Remote administration (with a relay - ?).
+
+8. Implement Conn as Unix-Domain Sockets instead of Named Pipes.
+
+9. Interactive Visual Debugger/Monitor.
+
+10. Delay Buckets.
+
+11. Syntax Highlighting for the translator's language.
+
+12. Noise Bridge.
+
+13. Switching states according to the amount of traffic.
+
+14. Merge with the previous project's code for compatibility with 
+Linux 2.2.x kernel. (we are _not_ doing it)
+
+15. Make sure everything is SMP-safe.
+
+16. A more portable log function.
+
+17. Convert to the kernel rand function.
+
+18. /proc filesystem for monitoring the kernel module.
+
+19. Quiet mode of the kernel module (Without printing the "Switching"
+msgs).
+
+
