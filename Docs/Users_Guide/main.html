@@ -358,6 +358,13 @@ One can specify to drop the packet altogether representing a loss of a packet
 along its route.
 </p>
 
+<h4>Accept</h4>
+
+<p>
+One can specify to simply "accept" the packet and send it on its way. For 
+all practical purposes, an accept is treated as a delay of 0.
+</p>
+
 <h4>Exponential Delay</h4>
 
 <p>
@@ -380,6 +387,96 @@ two adjacent points, one interpolates their end-values linearily.
 <p>
 In this delay type, the delay is chosen uniformly between a minimum and a 
 maximum specified by the user.
+</p>
+
+<h4>Stable Delay</h4>
+
+<p>
+A delay can be either stable or non-stable. In a stable delay, the packets 
+are sent on their way at the same order in which they arrived.
+In a non-stable delay, their order may be mixed. One can decide whether
+to issue a stable or non-stable delay by specifiying a probability factor.
+</p>
+
+<h3>How the Arbitration is Done</h3>
+
+<h4>Several Markov Chains</h4>
+
+<p>
+The arbitrator contains several markov chains which are run and processed in 
+parallel. Each chain has a chain filter that specifies which packets it wishes
+to process. When a packet arrives at the arbitrator, it is passed to all the
+chains, except for a special chain which is designated as the default chain. 
+Each chain determines on its own what to do with the packet, without consulting
+the other chains.
+</p>
+
+<p>
+A packet that is not processed by any chain is passed to the default chain, 
+whose filter (if any) is ignored. If more than one chain processed the packet, 
+then the following rules apply:
+</p>
+
+<p>
+<b>1.</b> If the packet was dropped by any chain, then it will be dropped. 
+(i.e: each chain can veto the verdict to a drop)
+</p>
+
+<p>
+<b>2.</b> If none of the chains dropped it, then the delay the packet would
+experience would be the sum of the delays of the chains. 
+(and as previously mentioned, an accept verdict is considered as a 
+delay of length 0)
+</p>
+
+<h4>State Switching</h4>
+
+<p>
+In each chain, the states are switched at exponential times from the time of 
+the last switch. Each state determines the probabilities for a packet being 
+dropped, delayed or accepted and the distribution of the delay. It also 
+determines the probability for a stable delay.
+</p>
+
+<h4>Chain Filters</h4>
+
+<p>
+A chain filter determines which packets are processed by a chain according to 
+their TCP/IP information. The motivation for a chain filter is that different
+parts of the network being modelled may experience different conditions. 
+Therefore, packets need to be treated differently based on their destination,
+source and other TCP/IP properties.
+</p>
+
+<p>
+In the IP-Noise Simulator, packets can be filtered according to the following 
+factors:
+</p>
+
+<p>
+<ol>
+
+<li>
+Source IPs and port combinations.
+</li>
+
+<li>
+Destination IPs and port combinations.
+</li>
+
+<li>
+Packet Length
+</li>
+
+<li>
+Value of the Time of Service field
+</li>
+
+<li>
+The Protocol type above the IP layer (e.g: TCP, UDP, ICMP, OSPF and IGMP).
+</li>
+
+</ol>
 </p>
 
 </body>
