@@ -8,7 +8,11 @@ extern "C" {
 
 struct ip_noise_rand_struct
 {
+#ifdef IP_NOISE_DETERMINISTIC_RAND
     long seed;
+#else
+    int fh;
+#endif
 };
 
 typedef struct ip_noise_rand_struct ip_noise_rand_t;

@@ -23,12 +23,17 @@
 
 #ifndef __KERNEL__
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #else
 #include "k_stdlib.h"
 #endif
 
 #include "rand.h"
 
+#ifdef IP_NOISE_DETERMINISTIC_RAND
 
 ip_noise_rand_t * ip_noise_rand_alloc(unsigned int seed)
 {
@@ -71,6 +76,36 @@ void ip_noise_rand_srand(ip_noise_rand_t * rand, int seed)
     rand->seed = seed;
 }
 
+#else
+
+ip_noise_rand_t * ip_noise_rand_alloc(unsigned int seed)
+{
+    ip_noise_rand_t * ret;
+    ret = malloc(sizeof(ip_noise_rand_t));
+
+    ret->fh = open("/dev/urandom", O_RDONLY);
+
+    return ret;
+}
+
+void ip_noise_rand_free(ip_noise_rand_t * rand)
+{
+    close(rand->fh);
+    free(rand);
+}
+
+int ip_noise_rand_rand(ip_noise_rand_t * rand)
+{
+    int i;
+    read(rand->fh, &i, 4);
+    i &= 0x3FFFFFFF;
+
+    return i;
+}
+
+
+#endif
+
 const int rand_normalizer = 10000000;
 
 double ip_noise_rand_rand_in_0_1(ip_noise_rand_t * rand)
@@ -84,5 +119,4 @@ double ip_noise_rand_rand_in_0_1(ip_noise_rand_t * rand)
 
     return ret;
 }
-
 
