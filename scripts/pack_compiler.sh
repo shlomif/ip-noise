@@ -1,6 +1,7 @@
 #!/bin/sh
-source="$HOME/Docs/Univ/cvs/C/arbitrator"
-dest_base="IP-Noise-C-Arbitrator"
+
+source="$HOME/Docs/Univ/cvs/perl/compiler"
+dest_base="IP-Noise-Compiler"
 build_dir="$HOME/Arcs"
 
 ver=`cat $source/ver.txt`
@@ -26,4 +27,3 @@ fi
 
 tar -czvf "$dest_arc" "$dest_dir"
 rm -fr "$dest_dir"
-
