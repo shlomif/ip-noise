@@ -1,7 +1,43 @@
+Arbitrator:
+===========
+
+Identifiers:
+------------
+
 We used lowercase names for all of our identifiers. The words or 
 components are separated by underscores. 
 
 All exportable symbols start with "ip_noise" in order to avoid 
-namespace collition. 
+namespace collition. Folliwing the ip_noise comes the class name.
+E.g: "rand", "arbitrator_iface", "delayer" Etc. The last component
+is the name of the method.
 
+Most classes have an alloc method that allocates a new object, and
+a destroy method that destroys it. 
+
+Typedefs:
+---------
+
+Typedefs also start with ip_noise, but end with a "_t" suffix. They
+are usually declared as "struct ip_noise_foo_struct" where foo is the
+data type being declared.
+
+Common Abbreviations:
+---------------------
+
+alloc - allocate
+bsearch - binary search
+cmp - comparison
+com - comulative
+ip - IP Address
+len - length
+pq - priority queue
+prob - probability
+ptr - pointer
+rand - random, randomizer etc.
+ret - return value
+tos - type of service
+tv - timeval (an internal C struct that specifies the time in seconds 
+        and microseconds)
+w - with
 
