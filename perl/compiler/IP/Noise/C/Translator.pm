@@ -71,6 +71,12 @@ my %transactions =
         'params' => [ "chain", "string" ],
         'out_params' => [ "int" ],
     },
+    'set_move_probs' =>
+    {
+        'opcode' => 0x2,
+        'params' => [ "chain", "int", "int", '@state', '@state', '@@probs' ],
+        'out_params' => [],
+    },
     'set_source' =>
     {
         'opcode' => 0x3,
@@ -94,6 +100,21 @@ my %transactions =
         'opcode' => 0x6,
         'params' => [ "chain", "int", "bool" ],
         'out_params' => [],
+    },
+    'set_min_packet_length' =>
+    {
+        'opcode' => 0x8,
+        'params' => [ "chain", "int"],        
+    },
+    'set_max_packet_length' =>
+    {
+        'opcode' => 0x9,
+        'params' => [ "chain", "int"],        
+    },
+    'set_which_packet_length' =>
+    {
+        'opcode' => 0xA,
+        'params' => [ "chain", "which_packet_length" ],
     },
     'set_drop_delay_prob' =>
     {
@@ -235,6 +256,24 @@ sub pack_ip_filter
     return $ret;
 }
 
+sub pack_state
+{
+    my $param = shift;
+
+    if ($param->{'type'} eq "last")
+    {
+        return pack_int32(2);
+    }
+    elsif ($param->{'type'} eq "index")
+    {
+        return pack_int32(0) . pack_int32($param->{'index'});
+    }
+    else
+    {
+        die "Unknown state type!\n";
+    }
+}
+
 sub transact
 {
     my $self = shift;
@@ -243,7 +282,7 @@ sub transact
 
     if (!exists($transactions{$name}))
     {
-        die "No such transaction";
+        die "No such transaction - \"$name\"";
     }
 
     my $record = $transactions{$name};
@@ -275,14 +314,7 @@ sub transact
         }
         elsif ($param_type eq "state")
         {
-            if ($param->{'type'} eq "last")
-            {
-                $conn->conn_write(pack_int32(2));
-            }
-            else
-            {
-                die "Unknown state type!\n";
-            }        
+            $conn->conn_write(pack_state($param));
         }
         elsif ($param_type eq "prob")
         {
@@ -337,6 +369,30 @@ sub transact
             $conn->conn_write(
                 pack_int32($param)
                 );
+        }
+        elsif ($param_type eq "which_packet_length")
+        {
+            my %map = (
+                'between' => 3,
+                'not-between' => 4,
+                'gt' => 1,
+                'lt' => 2,
+                'all' => 0
+                );
+
+            $conn->conn_write(
+                pack_int32($map{$param})
+                );                
+        }
+        elsif ($param_type eq '@state')
+        {
+            $conn->conn_write(join("", (map { pack_state($_) } @$param)));
+        }
+        elsif ($param_type eq '@@probs')
+        {
+            my @prob_strings = (map { join("", (map { pack_prob($_) } @{$_})) } @{$param});
+            my $string = join("", @prob_strings);
+            $conn->conn_write($string);
         }
         else
         {
@@ -638,7 +694,102 @@ sub load_arbitrator
                 }
             }
         }
-    }
+
+        if ($chain->{'length_spec'}->{'type'} ne "all")
+        {
+            my $length_spec = $chain->{'length_spec'};
+    
+            my $type = $length_spec->{'type'};            
+
+            if ($type =~ /^(between|not-between|lt)$/)
+            {
+                ($ret_value, $other_args) = 
+                    $self->transact(
+                        "set_max_packet_length",
+                        LAST_CHAIN,
+                        $length_spec->{'max'}
+                        );
+
+                if ($ret_value != 0)
+                {
+                    die "The arbitrator refused to accept the " . 
+                        "maximal packet length we gave it!\n";
+                }
+            }
+
+            if ($type =~ /^(between|not-between|gt)$/)
+            {
+                ($ret_value, $other_args) = 
+                    $self->transact(
+                        "set_min_packet_length",
+                        LAST_CHAIN,
+                        $length_spec->{'min'}
+                        );
+
+                if ($ret_value != 0)
+                {
+                    die "The arbitrator refused to accept the " . 
+                        "minimal packet length we gave it!\n";
+                }                        
+            }
+
+            print "type = $type!\n";
+            ($ret_value, $other_args) = 
+                $self->transact(
+                    "set_which_packet_length",
+                    LAST_CHAIN,
+                    $type
+                    );
+
+            if ($ret_value != 0)
+            {
+                die "The arbitrator refused to accept the " .
+                    "which packet length we gave it!\n";
+            }
+        }
+
+        # Now for the difficult part - transmitting the move probabilities
+
+        my @states = values(%{$chain->{'states'}});
+
+        my $num_states = scalar(@states);
+
+        my @state_list = 
+            (map 
+                { 
+                    { 'type' => 'index', index => $_->{'id'} } 
+                } 
+                (@states)
+            );
+
+        my @probs;
+        for(my $source=0;$source<$num_states;$source++)
+        {
+            for(my $dest=0;$dest<$num_states;$dest++)
+            {
+                my $dest_state_name = $states[$dest]->{'name'};
+                $probs[$source][$dest] = 
+                    (exists($states[$source]->{'move_to'}->{$dest_state_name}) 
+                        ? 
+                        ($states[$source]->{'move_to'}->{$dest_state_name}) 
+                        : 
+                        0
+                        );
+            }
+        }
+
+        ($ret_value, $other_args) =
+            $self->transact(
+                "set_move_probs",
+                LAST_CHAIN,
+                $num_states,
+                $num_states,
+                \@state_list,
+                \@state_list,
+                \@probs
+                );
+
+    }  # End of chain loop
 
     ($ret_value, $other_args) = $self->transact("end_connection");
 

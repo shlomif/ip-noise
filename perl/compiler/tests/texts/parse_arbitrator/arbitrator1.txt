@@ -29,6 +29,7 @@ Chain MyChain {
     }
     protocol = tcp, udp
     tos = 23, 47
+    length = ! 100 < l < 500
 }
 
 Chain AnotherChain {

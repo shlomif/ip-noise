@@ -67,6 +67,11 @@ my %operations =
         'out_params' => [ "int" ],
         'handler' => \&handler_new_state,
     },
+    0x2 =>
+    {
+        'params' => [ "chain", "int", "int" ],
+        'handler' => \&handler_set_move_probs,
+    },
     0x3 =>
     {
         'params' => [ "chain", "ip_packet_filter" ],
@@ -86,6 +91,21 @@ my %operations =
     {
         'params' => [ "chain", "int", "bool" ],
         'handler' => \&handler_set_tos,
+    },
+    0x8 =>
+    {
+        'params' => [ "chain", "int" ],
+        'handler' => \&handler_set_length_min,
+    },
+    0x9 =>
+    {
+        'params' => [ "chain", "int" ],
+        'handler' => \&handler_set_length_max,
+    },
+    0xa =>
+    {   
+        'params' => [ "chain", "which_packet_length" ],
+        'handler' => \&handler_set_which_length,
     },
     0x19 =>
     {
@@ -165,6 +185,11 @@ sub handler_new_chain
             'dest' => { 'type' => "none" },
             'protocols' => ("\xFF" x 32),
             'tos' => ("\xFF" x 8),
+            'length' => {
+                'type' => "all",
+                'min' => 0,
+                'max' => 65535
+                },
         };
     
     my $index = scalar(@{$data->{'chains'}})-1;
@@ -203,6 +228,12 @@ sub handler_new_state
 
     my $states_ref = $chain->{'states'};
 
+    # One more state was added so we need to have one more entry in every row of the matrix.
+    foreach my $state (@$states_ref)
+    {
+        push @{$state->{'move_tos'}}, 0;
+    }
+    
     push @$states_ref, 
         { 
             'name' => $state_name , 
@@ -221,6 +252,8 @@ sub handler_new_state
     $chain->{'states_map'}->{lc($state_name)} = $index;
 
     $self->{'last_state'} = $index;
+
+    $states_ref->[$index]->{'move_tos'} = [ (map { $_ == $index } (0 .. $index)) ]; 
 
     return (0, $index);
 }
@@ -418,6 +451,89 @@ sub handler_set_tos
     return 0;    
 }
 
+sub handler_set_length_min
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $min = shift;
+    
+    my $data = $self->{'data'};
+
+    my $length = $data->{'chains'}->[$chain_index]->{'length'};
+
+    $length->{'min'} = $min;
+
+    return 0;    
+}
+
+sub handler_set_length_max
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $max = shift;
+    
+    my $data = $self->{'data'};
+
+    my $length = $data->{'chains'}->[$chain_index]->{'length'};
+
+    $length->{'max'} = $max;
+
+    return 0;    
+}
+
+sub handler_set_which_length
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $which = shift;
+
+    my $data = $self->{'data'};
+
+    my $length = $data->{'chains'}->[$chain_index]->{'length'};
+
+    $length->{'type'} = $which;
+
+    return 0;
+}
+
+sub handler_set_move_probs
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $num_sources = shift;
+    my $num_dests = shift;
+
+    my $data = $self->{'data'};
+
+    my $chain = $data->{'chains'}->[$chain_index];
+
+    my @sources;
+    my @dests;
+    my ($i, $s, $d);
+
+    for($i=0;$i<$num_sources;$i++)
+    {
+        push @sources, $self->read_param_type("state");
+    }
+
+    for($i=0;$i<$num_dests;$i++)
+    {
+        push @dests, $self->read_param_type("state");        
+    }
+
+    # TODO: add sanity check that the some of the dests in any source
+    # equals the present sum.
+
+    for($s=0;$s<$num_sources;$s++)
+    {
+        for($d=0;$d<$num_dests;$d++)
+        {
+            $data->{'states'}->[$s]->{'move_tos'}->[$d] = $self->read_param_type("prob");
+        }
+    }
+
+    return 0;
+}
 
 sub read_param_type
 {
@@ -458,7 +574,13 @@ sub read_param_type
         $which = unpack("V", $which);
 
         # TODO : Implement the other state types
-        if ($which == 2)
+        if ($which == 0)
+        {
+            my $index = $conn->conn_read(4);
+            
+            return unpack("V", $index);
+        }
+        elsif ($which == 2)
         {
             return $self->{'last_state'};
         }
@@ -579,7 +701,18 @@ sub read_param_type
     elsif ($param_type eq "bool")
     {
         return (unpack("V", $conn->conn_read(4)) != 0);
-    }    
+    }
+    elsif ($param_type eq "which_packet_length")
+    {
+        my %map = (
+            0 => 'all',
+            1 => 'gt',
+            2 => 'lt',
+            3 => 'between',
+            4 => 'not-between'
+            );
+        return $map{unpack("V", $conn->conn_read(4))};
+    }
     else
     {
         die "Unknown param type: $param_type!\n";

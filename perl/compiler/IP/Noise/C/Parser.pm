@@ -606,7 +606,7 @@ sub parse_range_spec
         }
         elsif ($type eq "==")
         {
-            return { 'type' => "eq", "equal_to" => $arg };            
+            return { 'type' => "between", "max" => $arg, "min" => $arg };            
         }
         elsif ($type eq ">")
         {
@@ -614,15 +614,15 @@ sub parse_range_spec
         }
         elsif ($type eq "<=")
         {
-            return { 'type' => "le", 'max' => $arg };            
+            return { 'type' => "lt", 'max' => $arg };            
         }
         elsif ($type eq ">=")
         {
-            return { 'type' => "ge", 'min' => $arg };
+            return { 'type' => "gt", 'min' => $arg };
         }
         elsif ($type eq "!=")
         {
-            return { 'type' => "ne", 'equal_to' => $arg };
+            return { 'type' => "not-between", 'min' => $arg, 'max' => $arg };
         }
     }
 
