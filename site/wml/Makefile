@@ -1,5 +1,6 @@
 
 D = /var/www/html/ip-noise
+#D = /home/httpd/html/ip-noise
 
 IMAGES = $(D)/style.css                                       \
          $(D)/docs/Arbitrator_Architecture.txt                \
@@ -30,8 +31,8 @@ $(SUBDIRS) :: % :
 	fi
 	
 
-$(HTMLS) :: /var/www/html/ip-noise/% : %.wml .wmlrc
+$(HTMLS) :: $(D)/% : %.wml .wmlrc template.wml
 	wml $< > $@
 
-$(IMAGES) :: /var/www/html/ip-noise/% : %
+$(IMAGES) :: $(D)/% : %
 	cp -f $< $@
