@@ -41,6 +41,7 @@
                 - Netmasks
                 - ports
             - tos
+            - protocol
             
         - The default chain.
 

@@ -639,5 +639,198 @@ delay_type = Generic {
 </li>
 </ol>
 
+<h4>stable_delay</h4>
+
+<p>
+The <tt>stable_delay</tt> field specifies the stable delay probability of
+the state.
+</p>
+
+<h4>Complete State Example:</h4>
+
+<p>
+<pre>
+State A {
+   drop = 0.2
+   delay = 0.1
+   delay_type = E(200)
+   time_factor = 500 # This is the time factor to move to the other state
+   stable_delay = 0.2  # This is the probability for a stable delay.
+   move_to = {
+        0.2 = B
+        0.3 = C
+        0.5 = E
+   }    
+}
+</pre>
+</p>
+
+<h3>Chain Syntax</h3>
+
+<p>
+A chain starts with the keyword <tt>Chain</tt> followed by the chain's
+identifier followed by a left curly bracket (<tt>{</tt>) - all on the
+same line. It is terminated with a right curly bracket on a line of its
+own (<tt>}</tt>).
+</p>
+
+<h4>States</h4>
+
+<p>
+A chain can contain an arbitrary number of states, that are specified using
+the state syntax. There is one special state which ought to be named 
+<tt>Start</tt>, which is the initial state of the chain.
+</p>
+
+<h4>The Chain Filter</h4>
+
+<h5>length</h5>
+
+<p>
+The length field specifies the length of the IP packets that is accepted
+by the chain. Its syntax is <tt>length = l &lt; [max_len] </tt>, or
+<tt>length = l &gt; [min_len]</tt> or 
+<tt>length = [min_len] &lt; l &lt; [max_len]</tt>.
+</p>
+
+<h5>tos</h5>
+
+<p>
+The <tt>tos</tt> field specifies a valid range for the Time-of-service 
+specifier. The syntax is similar to the <tt>length</tt> field except that 
+the variable <tt>tos</tt> is used instead of <tt>l</tt>. For example:
+<tt>tos = tos &gt; 30</tt> or <tt>tos = 2 &lt; tos &lt; 5</tt>.
+</p>
+
+<h5>dest and source</h5>
+
+<p>
+<tt>source</tt> specifies a list of IP addresses and their corresponding ports
+for the source of packets to be processed by the chain. <tt>dest</tt> is the 
+same only for the destination of the packets.
+</p>
+
+<p>
+The value of these fields is a semicolon delimited list of IP specifications.
+An IP specification contains an IP address (4 decimal digits separated by a 
+dot (<tt>.</tt>)); an optional netmask width preceded by a slash (<tt>/<tt>).
+The last part is an optional port specifier that begins with a colon 
+(<tt>:</tt>) and contains a comma-delimited list of port ranges or individual
+port numbers. A port range is of the form <tt>[start_port]-[end_port]</tt>.
+</p>
+
+<p>
+Note: if the protocol above the IP does not use ports, then the port 
+specification will be ignored.
+</p>
+
+<p>
+Examples:
+</p>
+
+<p>
+<pre>
+source = 127.0.0.1:80                 # Only HTTP from the localhost
+source = 10.0.0.0/24:80,8080          # Only HTTP and 8080 from 10.x.x.x
+dest = 132.69.253.254 ; 132.68.7.4    # Either of the two IP addresses.
+</pre>
+</p>
+
+<h5>protocol</h5>
+
+<p>
+The protocol specifies the protocols above IP that will be accepted by
+the chain. Each can be a numeric value or it can be a name of the protocol 
+(according to the file /etc/protocols). The indiviuals protocols are separated
+by a comma.
+</p>
+
+<p>
+Example:
+</p>
+
+<p>
+<pre>
+protocol = tcp, udp
+</pre>
+</p>
+
+<h4>Complete Arbitrator Example</h4>
+
+<p>
+<pre>
+
+# This is the chain which handles packets which were not accepted
+# in any of the other chains.
+Chain Default {
+    State A { 
+        time_factor = 100000
+    }
+}
+
+Chain vipe_len_lt_100 {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 1
+        move_to = {
+            0.7 = Start
+        }
+    }
+    length = l &lt; 100
+    dest = 127.0.0.1 ; 132.68.52.118 ; 132.69.253.254
+    source = 127.0.0.1 ; 132.68.52.118 ; 132.69.253.254
+}
+
+Chain vipe_len_gt_100 {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 0
+        delay = 1
+        delay_type = U(3000,3000)
+        move_to = {
+            0.7 = Start
+        }
+    }
+    length = l &gt; 100
+    dest = 127.0.0.1 ; 132.68.52.118 ; 132.69.253.254
+    source = 127.0.0.1 ; 132.68.52.118 ; 132.69.253.254
+}
+
+
+Chain t2 {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 1
+        move_to = {
+            0.7 = Start
+        }
+    }
+    dest = 127.0.0.1 ; 132.68.52.118 ; 132.68.7.4
+    source = 127.0.0.1 ; 132.68.52.118 ; 132.68.7.4
+}
+</pre>
+</p>
+
 </body>
 </html>
