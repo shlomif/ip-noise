@@ -1293,7 +1293,10 @@ static void ip_noise_arbitrator_iface_transact(
 
     
 
-
+    
+    /* Read the opcode of this transaction. This opcode uniquely 
+     * identifies the transaction. Based on it we will know what to do
+     * next */
     opcode = read_opcode(self);
 
     if (opcode == IP_NOISE_READ_CONN_TERM)
@@ -1303,10 +1306,15 @@ static void ip_noise_arbitrator_iface_transact(
     }
     else if (opcode == IP_NOISE_READ_NOT_FULLY)
     {
+        /* We only received part of the opcode. Let's rollback the data
+         * so we will read the whole thing next time we receive more data 
+         * */
         ip_noise_read_rollback();
         return;
     }
 
+    /* Search for the transaction's record that contains this opcode.
+     * We need to process the rest of the transaction. */
     opcode_record.opcode = opcode;
 
     record = SFO_bsearch(
@@ -1326,7 +1334,7 @@ static void ip_noise_arbitrator_iface_transact(
         return;
     }
     
-    /* Read the parameters from the line */
+    /* Read the parameters from the line - one at a time*/
     for(a=0;a<record->num_params;a++)
     {
         ok = read_param_type(self, record->params[a], &params[a]);
@@ -1345,12 +1353,19 @@ static void ip_noise_arbitrator_iface_transact(
             }
             else if (ok == IP_NOISE_READ_NOT_FULLY)
             {
+                /* Restore the input to the place it was before this
+                 * transaction. This way, when new data arrives, we will
+                 * still process the old data */
                 ip_noise_read_rollback();
             }
             return;
         }                    
     }
 
+    /* 
+     * Call the handler of this transaction type to process the transaction
+     * and do the actual work 
+     * */
     ret_code = record->handler(self, params, out_params);
 
     if (ret_code < 0)
@@ -1361,13 +1376,19 @@ static void ip_noise_arbitrator_iface_transact(
         }
         else if (ret_code == IP_NOISE_READ_NOT_FULLY)
         {
+            /* Restore the input to the place it was before this
+             * transaction. This way, when new data arrives, we will
+             * still process the old data */
             ip_noise_read_rollback();
         }
         return;
     }
-
+    
+    /* Flush the inputted data out of the buffer, so we will not process
+     * it again. */
     ip_noise_read_commit();
 
+    /* Write all the data that this transaction returns to the line. */
     write_retvalue(self, ret_code);
 
     for(a=0;a<record->num_out_params;a++)

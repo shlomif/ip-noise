@@ -51,6 +51,12 @@ int ip_noise_rand_rand15(ip_noise_rand_t * rand)
     return (rand->seed >> 16) & 0x7fff;    
 }
 
+/*
+ *
+ * This function constructs a larger integral number of out of two
+ * 15-bit ones.
+ *
+ * */
 int ip_noise_rand_rand(ip_noise_rand_t * rand)
 {
     int one, two;
