@@ -1,0 +1,4 @@
+WithoutEqualSign {
+    drop 5
+    delay = 7
+}
