@@ -4,22 +4,9 @@ Chain Default {
         move_to = {
             1 = A
         }
-        drop = 0
-        delay = 0
-        time_factor = 100000
-    }
-}
-
-Chain UdpOnly {
-    State A {
-        move_to = {
-            1 = A
-        }
         delay = 1
         stable_delay = 1
         delay_type = U(1000,1010)
         time_factor = 100000
     }
-    protocol = udp
-}    
-    
+}

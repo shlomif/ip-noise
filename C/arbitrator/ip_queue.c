@@ -67,7 +67,6 @@ typedef struct ipq_queue {
     ip_noise_arbitrator_packet_logic_t * packet_logic;
 } ipq_queue_t;
 
-static ip_noise_rand_t * rand_gen;
 static ip_noise_delayer_t * delayer;
 /****************************************************************************
  *
@@ -207,7 +206,7 @@ static int ipq_enqueue(ipq_queue_t *q,
         m.skb = skb;
         m.info = info;
 
-        ip_noise_delayer_delay_packet(delayer, &m, num_millisecs);       
+        ip_noise_delayer_delay_packet(delayer, &m, num_millisecs);
     } 
     
     return 0;
@@ -373,8 +372,6 @@ static int __init init(void)
 	struct proc_dir_entry *proc;
     ip_noise_arbitrator_packet_logic_t * packet_logic;
 
-    rand_gen = ip_noise_rand_alloc(24);
-
     packet_logic = main_init_module();
 
     delayer = ip_noise_delayer_alloc(release_handler, NULL);
@@ -402,8 +399,6 @@ static int __init init(void)
 
 static void __exit fini(void)
 {
-    ip_noise_rand_free(rand_gen);
-
 	unregister_sysctl_table(ipq_sysctl_header);
 	proc_net_remove(IPQ_PROC_FS_NAME);
 	unregister_netdevice_notifier(&ipq_dev_notifier);
