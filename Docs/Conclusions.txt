@@ -82,4 +82,33 @@ http://www.cvshome.org/
 BerliOS
 -------
 
-BerliOS is a software hub that is ph
+BerliOS is a software hub that is physically located in Germany. We did not
+use all of the services that BerliOS offered us, but we made extensive used of
+the fact that it gave us a CVS repository. 
+
+At the time of this writing there are two similar services to BerliOS on the 
+web: SourceForge and GNU Savanah. All of them offer a good service for hosting
+open-source software.
+
+The BerliOS homepage is:
+http://developer.berlios.de/
+
+Lessons about C and Kernel Programming:
+======================================
+
+jiffies instead of gettimeofday()
+---------------------------------
+
+When programming in kernel mode it would make a vast speed improvement to
+use jiffies instead of gettimeofday(). jiffies are an integer that represents
+the internal time since the machine's startup. They are measured in units of 
+1/HZ seconds, where HZ is an architecture-specific constant.
+
+gettimeofday() requires some extra calculations, but retrieving the current
+jiffies does not even requires a function call. Furthermore, timers are set
+according by jiffies-time, so it saves the overhead of converting from jiffies
+to struct timeval and vice versa.
+
+
+
+
