@@ -24,6 +24,13 @@ sub initialize
     $self->read_next_line();
 }
 
+sub _eof
+{
+    my $self = shift;
+    
+    return eof(*{$self->{'file'}});
+}
+
 sub read_next_line
 {
     my $self = shift;

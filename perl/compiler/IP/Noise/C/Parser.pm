@@ -1036,11 +1036,16 @@ sub parse_arbitrator
 
     my %chains;
 
-    for(;($stream->read_next_line() == 0);)
+    for(; (! $stream->_eof()) ; $stream->read_next_line())
     {
         my $line = $stream->peak_line();
 
         $line =~ s/^\s+//;
+
+        if ($line eq "")
+        {
+            next;
+        }
 
         my $id = parse_id_string($stream);
 
