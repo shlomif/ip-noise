@@ -451,6 +451,27 @@ param_t read_param_type(
             ret.bool = (read_int(self) != 0);
         }
         break;
+
+        case PARAM_TYPE_WHICH_PACKET_LENGTH:
+        {
+            int index = read_int(self);
+
+            if ((index < 0) || (index > 4))
+            {
+                ret.which_packet_length = IP_NOISE_WHICH_PACKET_LEN_DONT_CARE;
+            }
+            else
+            {
+                ret.which_packet_length = index;
+            }
+        }
+        break;
+
+        case PARAM_TYPE_LAMBDA:
+        {
+            ret.lambda = read_int(self);
+        }
+        break;
         
         default:
         {

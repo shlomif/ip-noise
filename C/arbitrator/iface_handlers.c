@@ -419,10 +419,41 @@ static int ip_noise_arbitrator_iface_handler_set_tos(ip_noise_arbitrator_iface_t
 	int index = params[1]._int;
 	int enable_or_disable = params[2].bool;
 
+    ip_noise_chain_t * chain;
+    int byte, bit;
 
+    printf("Set TOS! - (%i,%i)\n", index, enable_or_disable);
+    
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    byte = (index >> 3);
+    bit = (index & 0x7);
+
+    if ((byte < 0) || (byte > sizeof(chain->filter->tos)))
+    {
+        memset(
+            chain->filter->tos ,
+            (enable_or_disable?'\xFF':'\x00') ,
+            sizeof(chain->filter->tos)
+            );
+        
+    }
+    else
+    {
+        if (enable_or_disable)
+        {
+            chain->filter->tos[byte] |= (1<<bit);
+        }
+        else
+        {
+            chain->filter->tos[byte] &= (~(1<<bit));
+        }
+    }
 
 	return 0;
 }
@@ -432,12 +463,20 @@ static int ip_noise_arbitrator_iface_handler_set_tos(ip_noise_arbitrator_iface_t
 static int ip_noise_arbitrator_iface_handler_set_length_min(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
 	int chain_index = params[0].chain;
-	int min = params[1]._int;
+	int min_ = params[1]._int;
 
+    ip_noise_chain_t * chain;
 
+    printf("Set Min Length!\n");
+    
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    chain->filter->min_packet_len = min_;
 
 	return 0;
 }
@@ -447,12 +486,20 @@ static int ip_noise_arbitrator_iface_handler_set_length_min(ip_noise_arbitrator_
 static int ip_noise_arbitrator_iface_handler_set_length_max(ip_noise_arbitrator_iface_t * self, param_t * params, param_t * out_params)
 {
 	int chain_index = params[0].chain;
-	int max = params[1]._int;
+	int max_ = params[1]._int;
 
+    ip_noise_chain_t * chain;
 
+    printf("Set Max Length!\n");
+    
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    chain->filter->max_packet_len = max_;
 
 	return 0;
 }
@@ -464,10 +511,18 @@ static int ip_noise_arbitrator_iface_handler_set_which_length(ip_noise_arbitrato
 	int chain_index = params[0].chain;
 	int which = params[1].which_packet_length;
 
+    ip_noise_chain_t * chain;
 
+    printf("Set Which Length!\n");
+    
+    chain = get_chain(self, chain_index);
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    if (chain == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
 
+    chain->filter->which_packet_len = which;
 
 	return 0;
 }
@@ -555,6 +610,7 @@ static int ip_noise_arbitrator_iface_handler_set_split_linear_points(ip_noise_ar
 
     if (state->delay_function.type != IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
     {
+        free(points.points);
         return IP_NOISE_RET_VALUE_SPLIT_LINEAR_SET_POINTS_ON_OTHER_TYPE;
     }
 
@@ -575,10 +631,23 @@ static int ip_noise_arbitrator_iface_handler_set_lambda(ip_noise_arbitrator_ifac
 	int state_index = params[1].state;
 	int lambda = params[2].lambda;
 
+    ip_noise_state_t * state;
 
+    printf("Set Lambda!\n");
 
-	printf("Unimplemented opcode: %i!\n", __LINE__); /* IN WITH BODY*/
+    state = get_state(self, chain_index, state_index);
 
+    if (state == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
+
+    if (state->delay_function.type != IP_NOISE_DELAY_FUNCTION_EXP)
+    {
+        return IP_NOISE_RET_VALUE_SPLIT_LINEAR_SET_POINTS_ON_OTHER_TYPE;
+    }
+
+    state->delay_function.params.lambda = lambda;
 
 	return 0;
 }
