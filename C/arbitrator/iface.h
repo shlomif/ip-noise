@@ -93,7 +93,7 @@ typedef struct ip_noise_port_range_struct ip_noise_port_range_t;
 
 struct ip_noise_ip_spec_struct
 {
-    struct ip_noise_ip_spec * next; /* = NULL to terminate the linked list */
+    struct ip_noise_ip_spec_struct * next; /* = NULL to terminate the linked list */
 
     struct in_addr ip;
     int net_mask; /* The sub-net width of the IP range */

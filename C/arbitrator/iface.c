@@ -7,6 +7,15 @@
 #include "iface.h"
 #include "rwlock.h"
 
+enum IP_NOISE_RET_VALUE_T
+{
+    IP_NOISE_RET_VALUE_OK = 0,
+    IP_NOISE_RET_VALUE_SOMETHING_WRONG = 1,
+    IP_NOISE_RET_VALUE_UNKNOWN_OPCODE = 2,
+    IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE = 3,
+
+};
+
 ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
 {
     ip_noise_arbitrator_data_t * data;
@@ -110,6 +119,8 @@ static ip_noise_chain_t * chain_alloc(char * name)
     chain->filter->max_packet_len = 65535;
     chain->filter->which_packet_len = IP_NOISE_WHICH_PACKET_LEN_DONT_CARE;
 
+    chain->state_names = ip_noise_str2int_dict_alloc();
+
     return chain;
 }
 
@@ -174,6 +185,39 @@ static void chain_free(ip_noise_chain_t * chain)
     ip_noise_str2int_dict_free(chain->state_names);
     
     free(chain);
+}
+
+static ip_noise_chain_t * get_chain(ip_noise_arbitrator_iface_t * self, int chain_index)
+{
+    ip_noise_arbitrator_data_t * data;
+
+    data = self->data;
+
+    if (chain_index >= data->num_chains)
+    {
+        return NULL;
+    }
+
+    return data->chains[chain_index];
+}
+
+static ip_noise_state_t * get_state(ip_noise_arbitrator_iface_t * self, int chain_index, int state_index)
+{
+    ip_noise_chain_t * chain;
+
+    chain = get_chain(self, chain_index);
+
+    if (chain == NULL)
+    {
+        return NULL;
+    }
+
+    if (state_index >= chain->num_states)
+    {
+        return NULL;
+    }
+
+    return chain->states[state_index];
 }
 
 #include "iface_handlers.c"
@@ -266,6 +310,31 @@ param_t read_param_type(
         }
         break;
 
+        case PARAM_TYPE_STATE:
+        {
+            int which;
+
+            which = read_int(self);
+
+            if (which == 0)
+            {
+                int index = read_int(self);
+
+                ret.state = index;
+            }
+            else if (which == 2)
+            {
+                ret.state = self->last_state;
+            }
+            else
+            {
+                printf("Uknown state which %i!\n", which);
+                exit(-1);
+            }
+            
+        }
+        break;
+
         case PARAM_TYPE_PROB:
         {
             double d;
@@ -275,6 +344,7 @@ param_t read_param_type(
                 d = 0;
             }
             ret.prob = d;
+            printf("Read Prob!\n");
         }
         break;
         

@@ -389,10 +389,21 @@ static int ip_noise_arbitrator_iface_handler_set_drop_delay_prob(ip_noise_arbitr
 	ip_noise_prob_t drop_prob = params[2].prob;
 	ip_noise_prob_t delay_prob = params[3].prob;
 
-
-
 	/* FILL IN WITH BODY*/
 
+    ip_noise_state_t * state;
+
+    printf("Set Drop/Delay Probs - (%i,%i)!\n", chain_index, state_index);
+
+    state = get_state(self, chain_index, state_index);
+
+    if (state == NULL)
+    {
+        return IP_NOISE_RET_VALUE_INDEX_OUT_OF_RANGE;
+    }
+
+    state->drop_prob = drop_prob;
+    state->delay_prob = delay_prob;
 
 	return 0;
 }
