@@ -12,6 +12,8 @@ IMAGES = $(D)/style.css                                             \
          $(D)/docs/Syntax_Description.txt                           \
          $(D)/docs/roadmaps/2001-08-22.txt                          \
          $(D)/docs/roadmaps/2001-09-11.txt                          \
+         $(D)/docs/Users_Guide/index.html                           \
+         $(D)/docs/Users_Guide/markov_chain1.png                    \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.1.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.2.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.3.tar.gz           \
@@ -35,7 +37,7 @@ IMAGES = $(D)/style.css                                             \
          
 
 
-SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/mailing-list
+SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/docs/Users_Guide $(D)/mailing-list
 
 HTMLS = $(D)/index.html $(D)/berlios.html $(D)/download/index.html $(D)/links.html \
 	$(D)/docs/index.html $(D)/mailing-list/index.html
