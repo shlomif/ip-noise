@@ -36,7 +36,9 @@ SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/mailing-list
 HTMLS = $(D)/index.html $(D)/berlios.html $(D)/download/index.html $(D)/links.html \
 	$(D)/docs/index.html $(D)/mailing-list/index.html
 
-all : $(SUBDIRS) $(HTMLS) $(IMAGES)
+RAW_SUBDIRS = $(D)/docs/Mid-Term-html
+
+all : $(SUBDIRS) $(HTMLS) $(IMAGES) $(RAW_SUBDIRS)
 
 $(SUBDIRS) :: % : 
 	@if [ ! -e $@ ] ; then \
@@ -49,3 +51,7 @@ $(HTMLS) :: $(D)/% : %.wml .wmlrc template.wml
 
 $(IMAGES) :: $(D)/% : %
 	cp -f $< $@
+
+$(RAW_SUBDIRS) :: $(D)/% : %
+	rm -fr $@
+	cp -r $< $@
