@@ -24,7 +24,9 @@ struct ip_noise_arbitrator_iface_struct
 
 typedef struct ip_noise_arbitrator_iface_struct ip_noise_arbitrator_iface_t;
 
-static int read_opcode(
+
+
+static int read_int(
     ip_noise_arbitrator_iface_t * self
     )
 {
@@ -32,8 +34,13 @@ static int read_opcode(
     
     ip_noise_conn_read(self->conn, buffer, 4);
 
-    return (buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24));
+    return (       buffer[0] | 
+            (((int)buffer[1]) << 8)  | 
+            (((int)buffer[2]) << 16) | 
+            (((int)buffer[3]) << 24) );
 }
+
+#define read_opcode(self) (read_int(self))
 
 typedef int param_type_t;
 
