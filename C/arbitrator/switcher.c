@@ -45,7 +45,7 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 }
 
 ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
-        ip_noise_arbitrator_date_t * data,
+        ip_noise_arbitrator_data_t * data,
         ip_noise_flags_t * flags,
         int * terminate_ptr
         )
@@ -57,6 +57,9 @@ ip_noise_arbitrator_switcher_t * ip_noise_arbitrator_switcher_alloc(
     self->data = data;
     self->flags = flags;
     self->terminate_ptr = terminate_ptr;
+    self->rand = ip_noise_rand_alloc(24);
 
-    PQueueInitialize(&(self->pq), 30, 0, ip_noise_timeval_cmp, NULL);
+    PQueueInitialise(&(self->pq), 30, 0, ip_noise_timeval_cmp, NULL);
+
+    return self;
 }

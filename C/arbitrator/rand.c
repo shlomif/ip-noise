@@ -33,7 +33,7 @@ int ip_noise_rand_rand(ip_noise_rand_t * rand)
     return (one | (two << 15));
 }
 
-void ip_noise_rand_srand(int seed)
+void ip_noise_rand_srand(ip_noise_rand_t * rand, int seed)
 {
     rand->seed = seed;
 }
@@ -42,11 +42,11 @@ void ip_noise_rand_srand(int seed)
 
 double ip_noise_rand_in_0_1(ip_noise_rand_t * rand)
 {
-    int rand;
+    int rand_num;
 
-    rand = ip_noise_rand_rand(rand);
+    rand_num = ip_noise_rand_rand(rand);
 
-    return (rand % rand_normalizer) * 1.0 / rand_normalizer;
+    return (rand_num % rand_normalizer) * 1.0 / rand_normalizer;
 }
 
 

@@ -1,9 +1,9 @@
 
 all: arb
 
-INCLUDES = conn.h delayer.h iface.h pqueue.h queue.h rwlock.h verdict.h
+INCLUDES = conn.h delayer.h iface.h pqueue.h queue.h rand.h rwlock.h switcher.h verdict.h 
 
-OBJECTS_PROTO = conn.o delayer.o main.o pqueue.o queue.o redblack.o rwlock.o str2int_dict.o
+OBJECTS_PROTO = conn.o delayer.o main.o pqueue.o queue.o rand.o redblack.o rwlock.o str2int_dict.o switcher.o
 
 $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
 	gcc -g -Wall -c $<
