@@ -11,5 +11,5 @@ Chain HTTP {
         drop = 1
     }
     protocol = tcp
-    dest = 127.0.0.1:80
+    dest = 132.68.52.118:80
 }

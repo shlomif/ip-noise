@@ -2,7 +2,7 @@ Chain Default {
     State A {
         delay = 1
         stable_delay = 1
-        delay_type = U(0,300)
+        delay_type = U(0,3000)
         time_factor = 100000
     }
     protocol = udp
