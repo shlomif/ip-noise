@@ -171,7 +171,7 @@ sub get_new_switch_event
     }
     
     # Get the length of the delay
-    my $length = (-log($prob))*$time_factor;
+    my $length = int((-log($prob))*$time_factor);
     
     my ($sec, $usec) = gettimeofday();
 

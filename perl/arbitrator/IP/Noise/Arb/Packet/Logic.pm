@@ -8,6 +8,10 @@ use NetPacket::UDP;
 
 use Data::Dumper;
 
+use Time::HiRes qw(gettimeofday);
+
+use IP::Noise::Rand;
+
 sub new
 {
     my $class = shift;
@@ -36,6 +40,8 @@ sub initialize
     $self->{'data'} = $data;
     $self->{'data_lock'} = $data_lock;
     $self->{'flags'} = $flags;
+
+    $self->{'rand'} = IP::Noise::Rand->new(5);
 
     return 0;
 }
@@ -86,13 +92,16 @@ sub get_packet_info
 
 sub is_in_ip_filter
 {
-    my $self = shift;
-    
     my $ip_filter = shift;
     
     my $ip = shift;
     
     my $port = shift;
+
+    if ($ip_filter->{'type'} eq "none")
+    {
+        return 1;
+    }
 
     foreach my $spec (@{$ip_filter->{'filters'}})
     {
@@ -100,7 +109,6 @@ sub is_in_ip_filter
 
         if (($spec->{'ip'} >> $netmask_width) == ($ip >> $netmask_width))
         {
-            # Do nothing
             if ($port == -1)
             {
                 # Do nothing
@@ -120,12 +128,55 @@ sub is_in_ip_filter
         }
         else
         {
+            # Continue to the next filter
         }
     }
     return 0;
 }
 
-sub chain_decide
+
+sub myBsearch
+{
+	my $key = shift;
+	my $array = shift;
+	my $len = shift;
+	my $compare = shift;
+	my $context = shift;
+
+	my $low = 0;
+	my $high = $len-1;
+	my $mid;
+	my $result;
+
+	while($low <= $high)
+	{
+		$mid = int(($low+$high)/2);
+
+		$result = &{$compare}($context, $key, $array->[$mid]);
+
+		if ($result < 0)
+		{
+			$high = $mid-1;
+		}
+		elsif ($result > 0)
+		{
+			$low = $mid+1;
+		}
+		else
+		{
+			return ($mid,1);
+		}
+	}
+
+	$result = &{$compare}($context, $key, $array->[$high]);
+
+	return ($high+1, 0);
+}
+
+
+my $prob_delta = 0.00000000001;
+
+sub is_in_chain_filter
 {
     my $self = shift;
 
@@ -135,9 +186,7 @@ sub chain_decide
 
     my $data = $self->{'data'};
 
-    my $chain = $self->{'data'}->{'chains'}->[$chain_index];
-
-    my $unprocessed_ret = { 'action' => "accept", 'flag' => "unprocessed" };
+    my $chain = $self->{'data'}->{'chains'}->[$chain_index];    
 
     if (! is_in_ip_filter(
         $chain->{'source'}, 
@@ -145,7 +194,7 @@ sub chain_decide
         $packet_info->{'source_port'}
         ))
     {
-        return $unprocessed_ret ;
+        return 0 ;
     }
 
     if (! is_in_ip_filter(
@@ -154,17 +203,17 @@ sub chain_decide
         $packet_info->{'dest_port'}
         ))
     {
-        return $unprocessed_ret ;
+        return 0 ;
     }
 
     if (! vec($chain->{'tos'}, $packet_info->{'tos'}, 1))
     {
-        return $unprocessed_ret ;
+        return 0 ;
     }
 
     if (! vec($chain->{'protocols'}, $packet_info->{'protocol'}, 1))
     {
-        return $unprocessed_ret ;
+        return 0 ;
     }
 
     my $length = $chain->{'length'};
@@ -179,34 +228,167 @@ sub chain_decide
     {
         if (! ($p_l >= $length->{'min'}))
         {
-            return $unprocessed_ret ;
+            return 0 ;
         }        
     }
     elsif ($len_type eq "lt")
     {
         if (! ($p_l <= $length->{'max'}))
         {
-            return $unprocessed_ret ;
+            return 0 ;
         }
     }
     elsif ($len_type eq "between")
     {
         if (! (($p_l <= $length->{'max'}) && ($p_l >= $length->{'min'})))
         {
-            return $unprocessed_ret ;
+            return 0 ;
         }
     }
     elsif ($len_type eq "not-between")
     {
         if ( (($p_l <= $length->{'max'}) && ($p_l >= $length->{'min'})))
         {
-            return $unprocessed_ret ;
+            return 0 ;
         }        
     }
 
-    
+    return 1;
+}
 
-    return { 'action' => "accept" };
+sub chain_decide
+{
+    my $self = shift;
+
+    my $chain_index = shift;
+
+    my $packet_info = shift;
+
+    my $ignore_filter = shift || 0;
+
+    my $unprocessed_ret = { 'action' => "accept", 'flag' => "unprocessed" };
+
+    if (! $ignore_filter)
+    {
+        if (! $self->is_in_chain_filter($chain_index, $packet_info))
+        {
+            return $unprocessed_ret;
+        }
+    }
+
+    my $chain = $self->{'data'}->{'chains'}->[$chain_index];
+
+    my $current_state = $chain->{'states'}->[$chain->{'current_state'}];
+
+    my $which_prob = $self->{'rand'}->rand_in_0_1();
+    if ($current_state->{'drop_prob'} < $which_prob)
+    {
+        return { 'action' => "drop" };
+    }
+    elsif ($current_state->{'drop_prob'} + $current_state->{'delay_prob'} < $which_prob)
+    {
+        # Delay
+
+        my $delay;
+
+        if ($current_state->{'delay_type'}->{'type'} eq "exponential")
+        {
+            my $prob = $self->{'rand'}->rand_in_0_1();
+
+            if ($prob < $prob_delta)
+            {
+                $prob = $prob_delta;
+            }
+
+            my $lambda = $current_state->{'delay_type'}->{'lambda'};
+            $delay = int((-log($prob)) * $lambda);            
+        }
+        elsif ($current_state->{'delay_type'}->{'type'} eq "generic")
+        {
+            my $prob = $self->{'rand'}->rand_in_0_1();
+
+            my $points = $current_state->{'delay_type'}->{'points'};
+
+            my $compare_func = sub {
+                my $context = shift;
+                my $prob = shift;
+                my $item = shift;
+
+                return ($prob <=> $item);
+            };
+
+            my ($index, $is_precise) = 
+                &myBsearch( 
+                    $prob,
+                    $points,
+                    scalar(@$points),
+                    $compare_func,
+                    0
+                    );
+            
+
+            if ($is_precise == 1)
+            {
+                $delay = $points->[$index]->{'delay'};                
+            }
+            else
+            {
+                # This is the formula for linear interpolation.
+                my ($x1, $y1) = @{$points->[$index]}{'prob','delay'};
+                my ($x2, $y2) = @{$points->[$index+1]}{'prob','delay'};
+                
+                $delay = int((($prob-$x1)*$y1+($x2-$prob)*$y2)/($x2-$x1));
+            }
+        }
+
+        my $do_a_stable_delay_prob = $self->{'rand'}->rand_in_0_1();
+
+        my ($sec, $usec) = &gettimeofday();
+
+        if (! exists($chain->{'last_packet_release_time'}))
+        {
+            $chain->{'last_packet_release_time'} = 
+                {
+                    'sec' => $sec,
+                    'usec' => $usec,
+                };                  
+        }
+
+        if ($do_a_stable_delay_prob < $current_state->{'stable_delay_prob'})
+        {
+            # $last_sec and $last_usec are the times in which the current
+            # packet will be released. It is calculated by taking the release
+            # time of the last packet and adding the delay.
+            my ($last_sec, $last_usec) = @{$chain->{'last_packet_release_time'}}{'sec','usec'};
+
+            $last_usec += $delay * 1000;
+            if ($last_usec > 1000000)
+            {
+                $last_sec += int($last_usec/1000000);
+                $last_usec %= 10000000;
+            }
+            # Calculate a modified delay
+            $delay = ($last_sec-$sec)*1000+int(($last_usec-$usec)/1000);
+        }
+
+        $usec += $delay * 1000;
+        if ($usec > 1000000)
+        {
+            $sec += int($usec/1000000);
+            $usec %= 10000000;
+        }
+        $chain->{'last_packet_release_time'} = 
+            { 
+                'sec' => $sec, 
+                'usec' => $usec 
+            };
+        
+        return { 'action' => "delay", 'delay_len' => $delay };
+    }
+    else
+    {
+        return { 'action' => "accept" , 'flag' => "processed" };
+    }
 }
 
 sub decide
@@ -275,7 +457,7 @@ sub decide
     {
         if (scalar(@$chains) > 0)
         {
-            $global_verdict = $self->chain_decide(0, $packet_info);
+            $global_verdict = $self->chain_decide(0, $packet_info, 1);
         }
     }
 
@@ -300,6 +482,9 @@ sub decide_what_to_do_with_packet
 
     if ($msg->data_len())
     {
+        my $verdict;
+
+        eval {
         my $payload = $msg->payload();
 
         my $data_lock = $self->{'data_lock'};
@@ -308,9 +493,19 @@ sub decide_what_to_do_with_packet
 
         my $packet_info = &get_packet_info($payload);
 
-        my $verdict = $self->decide($packet_info);
+        $verdict = $self->decide($packet_info);
+
+        my $d = Data::Dumper->new([ $verdict], [ "\$verdict"]);
+        print $d->Dump();
 
         $data_lock->up_read();        
+
+        };
+
+        if ($@)
+        {
+            print $@, "\n";
+        }
     
         return $verdict;
     }

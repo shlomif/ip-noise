@@ -842,6 +842,9 @@ sub loop
         $data_lock->up_write();
 
         # Destroy the connection.
+
+        my $d = Data::Dumper->new([$self->{'data'}], [ "\$data"]);
+        print $d->Dump();
         
         print "Closing a connection!\n";
         delete($self->{'conn'});
