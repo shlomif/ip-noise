@@ -1,0 +1,12 @@
+* Finish the rest of the document.
+
+* Add a CSS stylesheet
+
+* Rework 1., 2. lists as <ol>'s
+
+* Add numbers to the sections an subsections
+
+* Create a contents file
+
+* Convert the figures to SVG (?)
+
