@@ -5,7 +5,7 @@ use Sys::Hostname;
 
 use Time::HiRes qw(usleep);
 
-
+my $delay_in_usecs = shift || 20_000;
 
 
 my ( $count, $hisiaddr, $hispaddr, $histime,
@@ -52,6 +52,10 @@ for($count=0;$count<200_000;$count++)
     #    print "Sending \"$msg\"!\n";
     #}
     defined(send(SOCKET, $msg, 0, $hispaddr))    || die "send $host: $!";
+    if ($delay_in_usecs > 0)
+    {
+        usleep($delay_in_usecs);
+    }
     #sleep(1);
     #usleep(20000);
     #usleep(200000);

@@ -1,0 +1,23 @@
+Chain Default {
+    State A {
+        drop = 1 
+        time_factor = 100000
+    }
+}
+
+Chain ICMP {
+    State Start {
+        time_factor = 5000
+        move_to = { 
+            1 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 10000
+        drop = 0.5
+        move_to = {
+            1 = Start
+        }
+    }
+    protocol = icmp, udp
+}

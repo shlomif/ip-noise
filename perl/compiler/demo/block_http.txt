@@ -1,0 +1,15 @@
+Chain Default {
+    State A {
+        drop = 0 
+        time_factor = 100000
+    }
+}
+
+Chain HTTP {
+    State A {
+        time_factor = 100000
+        drop = 1
+    }
+    protocol = tcp
+    dest = 127.0.0.1:80
+}

@@ -9,7 +9,9 @@ use IP::Noise::C::Translator;
 use IP::Noise::Conn;
 #use IP::Noise::Conn::Ker;
 
-open I, "<./tests/texts/parse_arbitrator/arbitrator1.txt";
+my $filename = shift || "./tests/texts/parse_arbitrator/arbitrator1.txt";
+
+open I, "<$filename";
 my $stream = IP::Noise::Text::Stream::In->new(\*I);
 
 my $arbitrator_ds;

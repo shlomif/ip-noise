@@ -1,0 +1,6 @@
+Chain Default {
+    State A {
+        time_factor = 100000
+    }    
+}
+

@@ -1,0 +1,67 @@
+Chain Default {
+    State A { 
+        time_factor = 100000
+    }
+}
+
+Chain t2_len_lt_100 {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 1
+        move_to = {
+            0.7 = Start
+        }
+    }
+    length = l < 100
+    dest = 127.0.0.1 ; 132.68.7.4
+    source = 127.0.0.1 ; 132.68.7.4
+}
+
+Chain t2_len_gt_100 {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 1
+        move_to = {
+            0.7 = Start
+        }
+    }
+    length = l > 100
+    dest = 127.0.0.1 ; 132.68.7.4
+    source = 127.0.0.1 ; 132.68.7.4
+}
+
+
+Chain vipe {
+    State Start {
+        time_factor = 5000
+        drop = 0
+        move_to = {
+            0.5 = Noisy
+        }
+    }
+    State Noisy {
+        time_factor = 5000
+        drop = 1
+        move_to = {
+            0.7 = Start
+        }
+    }
+    dest = 127.0.0.1 ; 132.69.253.254
+    source = 127.0.0.1 ; 132.69.253.254
+}
+
+

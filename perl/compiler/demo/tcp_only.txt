@@ -1,0 +1,12 @@
+Chain Default {
+    State A {
+        drop = 1        
+    }
+}
+
+Chain TCP {
+    State A {
+        time_factor = 100000        
+    }
+    protocol = tcp, udp
+}
