@@ -22,12 +22,6 @@ my @stages =
         },
     );
 
-sub button_clicked
-{
-    my $i = shift;
-    
-    print $stages[$i]->{'id'}, "\n";
-}
 
 my $scw = Gtk::ScrolledWindow->new(undef,undef);
 $scw->set_policy('automatic', 'automatic');
@@ -58,19 +52,19 @@ my $code_text = Gtk::Text->new(undef,undef);
 $code_text->show();
 
 my $right_vbox = Gtk::VBox->new(0,0);
-$right_vbox->pack_start($desc_text, 0, 0, 0);
-$right_vbox->pack_start($code_text, 0, 0, 0);
+$right_vbox->pack_start($desc_text, 1, 1, 0);
+$right_vbox->pack_start($code_text, 1, 1, 0);
 $right_vbox->show();
 
 my $main_hbox = Gtk::HBox->new(0, 0);
-$main_hbox->pack_start($scw, 0, 0, 0);
-$main_hbox->pack_start($right_vbox, 0, 0, 0);
+$main_hbox->pack_start($scw, 1, 1, 0);
+$main_hbox->pack_start($right_vbox, 1, 1, 0);
 $main_hbox->show();
 
 my $window = new Gtk::Window('toplevel');
 $window->set_name("IP-Noise Demo");
 $window->set_uposition(20,20);
-$window->set_usize(200,400);
+$window->set_usize(400,400);
 
 $window->signal_connect("destroy" => \&Gtk::main_quit);
 $window->signal_connect("delete_event" => \&Gtk::false);
@@ -78,6 +72,28 @@ $window->signal_connect("delete_event" => \&Gtk::false);
 $window->add($main_hbox);
 
 $window->show();
+
+sub button_clicked
+{
+    my $index = shift;
+
+    my $id = $stages[$index]->{'id'};
+
+    my $demo_file = "demo/$id.txt";
+    my $desc_file = "demo/desc/$id.txt";
+
+    if (! -f $demo_file)
+    {
+        die "$demo_file not found!\n";
+    }
+    if (! -f $desc_file)
+    {
+        die "$desc_file not found!\n";
+    }
+    #print $stages[$index]->{'id'}, "\n";
+    system("perl tests/ker_translator.pl $demo_file &");
+}
+
 
 Gtk->main();
 
