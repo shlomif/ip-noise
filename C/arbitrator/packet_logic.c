@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
+#include "fcs_dm.h"
+#include "rand.h"
 #include "packet_logic.h"
 
 struct ip_noise_packet_info_struct
@@ -26,6 +29,8 @@ extern ip_noise_arbitrator_packet_logic_t *
 
     self->data = data;
     self->flags = flags;
+
+    self->rand = ip_noise_rand_alloc(5);
 
     return self;
 }
@@ -57,6 +62,31 @@ static ip_noise_packet_info_t * get_packet_info(unsigned char * payload)
     return ret;
 }
 
+int compare_prob_and_delay_points(
+    const void * v_p1,
+    const void * v_p2,
+    void * context
+    )
+{
+    ip_noise_prob_and_delay_t * p1 = (ip_noise_prob_and_delay_t * )v_p1;
+    ip_noise_prob_and_delay_t * p2 = (ip_noise_prob_and_delay_t * )v_p2;
+
+    if (p1->prob < p2->prob)
+    {
+        return -1;
+    }
+    else if (p1->prob > p2->prob)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+#define prob_delta 0.00000000001
+
 static ip_noise_verdict_t chain_decide(
     ip_noise_arbitrator_packet_logic_t * self,
     int chain_index,
@@ -65,10 +95,92 @@ static ip_noise_verdict_t chain_decide(
     )
 {
     ip_noise_verdict_t ret;
+    ip_noise_verdict_t unprocessed_ret;
+    ip_noise_chain_t * chain;
+    ip_noise_state_t * current_state;
+    ip_noise_prob_t which_prob;
 
-    ret.action = IP_NOISE_VERDICT_ACCEPT;
+    unprocessed_ret.action = IP_NOISE_VERDICT_ACCEPT;
+    unprocessed_ret.flag = IP_NOISE_VERDICT_FLAG_UNPROCESSED;
 
-    return ret;
+    ret.flag = IP_NOISE_VERDICT_FLAG_PROCESSED;
+
+    if (! ignore_filter)
+    {
+        if (! is_in_chain_filter(self, chain_index, packet_info))
+        {
+            return unprocessed_ret;
+        }
+    }
+
+    chain = self->data->chains[chain_index];
+    current_state = chain->states[chain->current_state];
+
+    which_prob = ip_noise_rand_rand_in_0_1(self->rand);
+
+    if (which_prob < current_state->drop_prob)
+    {
+        ret.action = IP_NOISE_VERDICT_DROP;
+        return ret;            
+    }
+    else if (which_prob < current_state->drop_prob + current_state->delay_prob)
+    {
+        /* Delay */
+        int delay;
+
+        if (current_state->delay_function.type == IP_NOISE_DELAY_FUNCTION_EXP)
+        {
+            ip_noise_prob_t prob;
+            int lambda;
+
+            prob = ip_noise_rand_rand_in_0_1(self->rand);
+
+            if (prob < prob_delta)
+            {
+                prob = prob_delta;                
+            }
+
+            lambda = current_state->delay_function.params.lambda;
+            delay = (int)((-log(prob)) * lambda);
+        }
+        else if (current_state->delay_function.type == IP_NOISE_DELAY_FUNCTION_SPLIT_LINEAR)
+        {
+            ip_noise_prob_t prob;
+            int num_points;
+            ip_noise_prob_and_delay_t * points, pseudo_point, * searched;
+            int is_precise;
+            
+            
+            prob = ip_noise_rand_rand_in_0_1(self->rand);
+
+            num_points = current_state->delay_function.params.split_linear.num_points;
+            points = current_state->delay_function.params.split_linear.points;
+
+            pseudo_point.prob = prob;
+             
+            searched = 
+                SFO_bsearch(
+                    &pseudo_point,
+                    points,
+                    num_points,
+                    sizeof(points[0]),
+                    compare_prob_and_delay_points,                    
+                    NULL,
+                    &is_precise
+                    );
+
+
+                    
+                
+               
+        }
+
+    }
+    else
+    {
+        ret.action = IP_NOISE_VERDICT_ACCEPT;
+        return ret;
+    }
 }
     
 

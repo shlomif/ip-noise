@@ -314,7 +314,7 @@ sub chain_decide
                 my $prob = shift;
                 my $item = shift;
 
-                return ($prob <=> $item);
+                return ($prob <=> $item->{'prob'});
             };
 
             my ($index, $is_precise) = 
