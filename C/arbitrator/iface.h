@@ -6,7 +6,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "redblack.h"
+
 #include "rwlock.h"
+
+typedef char ip_noise_id_t[80];
 
 typedef struct rbtree * ip_noise_str2int_dict;
 
@@ -50,6 +54,7 @@ typedef struct ip_noise_move_to_struct ip_noise_move_to_t;
 
 struct ip_noise_state_struct
 {
+    ip_noise_id_t name;
     ip_noise_prob_t drop_prob, delay_prob;
     ip_noise_delay_t delay_function;
     int time_factor;
@@ -115,6 +120,8 @@ typedef struct ip_noise_chain_filter_struct ip_noise_chain_filter_t;
 
 struct ip_noise_chain_struct
 {
+    ip_noise_id_t name;
+
     int num_states;
     ip_noise_state_t * states;
 
@@ -139,6 +146,12 @@ struct ip_noise_arbitrator_data_struct
 };
 
 typedef struct ip_noise_arbitrator_struct ip_noise_arbitrator_data_t;
+
+extern ip_noise_str2int_dict ip_noise_str2int_dict_alloc(void);
+extern int ip_noise_str2int_dict_get(ip_noise_str2int_dict dict, char * name);
+extern void ip_noise_str2int_dict_add(ip_noise_str2int_dict dict, char * name, int index);
+extern void ip_noise_str2int_dict_remove(ip_noise_str2int_dict dict, char * name);
+extern void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict);
 
 
 #endif /* #ifndef __IP_NOISE_IFACE_H */
