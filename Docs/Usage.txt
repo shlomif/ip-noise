@@ -17,7 +17,7 @@ superuser and the user that will run the compiler.
 5. Load the ip_queue module: "modprobe ip_queue".
 
 6. Set certain firewall rules to have the "QUEUE" directive. Like this:
-/sbin/iptables -A INPUT -i eth0 -j QUEUE
+# /sbin/iptables -A INPUT -i eth0 -j QUEUE
 
 The packets that are filtered by this rule will be passed to the 
 arbitrator. You may wish to make sure that some traffic will not be passed
@@ -29,6 +29,9 @@ to it, by playing with the firewalling rules.
 
 9. Enter the compiler's directory and type "./translator.pl [path_to_myfile]"
 where [path_to_myfile] is the path to the file that contains the configuration.
+
+10. You can later reload the arbitrator with different configurations by
+using steps #8 and #9.
 
 
 
