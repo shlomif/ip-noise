@@ -10,6 +10,9 @@ UML = 0
 
 DEBUG = 0
 
+I386 = 0
+
+
 ifeq ($(DEBUG),1)
 	OPT_FLAGS = -g -O2
 else
@@ -35,15 +38,27 @@ $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
 iface.o: iface.c iface_handlers.c $(INCLUDES)
 	kgcc $(CFLAGS) -c iface.c
 
+
+ifeq ($(I386),1)
+
 e_log.o: e_log.s
 	kgcc -c $<
 
+endif
+
+portable_log.o: portable_log.c
+	kgcc $(CFLAGS) -c $<
+
 OBJECTS = $(OBJECTS_PROTO) iface.o
 
-EXTRA_OBJECT = $(OBJECTS) e_log.o
+ifeq ($(I386),1)
+	OBJECTS_WITH_LOG = $(OBJECTS) e_log.o
+else
+	OBJECTS_WITH_LOG = $(OBJECTS) portable_log.o
+endif
 
-ip-noise-arb.o: $(OBJECTS) e_log.o
-	ld -r -o $@ $(OBJECTS) e_log.o
+ip-noise-arb.o: $(OBJECTS_WITH_LOG)
+	ld -r -o $@ $(OBJECTS_WITH_LOG)
 
 clean:
-	rm -f arb $(OBJECTS)
+	rm -f arb $(OBJECTS_WITH_LOG)
