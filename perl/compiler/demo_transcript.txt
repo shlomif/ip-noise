@@ -2,7 +2,7 @@ Before:
 -------
 
 1. Prepare an xterm on Desktop 5. 
-   cd it into ~/Docs/Univ/cvs/perl/scripts/test/udp and run 
+   cd it into ~/Docs/Univ/cvs/scripts/test/udp and run 
    perl server.pl.
 
 1.1: Prepare a root xterm running "tail -f /var/log/messages"
