@@ -54,6 +54,7 @@ extern void ip_noise_rwlock_up_write ( ip_noise_rwlock_t * lock );
 
 #include "k_pthread.h"
 
+#if 0
 typedef pthread_mutex_t ip_noise_rwlock_t;
 
 extern ip_noise_rwlock_t * ip_noise_rwlock_alloc();
@@ -63,7 +64,18 @@ extern void ip_noise_rwlock_free(ip_noise_rwlock_t * lock);
 #define ip_noise_rwlock_down_write(lock) pthread_mutex_lock(lock)
 #define ip_noise_rwlock_up_read(lock) pthread_mutex_unlock(lock)
 #define ip_noise_rwlock_up_write(lock) pthread_mutex_unlock(lock)
+#else
 
+typedef rwlock_t ip_noise_rwlock_t;
+
+extern ip_noise_rwlock_t * ip_noise_rwlock_alloc();
+extern void ip_noise_rwlock_free(ip_noise_rwlock_t * lock);
+
+#define ip_noise_rwlock_down_read(lock) read_lock(lock)
+#define ip_noise_rwlock_down_write(lock) write_lock(lock)
+#define ip_noise_rwlock_up_read(lock) read_unlock(lock)
+#define ip_noise_rwlock_up_write(lock) write_unlock(lock)
+#endif
 
 #endif
 

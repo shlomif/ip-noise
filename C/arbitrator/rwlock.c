@@ -175,14 +175,20 @@ ip_noise_rwlock_t * ip_noise_rwlock_alloc(void)
     ip_noise_rwlock_t * ret;
 
     ret = malloc(sizeof(ip_noise_rwlock_t));
+#if 0
     pthread_mutex_init(ret, NULL);
+#else
+    *ret = RW_LOCK_UNLOCKED;
+#endif
     
     return ret;
 }
 
 void ip_noise_rwlock_free(ip_noise_rwlock_t * lock)
 {
+#if 0
     pthread_mutex_destroy(lock);
+#endif
     free(lock);
 }
 
