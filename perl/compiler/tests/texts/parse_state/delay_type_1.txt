@@ -1,0 +1,8 @@
+Hello {    
+    delay = 0.2         # Yooo-hooo
+    delay_type = E(500)
+    time_factor = 1000
+    move_to = {
+        1 = Hello
+    }
+}

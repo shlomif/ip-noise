@@ -1,0 +1,7 @@
+MyState {
+    time_factor = 500
+    delay = 0.2
+    delay_type = N {
+    
+    }
+}

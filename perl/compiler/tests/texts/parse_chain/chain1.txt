@@ -1,0 +1,17 @@
+MyChain {
+    State A {
+        time_factor = 1000
+        move_to = {
+            0.2 = A
+            0.8 = B
+        }
+    }
+    State B {
+        time_factor = 500
+        move_to = {
+            0.5 = A
+            0.5 = B
+        }
+    }
+    length = l < 5000
+}
