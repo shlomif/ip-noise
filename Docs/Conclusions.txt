@@ -1,0 +1,29 @@
+Tools we used:
+==============
+
+VNC:
+----
+
+VNC, which stands for "Virtual Networking Computer" is similar to remote X.
+However, it has two very big advantages:
+
+1. It retains the same session between two consecutive logins.
+2. Its Win32 viewer is only one file, and does not require adminstrator
+permissions to run.
+
+During our first days, when we were given a very crammy screen, we set up a 
+VNC server on our Linux workstation, a viewer on a Windows 2000 machine, and 
+used the Linux workstation over the network.
+
+It usually worked very well. VNC is not without its flaws, however. 
+For instance, using a tiled-image wallpaper, resulted in a very slow rendering
+of the screen for some reason.
+
+Perl:
+-----
+
+Perl is a programming language commonly used for writing server-side Web 
+applications and for many other system administartion tasks. We found it 
+useful to program both the compiler and the initial version of the arbitrator
+in Perl, because a perl code takes a fraction of time to write in comparison
+to the equivalent C code.
