@@ -6,6 +6,8 @@ use Data::Dumper;
 
 use IP::Noise;
 
+use Time::HiRes qw(usleep);
+
 my $arb_string_len = IP::Noise::get_max_id_string_len() + 1;
 
 sub LAST_CHAIN ()
@@ -401,6 +403,7 @@ sub transact
             die "Unknown param_type $param_type!\n";
         }
         # TODO: Remove
+        usleep(20000);
     }
 
     my $ret_value = $self->read_retvalue();

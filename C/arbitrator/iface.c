@@ -36,6 +36,41 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
 }
 
 
+#ifdef USE_TEXT_QUEUE_IN
+
+static int ip_noise_read_proto(
+    ip_noise_arbitrator_iface_t * self,
+    char * buf,
+    int len
+    )
+{
+    int ret;
+    pthread_mutex_lock(&(self->text_queue_in_mutex));
+    ret = (ip_noise_text_queue_in_read_bytes(self->text_queue_in, (buf), (len)));    
+    pthread_mutex_unlock(&(self->text_queue_in_mutex));
+    
+    return ret;
+}
+
+static void ip_noise_read_rollback_proto(ip_noise_arbitrator_iface_t * self)
+{
+    pthread_mutex_lock(&(self->text_queue_in_mutex));
+    ip_noise_text_queue_in_rollback(self->text_queue_in);    
+    pthread_mutex_unlock(&(self->text_queue_in_mutex));
+  
+}
+
+static void ip_noise_read_commit_proto(ip_noise_arbitrator_iface_t * self)
+{
+    pthread_mutex_lock(&(self->text_queue_in_mutex));
+    ip_noise_text_queue_in_commit(self->text_queue_in);
+    printf("Commit!\n");
+    pthread_mutex_unlock(&(self->text_queue_in_mutex));
+}
+
+#endif
+
+
 static int read_int(
     ip_noise_arbitrator_iface_t * self
     )
@@ -368,7 +403,7 @@ int read_param_type(
             delay = read_int(self);
             if (delay < 0)
             {
-                return -1;
+                return delay;
             }
             if (delay == 0)
             {
@@ -703,11 +738,41 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
 
     return self;
 }
-        
+
+#ifdef USE_TEXT_QUEUE_IN
+
+extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
+
+static void * poll_conn(void * void_iface)
+{
+    ip_noise_arbitrator_iface_t * self = (ip_noise_arbitrator_iface_t * )void_iface;
+    char buffer[1];
+    int ret;
+    
+    while (1)
+    {
+        ret = ip_noise_conn_read(self->conn, buffer, 1);
+        if (ret == -1)
+        {
+            pthread_mutex_lock(&(self->text_queue_in_mutex));
+            ip_noise_text_queue_in_set_conn_closed(self->text_queue_in);
+            pthread_mutex_unlock(&(self->text_queue_in_mutex));
+            break;
+        }
+        pthread_mutex_lock(&(self->text_queue_in_mutex));
+        ip_noise_text_queue_in_put_bytes(self->text_queue_in, buffer, 1);
+        pthread_mutex_unlock(&(self->text_queue_in_mutex));
+    }
+
+    return NULL;
+}
+    
+#endif
+
 
 
 void ip_noise_arbitrator_iface_loop(
-    ip_noise_arbitrator_iface_t * self
+    ip_noise_arbitrator_iface_t * self 
     )
 {
     ip_noise_flags_t * flags;
@@ -729,6 +794,18 @@ void ip_noise_arbitrator_iface_loop(
         
         printf("%s", "Trying to open a connection!\n");
         self->conn = ip_noise_conn_open();
+
+#ifdef USE_TEXT_QUEUE_IN
+        self->text_queue_in_mutex = ip_noise_global_initial_mutex_constant;
+        pthread_mutex_init(&(self->text_queue_in_mutex), NULL);
+        self->text_queue_in = ip_noise_text_queue_in_alloc();
+
+        {
+            pthread_t thread;
+            pthread_create(&thread, NULL, poll_conn, self);
+        }
+#endif
+        
 
         /* Gain writer permission to the data */
 
@@ -796,6 +873,8 @@ void ip_noise_arbitrator_iface_loop(
 
             ret_code = record->handler(self, params, out_params);
 
+            ip_noise_read_commit();
+
             write_retvalue(self, ret_code);
 
             for(a=0;a<record->num_out_params;a++)
@@ -806,8 +885,6 @@ void ip_noise_arbitrator_iface_loop(
                     out_params[a]
                     );
             }
-
-            ip_noise_read_commit();
 
             end_of_loop:
         }

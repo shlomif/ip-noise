@@ -13,9 +13,9 @@ enum IP_NOISE_READ_ERROR_CODES
 };
 
 #ifdef USE_TEXT_QUEUE_IN
-#define ip_noise_read_commit() (ip_noise_text_queue_in_commit(self->text_queue_in))
-#define ip_noise_read_rollback() (ip_noise_text_queue_in_rollback(self->text_queue_in))
-#define ip_noise_read(buf, len) (ip_noise_text_queue_in_read_bytes(self->text_queue_in, (buf), (len)))
+#define ip_noise_read_commit() (ip_noise_read_commit_proto(self))
+#define ip_noise_read_rollback() (ip_noise_read_rollback_proto(self)) 
+#define ip_noise_read(buf, len) (ip_noise_read_proto(self, (buf), (len)))
 
 #else
 

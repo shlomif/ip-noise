@@ -2,18 +2,10 @@
 #include <string.h>
 
 #include "read.h"
+#include "text_queue_in.h"
 
 #define IP_NOISE_TEXT_QUEUE_IN_GROW_BY 2048
 
-struct ip_noise_text_queue_in_struct
-{
-    char * buffer;
-    int length;
-    int max_size;
-    int ptr_offset;
-};
-
-typedef struct ip_noise_text_queue_in_struct ip_noise_text_queue_in_t;
 
 ip_noise_text_queue_in_t * ip_noise_text_queue_in_alloc(void)
 {
@@ -23,7 +15,8 @@ ip_noise_text_queue_in_t * ip_noise_text_queue_in_alloc(void)
     q->max_size = IP_NOISE_TEXT_QUEUE_IN_GROW_BY;
     q->buffer = malloc(q->max_size);
     q->ptr_offset = 0;
-    
+    q->is_conn_closed = 0;
+    q->length = 0;
 
     return q;
 }
@@ -60,12 +53,19 @@ int ip_noise_text_queue_in_read_bytes(
     /* Check if we don't have enough to accomodate for the user's needs */
     if (q->ptr_offset + num_bytes > q->length)
     {
-        return IP_NOISE_READ_NOT_FULLY;
+        return (q->is_conn_closed) ? IP_NOISE_READ_CONN_TERM : IP_NOISE_READ_NOT_FULLY;
     }
     memcpy(dest, q->buffer + q->ptr_offset, num_bytes);
     q->ptr_offset += num_bytes;
 
     return IP_NOISE_READ_OK;
+}
+
+void ip_noise_text_queue_in_set_conn_closed(
+    ip_noise_text_queue_in_t * q
+    )
+{
+    q->is_conn_closed = 1;
 }
 
 void ip_noise_text_queue_in_commit(

@@ -706,6 +706,8 @@ static int ip_noise_arbitrator_iface_handler_set_time_factor(ip_noise_arbitrator
 
     ip_noise_state_t * state;
 
+    printf("Set Time Factor = %i\n", time_factor);
+
     state = get_state(self, chain_index, state_index);
 
     if (state == NULL)

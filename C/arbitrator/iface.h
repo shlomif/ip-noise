@@ -16,6 +16,7 @@ extern "C" {
 
 #include "rwlock.h"
 #include "conn.h"
+#include "text_queue_in.h"
 
 #define IP_NOISE_ID_LEN 80
 typedef char ip_noise_id_t[IP_NOISE_ID_LEN];
@@ -187,6 +188,10 @@ struct ip_noise_arbitrator_iface_struct
     ip_noise_flags_t * flags;    
     int last_chain;
     int last_state;
+#ifdef USE_TEXT_QUEUE_IN
+    ip_noise_text_queue_in_t * text_queue_in;
+    pthread_mutex_t text_queue_in_mutex;
+#endif
 };
 
 typedef struct ip_noise_arbitrator_iface_struct ip_noise_arbitrator_iface_t;
