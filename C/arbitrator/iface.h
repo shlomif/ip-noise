@@ -204,6 +204,9 @@ struct ip_noise_arbitrator_iface_struct
 #ifdef USE_TEXT_QUEUE_OUT
     ip_noise_text_queue_out_t * text_queue_out;
     pthread_mutex_t text_queue_out_mutex;
+#ifndef __KERNEL__
+    pthread_t write_poll_conn_thread;
+#endif
 #endif
 };
 

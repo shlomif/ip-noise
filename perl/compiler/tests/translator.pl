@@ -6,8 +6,8 @@ use IP::Noise::Text::Stream::In;
 use IP::Noise::C::Parser;
 
 use IP::Noise::C::Translator;
-#use IP::Noise::Conn;
-use IP::Noise::Conn::Ker;
+use IP::Noise::Conn;
+#use IP::Noise::Conn::Ker;
 
 open I, "<./tests/texts/parse_arbitrator/arbitrator1.txt";
 my $stream = IP::Noise::Text::Stream::In->new(\*I);
@@ -31,7 +31,7 @@ if ($@)
 
 close(I);
 
-my $conn = IP::Noise::Conn::Ker->new();
+my $conn = IP::Noise::Conn->new();
 
 my $translator = 
     IP::Noise::C::Translator->new(

@@ -86,7 +86,10 @@ void ip_noise_str2int_dict_reset(ip_noise_str2int_dict dict)
     while (myelem != NULL)
     {
         rbdelete(myelem, dict);
-        free(myelem);
+        /* rbdelete calls free implicitly */
+#if 0
+        free(myelem); 
+#endif
         myelem = (dict_elem *)rbmin(dict);
     }
 }

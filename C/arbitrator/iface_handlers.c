@@ -249,6 +249,7 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     self->last_state = index;
     
     chain->states[index]->move_tos = malloc(sizeof(chain->states[index]->move_tos[0])*(index+1));
+    chain->states[index]->num_move_tos = index+1;
     for(a=0;a<index;a++)
     {
         chain->states[index]->move_tos[a].comulative_prob = 0;

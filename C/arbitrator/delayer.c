@@ -326,11 +326,10 @@ void ip_noise_delayer_loop(
         cond_wait_status = 0;
         while (cond_wait_status == 0)
         {
-            if (cond_wait_status == 0)
-            {
-                /* We were signalled from the outside */
-                msg = PQueuePeekMinimum(&(delayer->pq));
-            }
+            /* We were signalled from the outside */
+            
+            msg = PQueuePeekMinimum(&(delayer->pq));
+
             if (msg != NULL)
             {
                 ts_to_wait_for.tv_sec = msg->tv.tv_sec;

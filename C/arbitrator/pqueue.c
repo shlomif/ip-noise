@@ -144,7 +144,20 @@ int PQueuePush( PQUEUE *pq, pq_element_t item)
 
 pq_element_t PQueuePeekMinimum( PQUEUE * pq)
 {
-    return pq->Elements[ PQ_FIRST_ENTRY ];
+    if (pq->CurrentSize == 0)
+    {
+#ifndef __KERNEL__
+        return NULL;
+#else
+        pq_element_t ret;
+        ret.tv = 0;
+        return ret;
+#endif
+    }
+    else
+    {        
+        return pq->Elements[ PQ_FIRST_ENTRY ];
+    }
 }
 
 int PQueueIsEmpty( PQUEUE *pq )

@@ -1,6 +1,8 @@
 #ifndef __KERNEL__
 #include <stdlib.h>
 #include <string.h>
+
+#include "ourrealloc.h"
 #else
 #include "k_stdlib.h"
 #endif

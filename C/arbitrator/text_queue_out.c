@@ -1,6 +1,8 @@
 #ifndef __KERNEL__
 #include <string.h>
 #include <stdlib.h>
+
+#include "ourrealloc.h"
 #else
 #include "k_stdlib.h"
 #endif
@@ -16,6 +18,8 @@ ip_noise_text_queue_out_t * ip_noise_text_queue_out_alloc(void)
     q = malloc(sizeof(ip_noise_text_queue_out_t ));
     q->max_size = IP_NOISE_TEXT_QUEUE_OUT_GROW_BY;
     q->buffer = malloc(q->max_size);
+    q->ptr_offset = 0;
+    q->length = 0;
 
     return q;
 }

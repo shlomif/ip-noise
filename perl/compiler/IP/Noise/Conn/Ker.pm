@@ -5,11 +5,14 @@
 package IP::Noise::Conn::Ker;
 
 use strict;
+use IO::Handle;
+
+sub O_RDWR () {    02;} 
 
 require 'flush.pl';
 
 #my $pipes_dir = "/home/project" . "/ip-noise/pipes/";
-my $dev_path = "/home/project/Docs/Univ/cvs/C/arbitrator" . "iface_dev";
+my $dev_path = "/home/project/Docs/Univ/cvs/C/arbitrator/" . "iface_dev";
 
 #local(*OUT,*IN);
 local (*DEV);
@@ -31,7 +34,10 @@ sub initialize
 {
     my $self = shift;
 
-    sysopen(*DEV, $dev_path, O_RDWR);
+    if (!sysopen(*DEV, $dev_path, O_RDWR))
+    {
+        die "sysopen $dev_path: $!\n";
+    }
 
     $self->{'out'} = \*DEV;
     $self->{'in'} = \*DEV;

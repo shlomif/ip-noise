@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "ourrealloc.h"
 #else
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -44,8 +46,8 @@ ip_noise_arbitrator_data_t * ip_noise_arbitrator_data_alloc(void)
     data->lock = ip_noise_rwlock_alloc();
 
     data->num_chains = 0;
-    data->max_num_chains = 0;
-    data->chains = NULL;
+    data->max_num_chains = 16;
+    data->chains = malloc(sizeof(data->chains[0]) * data->max_num_chains);
     data->chain_names = ip_noise_str2int_dict_alloc();
 
     return data;
@@ -196,7 +198,7 @@ static ip_noise_chain_t * chain_duplicate(
     new->last_packet_release_time = old->last_packet_release_time;
 
     new->state_names = ip_noise_str2int_dict_duplicate(old->state_names);
-    
+
     return new;
 }
 
@@ -211,6 +213,8 @@ static ip_noise_arbitrator_data_t *
     new = malloc(sizeof(ip_noise_arbitrator_data_t));
     new->max_num_chains = old->max_num_chains;
     new->num_chains = old->num_chains;
+    printf("max_num_chains == %i\n", new->max_num_chains);
+    fflush(stdout);
     new->chains = malloc(new->max_num_chains*sizeof(new->chains[0]));
     for(a = 0 ; a < new->num_chains ; a++)
     {
@@ -650,6 +654,7 @@ int read_param_type(
         {
             ip_noise_ip_spec_t * head;
             ip_noise_ip_spec_t * tail;
+            ip_noise_ip_spec_t * prev_tail;
             struct in_addr ip;
             struct in_addr terminator;
             int netmask;
@@ -662,6 +667,7 @@ int read_param_type(
             head = malloc(sizeof(ip_noise_ip_spec_t));
             head->port_ranges = NULL;
             tail = head;
+            prev_tail = tail;
             tail->next = NULL;
 
             memset(&ip, '\x0', sizeof(ip));
@@ -725,10 +731,13 @@ int read_param_type(
                     tail->num_port_ranges = num_port_ranges;
                     tail->port_ranges = port_ranges;
                     tail->next = malloc(sizeof(ip_noise_ip_spec_t));
+                    prev_tail = tail;
                     tail = tail->next;
                     tail->next = NULL;
                 }
             }
+            free(prev_tail->next);
+            prev_tail->next = NULL;
             if (num_port_ranges != 0)
             {
                 free(port_ranges);
@@ -1070,6 +1079,8 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     ip_noise_arb_iface = self;
     
 #endif
+
+    self->_continue = 0;
     
     return self;
 }
@@ -1141,6 +1152,8 @@ static void ip_noise_arbitrator_iface_init_connection(
     )
 {
     ip_noise_rwlock_t * data_lock;
+
+    
     data_lock = (*self->data)->lock;
 
         self->_continue = 1;
@@ -1172,7 +1185,7 @@ static void ip_noise_arbitrator_iface_init_connection(
         self->text_queue_out = ip_noise_text_queue_out_alloc();
 
 #ifndef __KERNEL__
-        pthread_create(&write_poll_conn_thread, NULL, write_poll_conn, self);
+        pthread_create(&(self->write_poll_conn_thread), NULL, write_poll_conn, self);
 #endif
 #endif
         
@@ -1202,7 +1215,7 @@ static void close_connection(
     
 #ifdef USE_TEXT_QUEUE_OUT
 #ifndef __KERNEL__
-        pthread_cancel(write_poll_conn_thread);
+        pthread_cancel(self->write_poll_conn_thread);
 #endif
 #endif
         
@@ -1238,6 +1251,7 @@ static void ip_noise_arbitrator_iface_transact(
     int ok;
     param_t params[4];
     param_t out_params[4];
+
     
 
 
@@ -1335,9 +1349,6 @@ void ip_noise_arbitrator_iface_loop(
 {
     ip_noise_flags_t * flags;
     ip_noise_rwlock_t * data_lock;        
-#if defined(USE_TEXT_QUEUE_OUT) && !defined(__KERNEL__)
-    pthread_t write_poll_conn_thread;
-#endif
 
     flags = self->flags;
     data_lock = (*self->data)->lock;
