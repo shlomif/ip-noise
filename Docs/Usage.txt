@@ -23,7 +23,9 @@ The packets that are filtered by this rule will be passed to the
 arbitrator. You may wish to make sure that some traffic will not be passed
 to it, by playing with the firewalling rules.
 
-7. Enter the arbitrator's directory, su into root, and run the arbitrator.
+7. Enter the arbitrator's directory, su into root, and run the arbitrator. You
+have to keep this shell open. If you want to run it in the background use
+GNU screen.
 
 8. Prepare a file containing the configuration of the arbitrator. 
 
@@ -53,7 +55,8 @@ of this device in the shell of the user that would run the compiler.
 # /sbin/iptables -A INPUT -i eth0 -j QUEUE
 
 7. Enter the arbitrator's directory, su into root and type 
-"/sbin/insmod ip-noise-arb.o".
+"/sbin/insmod ip-noise-arb.o". After this step you don't have to remain as
+root.
 
 8. Prepare a file containing the configuration of the arbitrator. 
 
