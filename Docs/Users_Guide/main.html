@@ -248,6 +248,11 @@ system:
 </table>
 </p>
 
+<p>
+Note that the IP-Noise kernel module replaces the IP-Queue mechanism of the 
+Linux kernel, and both cannot be used simultaneously.
+</p>
+
 <h3>Loading and Un-loading the arbitrator</h3>
 
 <h4>Userland Arbitrator</h4>
@@ -269,10 +274,32 @@ There type <tt>./arb</tt> to invoke the arbitrator.
 </p>
 
 <p>
-To cancel it, simply type <tt>Ctrl+C</tt> at the terminal in which it 
+To unload it, simply type <tt>Ctrl+C</tt> at the terminal in which it 
 was invoked.
 </p>
 
+<h4>Kernel-Module Arbitrator</h4>
+
+<p>
+After the IP-Tables rules have been set up, cd to the <tt>C/arbitrator</tt> 
+directory of the distribution as root. There type <tt>insmod ./ip-noise-arb.o</tt>.
+</p>
+
+<p>
+To unload it type <tt>rmmod ip-noise-arb</tt> as root.
+</p>
+
+<h3>Configuring an Arbitrator</h3>
+
+<p>
+To configure an arbitrator one has to prepare a configuration file that
+contains the description of the noise behaviour, in the syntax that was
+defined for this purpose (which will be described below). After the file has
+been prepared, cd to the <tt>perl/compiler</tt> 
+directory of the distribution. Then type <tt>perl tests/translator.pl</tt>
+or <tt>perl tests/ker_translator.pl</tt> (for the userland and kernel-level 
+arbitrators respectively) followed by the path to the configuration file.
+</p>
 
 </body>
 </html>
