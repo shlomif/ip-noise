@@ -83,6 +83,12 @@ my %transactions =
         'params' => [ "chain", "ip_packet_filter"],
         'out_params' => [],
     },
+    'set_protocol' =>
+    {
+        'opcode' => 0x5,
+        'params' => [ "chain", "int", "bool" ],
+        'out_params' => [],
+    },
     'set_drop_delay_prob' =>
     {
         'opcode' => 0x0E,
@@ -314,6 +320,18 @@ sub transact
                     )
                 );
         }
+        elsif ($param_type eq "int")
+        {
+            $conn->conn_write(
+                pack_int32($param)
+                );
+        }
+        elsif ($param_type eq "bool")
+        {
+            $conn->conn_write(
+                pack_int32($param)
+                );
+        }
         else
         {
             die "Unknown param_type $param_type!\n";
@@ -529,6 +547,47 @@ sub load_arbitrator
             if ($ret_value != 0)
             {
                 die "The arbitrator did not accept our dest!\n";
+            }
+        }
+
+        if ($chain->{'protocols'}->{'type'} ne "all")
+        {
+            print "Uploading Protocols!\n";
+
+            my $include_or_exclude = $chain->{'protocols'}->{'type'} eq "only";
+
+            if ($include_or_exclude)
+            {
+                ($ret_value, $other_args) =
+                    $self->transact(
+                        "set_protocol",
+                        LAST_CHAIN,
+                        256,
+                        0
+                        );
+
+                if ($ret_value != 0)
+                {
+                    die ("The arbitrator refused to disable " . 
+                        "all the protocols!\n");
+                }
+            }
+            foreach my $p (keys(%{$chain->{'protocols'}->{'protocols'}}))
+            {
+                ($ret_value, $other_args) =
+                    $self->transact(
+                        "set_protocol",
+                        LAST_CHAIN,
+                        $p,
+                        $include_or_exclude
+                        );
+                
+                if ($ret_value != 0)
+                {
+                    die ("The arbitrator refused to " . 
+                        ($include_or_exclude ? "enable" : "disable") .
+                        " the protocol $p!\n");
+                }
             }
         }
     }

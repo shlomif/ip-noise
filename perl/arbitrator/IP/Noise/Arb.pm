@@ -76,7 +76,12 @@ my %operations =
     {
         'params' => [ "chain", "ip_packet_filter" ],
         'handler' => \&handler_set_dest,
-    },    
+    },
+    0x5 =>
+    {
+        'params' => [ "chain", "int", "bool" ],
+        'handler' => \&handler_set_protocol,
+    },
     0x19 =>
     {
         'params' => [],
@@ -153,6 +158,7 @@ sub handler_new_chain
             'states_map' => {},
             'source' => { 'type' => "none" },
             'dest' => { 'type' => "none" },
+            'protocols' => ("\xFF" x 32),
         };
     
     my $index = scalar(@{$data->{'chains'}})-1;
@@ -356,6 +362,30 @@ sub handler_set_dest
     return 0;    
 }
 
+sub handler_set_protocol
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $index = shift;
+    my $enable_or_disable = shift;
+
+    print "Set Protocol [index=$index, enable=$enable_or_disable!\n";
+
+    my $data = $self->{'data'};
+
+    my $chain = $data->{'chains'}->[$chain_index];
+
+    if ($index > 255)
+    {
+        $chain->{'protocols'} = ($enable_or_disable ? "\xFF" : "\x00") x 32;
+    }
+    else
+    {
+        vec($chain->{'protocols'}, $index, 1) = $enable_or_disable;
+    }
+
+    return 0;    
+}
 
 sub read_param_type
 {
@@ -483,6 +513,8 @@ sub read_param_type
         my @ret;
 
         # TODO: Add sanity checks.
+
+        $ip = "";
         
         while ($ip ne "\xFF\xFF\xFF\xFF")
         {
@@ -508,6 +540,14 @@ sub read_param_type
 
         return { 'type' => 'pass', 'filters' => \@ret};
     }
+    elsif ($param_type eq "int")
+    {
+        return unpack("V", $conn->conn_read(4));
+    }
+    elsif ($param_type eq "bool")
+    {
+        return (unpack("V", $conn->conn_read(4)) != 0);
+    }    
     else
     {
         die "Unknown param type: $param_type!\n";
