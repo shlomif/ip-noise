@@ -21,7 +21,7 @@ IMAGES = $(D)/style.css                                             \
 
 SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/mailing-list
 
-HTMLS = $(D)/index.html $(D)/download/index.html $(D)/links.html \
+HTMLS = $(D)/index.html $(D)/berlios.html $(D)/download/index.html $(D)/links.html \
 	$(D)/docs/index.html $(D)/mailing-list/index.html
 
 all : $(SUBDIRS) $(HTMLS) $(IMAGES)
