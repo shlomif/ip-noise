@@ -119,9 +119,63 @@ distributed under the MIT X11 license.
 
 <p>
 In order to use the simulator, the IP-Tables kernel module must be compiled,
-and available for loading. perl v. 5.6.1 or later must be available on the 
+and available for loading. Specifically, the ip_queue module should be 
+available. perl v. 5.6.1 or later must be available on the 
 system in order to configure the simulator.
 </p>
 
+<p>
+libipq which is part of the iptables userland distribution should be installed 
+and available on the system, as the userland simulator makes use of it.
+</p>
+
+<h4>Compiling the Simulator</h4>
+
+<p>
+Download and unpack the latest distribution. <tt>cd</tt> to the directory 
+<tt>C/arbitrator</tt>. In order to compile the userland simulator type 
+"<tt>make</tt>". 
+</p>
+
+<p>
+In order to compile the kernel module-based simulator type 
+"<tt>make -f Makefile kernel</tt>". In case you don't have 
+an i386-compatible machine, you should edit the file 
+<tt>Makefile.kernel</tt> and change the line "<tt>I386 = 1</tt>" 
+to "<tt>I386 = 0</tt>".
+</p>
+
+<h4>Userland Arbitrator Specific Instructions</h4>
+
+<p>
+Designate a directory in which two named pipes will be put. These pipes will
+be used for communication between the arbitrator and the configuration
+utility. The directory should be accesible both by root and by the user, with
+which you intend to run the configurator (which we recommend 
+should not be root).
+</p>
+
+<p>
+In this directory type the following set of commands as root:
+</p>
+
+<p>
+<pre>
+# pwd
+/ip-noise
+#mkfifo to_arb
+#mkfifo from_arb
+#chown ipnoise.ipnoise to_arb from_arb
+#chmod 600 to_arb from_arb
+#chmod 700 .
+#chown ipnoise.ipnoise .
+</pre>
+</p>
+
+<p>
+<tt>ipnoise.ipnoise</tt> is the username and group of the user that will 
+be used to invoke the configurator. Now set the environment variable 
+<tt>IP_NOISE_UM_ARB_CONN_PATH</tt> to the full path of this directory.
+</p>
 </body>
 </html>
