@@ -5,6 +5,8 @@ use strict;
 
 require 'flush.pl';
 
+my $pipes_dir = $ENV{'HOME'} . "/ip-noise/pipes/";
+
 local(*OUT,*IN);
 
 sub new
@@ -28,13 +30,13 @@ sub initialize
     
     if ($is_arbitrator)
     {
-        open *OUT, ">./pipes/from_arb";
-        open *IN, "<./pipe/to_arb";
+        open *OUT, ">$pipes_dir/from_arb";
+        open *IN, "<$pipes_dir/to_arb";
     }
     else
     {
-        open *OUT, ">./pipes/to_arb";
-        open *IN, "<./pipes/from_arb";
+        open *OUT, ">$pipes_dir/to_arb";
+        open *IN, "<$pipes_dir/from_arb";
     }
 
     $self->{'out'} = \*OUT;

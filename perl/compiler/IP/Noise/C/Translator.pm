@@ -39,7 +39,7 @@ my %transactions =
         'params' => [],
         'out_params' => [],
     },
-)
+);
 
 sub pack_int32
 {
