@@ -5,11 +5,12 @@
 <p>
 This page describes the 
 <a href="http://comnet.technion.ac.il/">Computer Networks Lab</a>'s
-project of creating a simulator of IP noise for the Linux kernel. 
+project of creating a simulator of IP noise for Linux. 
 </p>
 
 <h2>Project Takers</h2>
 
+<ul>
 <h3><a href="http://t2.technion.ac.il/~shlomif/">Shlomi Fish</a></h3>
 
 (Please use his Technion E-mail: 
@@ -19,9 +20,13 @@ shlomif@vipe.technion.ac.il
 )
 <h3>Roy Glasberg</h3> 
 
+</ul>
+
 <h2>Project Supervisor</h2>
 
+<ul>
 <h3><a href="http://tiger.technion.ac.il/~libman/">Lavy Libman</a></h3>
+</ul>
 
 <h2>The Project's Purpose</h2>
 
@@ -33,9 +38,9 @@ noise, or one with a time-varying behaviour.
 </p>
 
 <p>
-The incensitive for this is to allow researchers and developers to
-test whether their protocols are immune to various types of 
-network noise.
+The incenitive for this is to allow researchers and developers to
+test whether their protocols can operate well under various kinds of network
+noise.
 </p>
 
 <h2><a href="download/">Downloads</a></h2>
