@@ -1,5 +1,5 @@
 
-UML = 1
+UML = 0
 
 ifeq ($(UML),1)
 	LINUX_KERNEL_DIR = /home/shlomi/Download/unpack/kernel/User-Mode-Linux/kernel/linux

@@ -66,8 +66,8 @@ ip_noise_delayer_t * ip_noise_delayer_alloc(
     ip_noise_delayer_t * ret;
 
     ret = malloc(sizeof(ip_noise_delayer_t));
-    printf("ipq_ker_q: ret=%i line=%i module=\"%s\"", 
-            (int)ret,
+    printf("ipq_ker_q: ret=%p line=%i module=\"%s\"\n", 
+            ret,
             __LINE__,
             __FILE__
             );
@@ -105,12 +105,21 @@ void ip_noise_delayer_destroy(ip_noise_delayer_t * delayer)
     free(delayer);
 }
 
-void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
+static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer);
+
+static void ip_noise_delayer_timer_function(ip_noise_delayer_t * delayer)
+{
+    pthread_mutex_lock(&(delayer->mutex));
+    delayer->current_timer_initialized = 0;
+    ip_noise_delayer_check_pq(delayer);
+    pthread_mutex_unlock(&(delayer->mutex));
+}
+
+static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
 {
     ip_noise_delayer_pq_element_t current_time_pseudo_msg, * msg;
 
     gettimeofday(&(current_time_pseudo_msg.tv), &tz);
-    pthread_mutex_lock(&(delayer->mutex));
 
     while (!PQueueIsEmpty(&(delayer->pq)))
     {
@@ -120,7 +129,7 @@ void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
         {
             break;
         }
-        if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) < 0)
+        if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) <= 0)
         {
             delayer->release_callback(msg->m, delayer->release_callback_context);
             PQueuePop(&(delayer->pq));
@@ -145,13 +154,11 @@ void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
         
         delayer->current_timer.expires = jiffies + ((HZ * num_millisecs) / 1000);
         delayer->current_timer.data = (unsigned long)delayer;
-        delayer->current_timer.function = (void (*) (unsigned long))ip_noise_delayer_check_pq;
+        delayer->current_timer.function = (void (*) (unsigned long))ip_noise_delayer_timer_function;
         add_timer(&(delayer->current_timer));
         delayer->current_timer_initialized = 1;
     }
 #endif
-
-    pthread_mutex_unlock(&(delayer->mutex));
 }
 
 void ip_noise_delayer_delay_packet(
@@ -163,6 +170,9 @@ void ip_noise_delayer_delay_packet(
 {
     ip_noise_delayer_pq_element_t * elem;
     ip_noise_delayer_pq_element_t * min_msg;
+    struct timeval current_time;
+
+    current_time = tv;
     
     tv.tv_usec += delay_len * 1000;
     if (tv.tv_usec > 1000000)
@@ -187,6 +197,12 @@ void ip_noise_delayer_delay_packet(
         (
             (elem->tv.tv_sec == min_msg->tv.tv_sec) &&
             (elem->tv.tv_usec < min_msg->tv.tv_usec)
+        ) ||
+        /* Check if the minimal message should have already been released by now */
+        (min_msg->tv.tv_sec < current_time.tv_sec) ||
+        (
+            (min_msg->tv.tv_sec == current_time.tv_sec) &&
+            (min_msg->tv.tv_usec < current_time.tv_usec)
         )
        )
     {
@@ -195,11 +211,13 @@ void ip_noise_delayer_delay_packet(
 #else
         if (delayer->current_timer_initialized)
         {
-            del_timer(&delayer->current_timer);
+            del_timer(&(delayer->current_timer));
+            delayer->current_timer_initialized = 0;
         }
+#if 0
         pthread_mutex_unlock(&(delayer->mutex));
+#endif
         ip_noise_delayer_check_pq(delayer);
-        return;        
 #endif        
     }
     pthread_mutex_unlock(&(delayer->mutex));
@@ -225,7 +243,7 @@ void ip_noise_delayer_loop(
         {
             /* See if the message should have been sent by now. */
             msg = PQueuePeekMinimum(&(delayer->pq));
-            if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) < 0)
+            if (ip_noise_timeval_cmp(msg, &current_time_pseudo_msg, NULL) <= 0)
             {
                 delayer->release_callback(msg->m, delayer->release_callback_context);
                 PQueuePop(&(delayer->pq));

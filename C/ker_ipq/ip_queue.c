@@ -213,6 +213,11 @@ static int ipq_enqueue(ipq_queue_t *q,
         /* Determine the delay in msecs */
         num_millisecs = ip_noise_rand_rand15(rand_gen) % 3000;
 
+        if (num_millisecs < 100)
+        {
+            num_millisecs = 100;
+        }
+
         gettimeofday(&tv, &tz);
 #if 0
         tv.tv_usec += (num_millisecs % 1000) * 1000;
@@ -405,7 +410,7 @@ static int __init init(void)
 
     delayer = ip_noise_delayer_alloc(release_handler, NULL);
 
-    printf("ipq_ker_q: delayer=%i\n", (unsigned int)delayer);
+    printf("ipq_ker_q: delayer=%p\n", delayer);
 
     pthread_mutex_init(&protect_timers_mutex, NULL);
 	

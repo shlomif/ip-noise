@@ -50,5 +50,5 @@ while (1)
     #}
     defined(send(SOCKET, $msg, 0, $hispaddr))    || die "send $host: $!";
     #sleep(1);
-    usleep(2000);
+    usleep(20000);
 }
