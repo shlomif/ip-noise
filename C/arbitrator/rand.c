@@ -38,15 +38,18 @@ void ip_noise_rand_srand(ip_noise_rand_t * rand, int seed)
     rand->seed = seed;
 }
 
-#define rand_normalizer 10000000
+const int rand_normalizer = 10000000;
 
 double ip_noise_rand_rand_in_0_1(ip_noise_rand_t * rand)
 {
     int rand_num;
+    double ret;
 
     rand_num = ip_noise_rand_rand(rand);
 
-    return (rand_num % rand_normalizer) * 1.0 / rand_normalizer;
+    ret = ((double)(rand_num % rand_normalizer)) / rand_normalizer;
+
+    return ret;
 }
 
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "switcher.h"
 
@@ -110,7 +111,6 @@ static void switch_chain(
     double prob;
     double move_tos_com_prob = 0;
     int i;
-    int num_move_tos;
 
     data = self->data;
     
@@ -118,12 +118,15 @@ static void switch_chain(
 
     current_state = chain->current_state;
 
+#if 0
+    /* At the moment, nothing is implemented using num_move_tos. */
     num_move_tos = chain->states[current_state]->num_move_tos;
+#endif
     move_tos = chain->states[current_state]->move_tos;
 
     prob = ip_noise_rand_rand_in_0_1(self->rand);
 
-    for(i=0;i<num_move_tos;i++)
+    for(i=0;i<chain->num_states;i++)
     {
         move_tos_com_prob += move_tos[i].comulative_prob;
         if (prob < move_tos_com_prob)
@@ -139,9 +142,59 @@ static void switch_chain(
     }
 }
 
+#define prob_delta 0.00000000001
+
+static ip_noise_arbitrator_switcher_event_t * get_new_switch_event(
+    ip_noise_arbitrator_switcher_t * self, 
+    int chain_index
+    )
+{
+    ip_noise_arbitrator_data_t * data;
+    ip_noise_chain_t * chain;
+    int current_state;
+    int time_factor;
+    double prob;
+    int length;
+    struct timeval tv;
+    struct timezone tz;
+    ip_noise_arbitrator_switcher_event_t * event;    
+
+    data = self->data;
+    chain = data->chains[chain_index];
+    current_state = chain->current_state;
+
+    time_factor = chain->states[current_state]->time_factor;
+
+    prob = ip_noise_rand_rand_in_0_1(self->rand);
+
+    if (prob < prob_delta)
+    {
+        prob = prob_delta;
+    }
+    
+    length = (int)((-log(prob))*time_factor);
+
+    gettimeofday(&tv, &tz);
+
+    tv.tv_usec += length*1000;
+
+    if (tv.tv_usec > 1000000)
+    {
+        tv.tv_sec += tv.tv_usec / 1000000;
+        tv.tv_usec %= 1000000;
+    }
+
+    event = malloc(sizeof(ip_noise_arbitrator_switcher_event_t));
+
+    event->tv = tv;
+    event->chain = chain_index;
+
+    return event;
+}
+
 void ip_noise_arbitrator_switcher_loop(
     ip_noise_arbitrator_switcher_t * self
-    ) 
+    )
 {
     ip_noise_flags_t * flags;
     ip_noise_arbitrator_data_t * data;

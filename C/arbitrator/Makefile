@@ -14,7 +14,7 @@ iface.o: iface.c iface_handlers.c $(INCLUDES)
 OBJECTS = $(OBJECTS_PROTO) iface.o
 
 arb: $(OBJECTS)
-	gcc -g -Wall -o $@ $(OBJECTS) -lipq -lpthread
+	gcc -g -Wall -o $@ $(OBJECTS) -lipq -lpthread -lm -lefence
 
 clean:
 	rm -f arb $(OBJECTS)

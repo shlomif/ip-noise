@@ -10,6 +10,7 @@
 #include "delayer.h"
 #include "verdict.h"
 #include "iface.h"
+#include "switcher.h"
 
 
 static void die(struct ipq_handle * h)
@@ -20,7 +21,7 @@ static void die(struct ipq_handle * h)
 }
 
 
-ip_noise_verdict_t decide_what_to_do_with_packet(ipq_packet_msg_t * m)
+static ip_noise_verdict_t decide_what_to_do_with_packet(ipq_packet_msg_t * m)
 {
     int what_to_do;
     int delay;
@@ -57,7 +58,7 @@ struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
 
 typedef struct ip_noise_decide_what_to_do_with_packets_thread_context_struct ip_noise_decide_what_to_do_with_packets_thread_context_t;
 
-void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
+static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
 {
     ip_noise_decide_what_to_do_with_packets_thread_context_t * context;      
     ip_noise_messages_queue_t * packets_to_arbitrate_queue;
@@ -142,7 +143,7 @@ struct ip_noise_release_packets_thread_context_struct
 
 typedef struct ip_noise_release_packets_thread_context_struct ip_noise_release_packets_thread_context_t;
 
-void * release_packets_thread_func(void * void_context)
+static void * release_packets_thread_func(void * void_context)
 {
     ip_noise_release_packets_thread_context_t * context;
     ip_noise_delayer_t * delayer;
@@ -164,7 +165,7 @@ void * release_packets_thread_func(void * void_context)
     
 }
 
-void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
+static void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
 {
     struct ipq_handle * h = (struct ipq_handle *)context;
     int status;
@@ -177,12 +178,20 @@ void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
     free(m);
 }
 
-void * arb_iface_thread_func(void * context)
+static void * arb_iface_thread_func(void * context)
 {
     ip_noise_arbitrator_iface_loop( (ip_noise_arbitrator_iface_t * )context);
 
     return NULL;
 }
+
+static void * arb_switcher_thread_func(void * context)
+{
+    ip_noise_arbitrator_switcher_loop( (ip_noise_arbitrator_switcher_t * )context);
+
+    return NULL;
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -204,6 +213,9 @@ int main(int argc, char * argv[])
     ip_noise_flags_t flags;
     ip_noise_arbitrator_iface_t * arb_iface;
     pthread_t arb_iface_thread;
+
+    ip_noise_arbitrator_switcher_t * arb_switcher;
+    pthread_t arb_switcher_thread;
 
 
 
@@ -283,6 +295,34 @@ int main(int argc, char * argv[])
         exit(-1);
     }
 
+    arb_switcher = ip_noise_arbitrator_switcher_alloc(data, &flags, &terminate);
+
+    check = pthread_create(
+        &arb_switcher_thread,
+        NULL,
+        arb_switcher_thread_func,
+        (void *)arb_switcher
+        );
+
+    if (check != 0)
+    {
+        fprintf(stderr, "Could not create the arbitrator switcher thread!\n");
+        exit(-1);
+    }
+
+#if 0
+    {
+        ip_noise_rand_t * rand;
+
+        rand = ip_noise_rand_alloc(24);
+    
+        while(1)
+        {
+            printf("%f\n", ip_noise_rand_rand_in_0_1(rand));
+            sleep(1);
+        }
+    }
+#endif
     
     do
     {

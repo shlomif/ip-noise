@@ -224,7 +224,7 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     
     for(a=0;a<chain->num_states;a++)
     {
-        realloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
+        chain->states[a]->move_tos = realloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
         chain->states[a]->move_tos[chain->num_states].comulative_prob = 0; 
     }
 
@@ -253,6 +253,8 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     chain->states[index]->move_tos[a].comulative_prob = 1;
 
     chain->num_states++;
+
+    out_params[0].state = index;
     
 	return 0;
 }
@@ -301,7 +303,7 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
     }
 
     /*
-     * TODO: add sanity check that the some of the dests in any source
+     * TODO: add sanity check that the sum of the dests in any source
      *  equals the present sum.
      *
      * */

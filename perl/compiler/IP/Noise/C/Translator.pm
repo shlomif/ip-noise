@@ -2,6 +2,8 @@ package IP::Noise::C::Translator;
 
 use strict;
 
+use Data::Dumper;
+
 use IP::Noise;
 
 my $arb_string_len = IP::Noise::get_max_id_string_len() + 1;
@@ -805,6 +807,11 @@ sub load_arbitrator
                 } 
                 (@states)
             );
+
+        {
+            my $d = Data::Dumper->new([ \@state_list ], ["\@state_list"]);
+            print $d->Dump();
+        }
 
         my @probs;
         for(my $source=0;$source<$num_states;$source++)
