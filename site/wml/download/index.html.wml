@@ -15,3 +15,12 @@ a more sophisticated perl API that enables accepting, dropping and
 delaying packets for arbitrary delays. It comes with a simple, stateless
 , rule-based arbitrator, but alternative ones may be written.
 </p>
+
+<p>
+<a href="IP-Noise-Compiler-2001-08-28-rev1.tar.gz">
+IP-Noise-Compiler-2001-08-28-rev1.tar.gz
+</a> - 
+a compiler for the configuration language of the future arbitrator.
+</p>
+
+
