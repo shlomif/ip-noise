@@ -19,6 +19,7 @@
     - Markov Chains
     - Basic concepts: delay, drop, exponential delay, split-linear delay, etc.
     - How the arbitration is done
+        - Several Markov chains
         - States are switched at exponential steps
         - Stable Delays
         - Totalling the decision 
