@@ -37,6 +37,7 @@
 #include "k_pthread.h"
 #include "k_time.h"
 #include "k_stdlib.h"
+#include "k_stdio.h"
 
 #define IPQ_QMAX_DEFAULT 1024
 #define IPQ_PROC_FS_NAME "ip_queue_ker"
@@ -403,6 +404,8 @@ static int __init init(void)
     rand_gen = ip_noise_rand_alloc(24);
 
     delayer = ip_noise_delayer_alloc(release_handler, NULL);
+
+    printf("ipq_ker_q: delayer=%i\n", (unsigned int)delayer);
 
     pthread_mutex_init(&protect_timers_mutex, NULL);
 	

@@ -24,6 +24,11 @@ struct ip_noise_delayer_struct
 #ifndef __KERNEL__
     pthread_cond_t cond;
 #endif
+#ifdef __KERNEL__
+    struct timer_list current_timer;
+    int current_timer_initialized;
+#endif
+
     PQUEUE pq;
     void (*release_callback)(ip_noise_message_t * m, void * context);
     void * release_callback_context;
