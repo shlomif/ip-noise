@@ -1,0 +1,4 @@
+In this mode, some UDP packets are delayed 
+without making sure they are sent at the same 
+order of their arrival.
+
