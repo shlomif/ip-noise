@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.1 2001-09-10 08:47:31 shlomif Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.2 2001-10-10 13:19:52 shlomif Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -24,10 +24,16 @@ static char rcsid[]="$Id: redblack.c,v 1.1 2001-09-10 08:47:31 shlomif Exp $";
 ** exactly the same
 */
 
+#ifndef __KERNEL__
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
+#else
+#include "k_stdlib.h"
+#endif
+
 #include "redblack.h"
+
 
 #define assert(expr)
 
@@ -1005,6 +1011,11 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: not supported by cvs2svn $
+ * Revision 1.1  2001/09/10 08:47:31  shlomif
+ *
+ *
+ * Several files added.
+ *
  * Revision 1.4  2000/06/06 14:43:43  damo
  * Added all the rbwalk & rbopenlist stuff. Fixed up malloc instead of sbrk.
  * Added two new examples

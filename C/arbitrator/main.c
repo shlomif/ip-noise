@@ -223,8 +223,9 @@ int main(int argc, char * argv[])
 int main_init_module()
 #endif
 {
+#ifndef __KERNEL__    
     int status;
-#ifndef __KERNEL__
+
     unsigned char message[IP_NOISE_MESSAGE_BUFSIZE];
 #endif
     struct ipq_handle * h;
@@ -263,7 +264,7 @@ int main_init_module()
 
 
 
-
+#ifndef __KERNEL__
     h = ipq_create_handle(0);
     if (h == NULL)
     {
@@ -276,6 +277,7 @@ int main_init_module()
     {
         die(h);
     }
+#endif
 
 #ifndef __KERNEL__
     packets_to_arbitrate_queue = ip_noise_messages_queue_alloc();

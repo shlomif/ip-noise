@@ -24,7 +24,7 @@ extern void ip_noise_text_queue_in_destroy(
 
 extern void ip_noise_text_queue_in_put_bytes(
     ip_noise_text_queue_in_t * q,
-    char * bytes,
+    const char * bytes,
     int length
     );
 

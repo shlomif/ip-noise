@@ -7,9 +7,6 @@
     (It's not copyrighted)
 */
 
-#include <stddef.h>
-#include <string.h>
-
 #include "fcs_dm.h"
 
 /*

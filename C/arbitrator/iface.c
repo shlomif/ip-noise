@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #else
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/fs.h>
+#include <linux/wrapper.h>
+#include <asm/uaccess.h>
 #include "k_stdlib.h"
 #include "k_stdio.h"
 #endif
@@ -928,6 +933,104 @@ static void write_param_type(
     }
 }
 
+#ifdef __KERNEL__
+static ip_noise_arbitrator_iface_t * ip_noise_arb_iface;
+
+int Major;
+
+static ssize_t ip_noise_device_read(struct file * file,
+        char * buffer,
+        size_t length,
+        loff_t * offset
+        )
+{
+    ip_noise_arbitrator_iface_t * self;
+    char * local_buffer;
+    int how_many;
+
+    self = ip_noise_arb_iface;
+
+    local_buffer = malloc(length);
+
+    memset(local_buffer, '\0', length);
+    
+    how_many = ip_noise_text_queue_out_write_bytes(self->text_queue_out, local_buffer, length);
+    copy_to_user(buffer, local_buffer, how_many);
+
+    free(local_buffer);
+
+    return how_many;
+}
+
+static void ip_noise_arbitrator_iface_transact(
+    ip_noise_arbitrator_iface_t * self
+    );
+
+static ssize_t ip_noise_device_write(struct file *file,
+    const char *buffer,    /* The buffer */
+    size_t length,   /* The length of the buffer */
+    loff_t *offset)  /* Our offset in the file */
+{
+    ip_noise_arbitrator_iface_t * self;
+
+    self = ip_noise_arb_iface;
+
+    ip_noise_text_queue_in_put_bytes(self->text_queue_in, buffer, length);
+
+    ip_noise_arbitrator_iface_transact(self);
+
+    return length;
+}
+
+static void ip_noise_arbitrator_iface_init_connection(
+    ip_noise_arbitrator_iface_t * self
+    );
+
+static int ip_noise_device_open(struct inode *inode, 
+                       struct file *file)
+{
+    ip_noise_arbitrator_iface_t * self;
+    
+    self = ip_noise_arb_iface;
+
+    if (self->_continue == 1)
+    {
+        /* We are already open. */
+        return -EBUSY;
+    }
+
+    ip_noise_arbitrator_iface_init_connection(self);  
+
+    return 0;
+}
+
+static int ip_noise_device_release(struct inode *inode, 
+                          struct file *file)
+{
+    ip_noise_arbitrator_iface_t * self;
+    
+    self = ip_noise_arb_iface;
+
+    self->_continue = 0;
+
+    return 0;
+}
+ 
+
+struct file_operations ip_noise_fops = {
+    NULL,
+    NULL, /* seek */
+    ip_noise_device_read,
+    ip_noise_device_write,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    ip_noise_device_open,
+    NULL,
+    ip_noise_device_release        
+};
+#endif
 ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     ip_noise_arbitrator_data_t * * data,
     ip_noise_flags_t * flags
@@ -942,6 +1045,31 @@ ip_noise_arbitrator_iface_t * ip_noise_arbitrator_iface_alloc(
     
     self->last_chain = -1;
 
+#ifdef __KERNEL__
+    Major = register_chrdev(0, "ip_noise_arb_iface", &ip_noise_fops);
+
+    if (Major < 0)
+    {
+        printf("%s device failed with %d'n", "Sorrt, registering the character", Major);
+        free(self);
+
+        return NULL;
+    }
+
+    printf ("%s The major device number is %d.\n",
+          "Registeration is a success.",
+          Major);
+    printf ("If you want to talk to the device driver,\n");
+    printf ("you'll have to create a device file. \n");
+    printf ("We suggest you use:\n");
+    printf ("mknod <name> c %d <minor>\n", Major);
+    printf ("You can try different minor numbers %s",
+          "and see what happens.\n");
+
+    ip_noise_arb_iface = self;
+    
+#endif
+    
     return self;
 }
 
@@ -1007,38 +1135,24 @@ static void * write_poll_conn(void * void_iface)
     
 #endif
 
-
-
-void ip_noise_arbitrator_iface_loop(
-    ip_noise_arbitrator_iface_t * self 
+static void ip_noise_arbitrator_iface_init_connection(
+    ip_noise_arbitrator_iface_t * self
     )
 {
-    ip_noise_flags_t * flags;
     ip_noise_rwlock_t * data_lock;
-    int opcode;
-    operation_t * record, opcode_record;
-    param_t params[4];
-    param_t out_params[4];
-    int a;
-    int ret_code;
-    int ok;
-#if defined(USE_TEXT_QUEUE_OUT) && !defined(__KERNEL__)
-    pthread_t write_poll_conn_thread;
-#endif
-    int found;
-
-    flags = self->flags;
     data_lock = (*self->data)->lock;
 
-    while (1)
-    {
         self->_continue = 1;
         
         printf("%s", "Trying to open a connection!\n");
+#ifndef __KERNEL__
         self->conn = ip_noise_conn_open();
+#endif
 
 #ifdef USE_TEXT_QUEUE_IN
+#ifndef __KERNEL__
         self->text_queue_in_mutex = ip_noise_global_initial_mutex_constant;
+#endif
         pthread_mutex_init(&(self->text_queue_in_mutex), NULL);
         self->text_queue_in = ip_noise_text_queue_in_alloc();
 
@@ -1050,7 +1164,9 @@ void ip_noise_arbitrator_iface_loop(
 #endif
 #endif
 #ifdef USE_TEXT_QUEUE_OUT
+#ifndef __KERNEL__
         self->text_queue_out_mutex = ip_noise_global_initial_mutex_constant;
+#endif
         pthread_mutex_init(&(self->text_queue_out_mutex), NULL);
         self->text_queue_out = ip_noise_text_queue_out_alloc();
 
@@ -1070,21 +1186,71 @@ void ip_noise_arbitrator_iface_loop(
 #endif
         ip_noise_rwlock_down_read(data_lock);
         self->data_copy = ip_noise_arbitrator_data_duplicate(*(self->data));
-        ip_noise_rwlock_up_read(data_lock);
+        ip_noise_rwlock_up_read(data_lock);    
+}
 
-        while (self->_continue)
-        {
+static void close_connection(
+    ip_noise_arbitrator_iface_t * self
+    )
+{
+    ip_noise_flags_t * flags;
+    ip_noise_rwlock_t * data_lock;
+    
+    flags = self->flags;
+    data_lock = (*self->data)->lock;
+    
+#ifdef USE_TEXT_QUEUE_OUT
+#ifndef __KERNEL__
+        pthread_cancel(write_poll_conn_thread);
+#endif
+#endif
+        
+        flags->reinit_switcher = 1;
+
+        ip_noise_rwlock_down_write(data_lock);
+        ip_noise_arbitrator_data_free(*(self->data));
+        *(self->data) = self->data_copy;
+        ip_noise_rwlock_up_write(data_lock);
+#if 0
+        /* Release the data for others to use */
+        ip_noise_rwlock_up_write(data_lock);
+#endif
+        
+#ifndef __KERNEL__
+        printf("%s", "IFace: Closing a connection!\n");
+        
+        ip_noise_conn_destroy(self->conn);    
+#endif
+
+}
+        
+
+static void ip_noise_arbitrator_iface_transact(
+    ip_noise_arbitrator_iface_t * self
+    )
+{
+    int opcode;
+    operation_t * record, opcode_record;
+    int found;
+    int a;
+    int ret_code;
+    int ok;
+    param_t params[4];
+    param_t out_params[4];
+    
+
+
             opcode = read_opcode(self);
 
             if (opcode == IP_NOISE_READ_CONN_TERM)
             {                
                 self->_continue = 0;
-                continue;
+                return;
             }
             else if (opcode == IP_NOISE_READ_NOT_FULLY)
             {
                 ip_noise_read_rollback();
-                continue;
+                return;
             }
 
             opcode_record.opcode = opcode;
@@ -1103,7 +1269,7 @@ void ip_noise_arbitrator_iface_loop(
             {
                 printf("Unknown opcode 0x%x!\n", opcode);
                 write_retvalue(self, 0x2);
-                continue;
+                return;
             }
             
             /* Read the parameters from the line */
@@ -1159,28 +1325,31 @@ void ip_noise_arbitrator_iface_loop(
                     );
             }
 
-            end_of_loop:
+            end_of_loop:    
+}
+
+void ip_noise_arbitrator_iface_loop(
+    ip_noise_arbitrator_iface_t * self 
+    )
+{
+    ip_noise_flags_t * flags;
+    ip_noise_rwlock_t * data_lock;        
+#if defined(USE_TEXT_QUEUE_OUT) && !defined(__KERNEL__)
+    pthread_t write_poll_conn_thread;
+#endif
+
+    flags = self->flags;
+    data_lock = (*self->data)->lock;
+
+    while (1)
+    {
+        ip_noise_arbitrator_iface_init_connection(self);
+
+        while (self->_continue)
+        {
+            ip_noise_arbitrator_iface_transact(self);
         }
 
-#ifdef USE_TEXT_QUEUE_OUT
-#ifndef __KERNEL__
-        pthread_cancel(write_poll_conn_thread);
-#endif
-#endif
-        
-        flags->reinit_switcher = 1;
-
-        ip_noise_rwlock_down_write(data_lock);
-        ip_noise_arbitrator_data_free(*(self->data));
-        *(self->data) = self->data_copy;
-        ip_noise_rwlock_up_write(data_lock);
-#if 0
-        /* Release the data for others to use */
-        ip_noise_rwlock_up_write(data_lock);
-#endif
-        
-        printf("%s", "IFace: Closing a connection!\n");
-        ip_noise_conn_destroy(self->conn);
-
+        close_connection(self);
     }
 }

@@ -1,5 +1,9 @@
+#ifndef __KERNEL__
 #include <stdlib.h>
 #include <string.h>
+#else
+#include "k_stdlib.h"
+#endif
 
 #include "read.h"
 #include "text_queue_in.h"
@@ -31,14 +35,15 @@ void ip_noise_text_queue_in_destroy(
 
 void ip_noise_text_queue_in_put_bytes(
     ip_noise_text_queue_in_t * q,
-    char * bytes,
+    const char * bytes,
     int length
     )
 {
     if (q->length + length > q->max_size)
     {
-        q->max_size = q->length + length + IP_NOISE_TEXT_QUEUE_IN_GROW_BY;
-        q->buffer = realloc(q->buffer, q->max_size);
+        int new_max_size = q->length + length + IP_NOISE_TEXT_QUEUE_IN_GROW_BY;
+        q->buffer = ourrealloc(q->buffer, q->max_size, new_max_size);
+        q->max_size = new_max_size;
     }
     memcpy(q->buffer + q->length, bytes, length);
     q->length += length;
