@@ -22,7 +22,7 @@ void ip_noise_rand_free(ip_noise_rand_t * rand)
     free(rand);
 }
 
-static int ip_noise_rand_rand15(ip_noise_rand_t * rand)
+int ip_noise_rand_rand15(ip_noise_rand_t * rand)
 {
     rand->seed = (rand->seed * 214013 + 2531011);
     return (rand->seed >> 16) & 0x7fff;    

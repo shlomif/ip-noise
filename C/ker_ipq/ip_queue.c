@@ -158,10 +158,31 @@ static int ipq_set_verdict_helper(
     unsigned int len
     );
 
+struct wrapper_struct
+{
+    ipq_queue_element_t * e;
+    struct timer_list * timer;    
+};
+
+typedef struct wrapper_struct wrapper_t;
+
+void release_handler(unsigned long ul_data)
+{
+    wrapper_t * w = (wrapper_t *)(void *)ul_data;
+    ipq_queue_element_t * e = w->e;
+    struct timer_list * t = w->timer;
+
+    kfree(w);    
+    nf_reinject(e->skb, e->info, NF_ACCEPT);
+    kfree(e);
+    kfree(t);
+}
+
 static int ipq_enqueue(ipq_queue_t *q,
                        struct sk_buff *skb, struct nf_info *info)
 {
 	ipq_queue_element_t *e;
+    double prob;
 #if 0
 	int status;
 #endif
@@ -203,17 +224,38 @@ static int ipq_enqueue(ipq_queue_t *q,
 		goto free_drop;
 	}
 
-    {
-        double prob;
-        int to_accept;
-        prob = ip_noise_rand_rand_in_0_1(rand_gen);
-        to_accept = (prob < 0.5);
+    spin_unlock_bh(&q->lock);
 
-        spin_unlock_bh(&q->lock);
-        
-        nf_reinject(e->skb, e->info, (to_accept ? NF_ACCEPT : NF_DROP));
+    prob = ip_noise_rand_rand_in_0_1(rand_gen);
+    if (prob < 0.5)
+    {       
+        nf_reinject(e->skb, e->info, NF_ACCEPT);
+        kfree(e);
     }
-    kfree(e);
+    else if (prob < 0.7)
+    {
+        nf_reinject(e->skb, e->info, NF_DROP);
+        kfree(e);
+    }
+    else
+    {
+        struct timer_list * mytimer;
+        wrapper_t * w;
+        int num_millisecs;
+
+        mytimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
+        w = kmalloc(sizeof(wrapper_t), GFP_KERNEL);
+        /* Determine the delay in msecs */
+        w->timer = mytimer;
+        w->e = e;        
+        num_millisecs = ip_noise_rand_rand15(rand_gen) % 3000;
+        
+        init_timer(mytimer);
+        mytimer->expires = jiffies + (HZ * num_millisecs) / 1000;
+        mytimer->data = (unsigned long)w;
+        mytimer->function = release_handler;
+        add_timer(mytimer);
+    } 
     
     //ipq_set_verdict_helper(e);
 
