@@ -1,8 +1,12 @@
-package IP::Noise::Arb;
+package IP::Noise::Arb::IFace;
 
 use strict;
 
 use IP::Noise;
+
+use IP::Noise::Conn;
+
+use Thread;
 
 my $arb_string_len = IP::Noise::get_max_id_string_len() + 1;
 
@@ -25,14 +29,20 @@ sub initialize
 {
     my $self = shift;
 
-    my $conn = shift;
+    my $data = shift;
 
-    $self->{'conn'} = $conn;
+    my $data_lock = shift;
 
-    $self->{'data'} = {
-        'chains' => [],
-        'chains_map' => {},
-    };
+    my $flags = shift;
+
+    $self->{'conn'} = IP::Noise::Conn->new(1);
+
+    $self->{'data'} = $data;
+    $self->{'data_lock'} = $data_lock;
+    $self->{'flags'} = $flags;
+
+    $data->{'chains'} = [];
+    $data->{'chains_map'} = {};
 
     # This member specifies whether to continue the loop.
     $self->{'continue'} = 1;
@@ -743,58 +753,78 @@ sub loop
 {
     my $self = shift;
 
-    my $conn = $self->{'conn'};
+    my $flags = $self->{'flags'};
 
-    while($self->{'continue'})
-    {
-        my $opcode = $self->read_opcode(); 
+    my $data_lock = $self->{'data_lock'};
 
-        # Check if an operation for this opcode was defined.
-        if (! exists($operations{$opcode}))
-        {
-            print "Uknown opcode $opcode!\n";
-            # If not report it to the user immidiately.
-            $conn->conn_write(pack("V", 0x2));
-            # Read the next opcode.
-            next;
-        }
+    # We keep trying to open a new connection, by this blocking this thread.
+    while (1)
+    {        
+        $self->{'continue'} = 1;
+        $self->{'conn'} = IP::Noise::Conn->new(1);
+ 
+        $data_lock->down_write(); 
         
-        # The record of the operation.
-        my $record = $operations{$opcode};
+        my $conn = $self->{'conn'};
 
-        my @in_param_types = @{$record->{'params'}};
-        my @params = ();
-        
-        # Read the parameters from the line.
-        foreach my $param_type (@in_param_types)
+        while($self->{'continue'})
         {
-            push @params, $self->read_param_type($param_type);
-        }
-        
-        # Call the handler to perform the operation.
-        my ($ret_code, @ret) = 
-            $record->{'handler'}->(
-                $self,
-                @params
-                );
-        
-        # Write the return code.
-        $conn->conn_write(pack("V", $ret_code));
-        
-        # Write the output parameters to the line.
-        if (exists($record->{'out_params'}))
-        {
-            my $i;
-            my $num_params = scalar(@{$record->{'out_params'}});
-            
-            for($i=0 ; $i < $num_params ; $i++)
+            my $opcode = $self->read_opcode(); 
+
+            # Check if an operation for this opcode was defined.
+            if (! exists($operations{$opcode}))
             {
-                $self->write_param_type(
-                    $record->{'out_params'}->[$i],
-                    $ret[$i]
+                print "Uknown opcode $opcode!\n";
+                # If not report it to the user immidiately.
+                $conn->conn_write(pack("V", 0x2));
+                # Read the next opcode.
+                next;
+            }
+            
+            # The record of the operation.
+            my $record = $operations{$opcode};
+
+            my @in_param_types = @{$record->{'params'}};
+            my @params = ();
+            
+            # Read the parameters from the line.
+            foreach my $param_type (@in_param_types)
+            {
+                push @params, $self->read_param_type($param_type);
+            }
+            
+            # Call the handler to perform the operation.
+            my ($ret_code, @ret) = 
+                $record->{'handler'}->(
+                    $self,
+                    @params
                     );
+            
+            # Write the return code.
+            $conn->conn_write(pack("V", $ret_code));
+            
+            # Write the output parameters to the line.
+            if (exists($record->{'out_params'}))
+            {
+                my $i;
+                my $num_params = scalar(@{$record->{'out_params'}});
+                
+                for($i=0 ; $i < $num_params ; $i++)
+                {
+                    $self->write_param_type(
+                        $record->{'out_params'}->[$i],
+                        $ret[$i]
+                        );
+                }
             }
         }
+
+        $flags->{'reinit_switcher'} = 1;
+
+        $data_lock->up_write();
+
+        # Destroy the connection.
+        delete($self->{'conn'});
     }
 }
 

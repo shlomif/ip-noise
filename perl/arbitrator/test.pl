@@ -2,17 +2,19 @@
 
 use Data::Dumper;
 
-use IP::Noise::Arb;
+use IP::Noise::Arb::IFace;
 
 use IP::Noise::Conn;
 
-my $conn = IP::Noise::Conn->new(1);
+#my $conn = IP::Noise::Conn->new(1);
 
-my $arb = IP::Noise::Arb->new($conn);
+my $data = {};
 
-$arb->loop();
+my $arb_iface = IP::Noise::Arb::IFace->new($data);
 
-my $d = Data::Dumper->new([ $arb->{'data'} ],  [ '$data' ]);
+$arb_iface->loop();
+
+my $d = Data::Dumper->new([ $data ],  [ '$data' ]);
 
 print $d->Dump();
 
