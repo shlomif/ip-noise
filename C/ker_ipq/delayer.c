@@ -12,14 +12,21 @@
 #include "delayer.h"
 #include "pqueue.h"
 
+#ifdef __KERNEL__
+typedef unsigned long ip_noise_time_t;
+#else
+typedef struct timeval ip_noise_time_t;
+#endif
+
 struct ip_noise_delayer_pq_element_struct
 {
     ip_noise_message_t * m;
-    struct timeval tv;
+    ip_noise_time_t tv;
 };
 
 typedef struct ip_noise_delayer_pq_element_struct ip_noise_delayer_pq_element_t;
 
+#ifndef __KERNEL__
 static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
 {
     ip_noise_delayer_pq_element_t * m1;
@@ -52,6 +59,29 @@ static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
         }
     }    
 }
+#else
+static int ip_noise_timeval_cmp (void * p_m1, void * p_m2, void * context)
+{
+    ip_noise_delayer_pq_element_t * m1;
+    ip_noise_delayer_pq_element_t * m2;
+
+    m1 = (ip_noise_delayer_pq_element_t * )p_m1;
+    m2 = (ip_noise_delayer_pq_element_t * )p_m2;
+    
+    if (m1->tv > m2->tv)
+    {
+        return 1;
+    }
+    else if (m1->tv < m2->tv)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+#endif
 
 #ifndef __KERNEL__
 extern const pthread_mutex_t ip_noise_global_initial_mutex_constant;
@@ -119,7 +149,11 @@ static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
 {
     ip_noise_delayer_pq_element_t current_time_pseudo_msg, * msg;
 
+#ifndef __KERNEL__
     gettimeofday(&(current_time_pseudo_msg.tv), &tz);
+#else
+    current_time_pseudo_msg.tv = jiffies;
+#endif
 
     while (!PQueueIsEmpty(&(delayer->pq)))
     {
@@ -144,15 +178,9 @@ static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
 #ifdef __KERNEL__
     if (!PQueueIsEmpty(&(delayer->pq)))
     {
-        unsigned long num_millisecs;
-
-        num_millisecs = 
-            (msg->tv.tv_sec - current_time_pseudo_msg.tv.tv_sec) * 1000 + 
-            (msg->tv.tv_usec - current_time_pseudo_msg.tv.tv_usec) / 1000000;
-
         init_timer(&(delayer->current_timer));
         
-        delayer->current_timer.expires = jiffies + ((HZ * num_millisecs) / 1000);
+        delayer->current_timer.expires = msg->tv;
         delayer->current_timer.data = (unsigned long)delayer;
         delayer->current_timer.function = (void (*) (unsigned long))ip_noise_delayer_timer_function;
         add_timer(&(delayer->current_timer));
@@ -164,14 +192,20 @@ static void ip_noise_delayer_check_pq(ip_noise_delayer_t * delayer)
 void ip_noise_delayer_delay_packet(
     ip_noise_delayer_t * delayer, 
     ip_noise_message_t * m,
+#ifndef __KERNEL__
     struct timeval tv,
+#endif
     int delay_len
     )
 {
     ip_noise_delayer_pq_element_t * elem;
     ip_noise_delayer_pq_element_t * min_msg;
-    struct timeval current_time;
+    ip_noise_time_t current_time;
+#ifdef __KERNEL__
+    unsigned long tv;
+#endif
 
+#ifndef __KERNEL__
     current_time = tv;
     
     tv.tv_usec += delay_len * 1000;
@@ -180,6 +214,10 @@ void ip_noise_delayer_delay_packet(
         tv.tv_sec += tv.tv_usec / 1000000;
         tv.tv_usec %= 1000000;
     }
+#else
+    current_time = jiffies;
+    tv = current_time + ((HZ * delay_len) / 1000);
+#endif
 
     elem = (ip_noise_delayer_pq_element_t *)malloc(sizeof(ip_noise_delayer_pq_element_t ));
 
@@ -193,6 +231,7 @@ void ip_noise_delayer_delay_packet(
     PQueuePush(&(delayer->pq), elem);
 
     if ((min_msg == NULL) ||
+#ifndef __KERNEL__
         (elem->tv.tv_sec < min_msg->tv.tv_sec) || 
         (
             (elem->tv.tv_sec == min_msg->tv.tv_sec) &&
@@ -204,6 +243,10 @@ void ip_noise_delayer_delay_packet(
             (min_msg->tv.tv_sec == current_time.tv_sec) &&
             (min_msg->tv.tv_usec < current_time.tv_usec)
         )
+#else
+        (elem->tv < min_msg->tv) ||
+        (min_msg->tv < current_time)
+#endif
        )
     {
 #ifndef __KERNEL__

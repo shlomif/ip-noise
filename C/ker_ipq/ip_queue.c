@@ -207,7 +207,6 @@ static int ipq_enqueue(ipq_queue_t *q,
     else
     {
         int num_millisecs;
-        struct timeval tv;
         ip_noise_message_t * m;
 
         /* Determine the delay in msecs */
@@ -218,8 +217,9 @@ static int ipq_enqueue(ipq_queue_t *q,
             num_millisecs = 100;
         }
 
-        gettimeofday(&tv, &tz);
 #if 0
+        gettimeofday(&tv, &tz);
+
         tv.tv_usec += (num_millisecs % 1000) * 1000;
         if (tv.tv_usec > 1000000)
         {
@@ -230,9 +230,8 @@ static int ipq_enqueue(ipq_queue_t *q,
 #endif
         m = malloc(sizeof(ip_noise_message_t));
         m->m = e;
-        m->tv = tv;        
 
-        ip_noise_delayer_delay_packet(delayer, m, tv, num_millisecs);
+        ip_noise_delayer_delay_packet(delayer, m, num_millisecs);
         
 #if 0
         init_timer(mytimer);

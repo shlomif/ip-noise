@@ -45,7 +45,9 @@ extern ip_noise_delayer_t * ip_noise_delayer_alloc(
 extern void ip_noise_delayer_delay_packet(
     ip_noise_delayer_t * delayer, 
     ip_noise_message_t * m,
+#ifndef __KERNEL__    
     struct timeval tv,
+#endif
     int delay_len
     );
 
