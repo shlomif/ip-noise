@@ -7,13 +7,13 @@ Before:
 
 1.1: Prepare a root xterm running "tail -f /var/log/messages"
 
-2. Log in on comnet17/18 and open several xterms.
+2. Log in on NT WS and open several CMD windows.
 
 3. On comnet 17/18, ssh into vipe twice. (/usr/local/bin/ssh)
 
 4. On comnet 17/18, ssh into t2.
 
-5. On comnet17/18, open a netscape window with 
+5. On NT WS, open a netscape window with 
 http://132.68.52.118/ip-noise/
 
 
@@ -31,26 +31,26 @@ Non-Stable Delay:
 
 Explain what is the UDP test. - delay U(0,5000)
 
-On comnet17/18 run "perl client.pl 20000 1000".
+On NT WS run "perl client.pl 20000 1000".
 
 Stable Delay:
 -------------
 
 Wait for all the packets to be released. - delay U(0,3000)
 
-On comnet17/18 run "perl client.pl 20000 1000".
+On NT WS run "perl client.pl 20000 1000".
 
 Block TCP:
 ----------
 
-On comnet17/18 type: "ping -s 132.68.52.118 50"
+On NT WS type: "ping -s 132.68.52.118 50"
 
 Reload netscape to show that TCP does not work.
 
 Block ICMP:
 ---------
 
-On comnet17/18 type: "ping -s 132.68.52.118 50"
+On NT WS type: "ping -s 132.68.52.118 50"
 
 Reload netscape to show that TCP works.
 
