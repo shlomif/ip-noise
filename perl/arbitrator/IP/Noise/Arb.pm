@@ -253,7 +253,7 @@ sub handler_new_state
 
     $self->{'last_state'} = $index;
 
-    $states_ref->[$index]->{'move_tos'} = [ (map { $_ == $index } (0 .. $index)) ]; 
+    $states_ref->[$index]->{'move_tos'} = [ (0) x $index , 1 ]; 
 
     return (0, $index);
 }
@@ -528,7 +528,7 @@ sub handler_set_move_probs
     {
         for($d=0;$d<$num_dests;$d++)
         {
-            $data->{'states'}->[$s]->{'move_tos'}->[$d] = $self->read_param_type("prob");
+            $chain->{'states'}->[$s]->{'move_tos'}->[$d] = $self->read_param_type("prob");
         }
     }
 
