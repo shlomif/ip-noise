@@ -13,6 +13,13 @@
  * 2000-08-01: Added Nick Williams' MAC support.
  *
  */
+
+/*
+ * Mental Note by Shlomi Fish and Roy Glasberg: don't look at us for
+ * explanations about the original code! We practically ripped it and
+ * modified it for our needs.
+ * */
+
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/init.h>
@@ -403,19 +410,12 @@ static int __init init(void)
 
 static void __exit fini(void)
 {
-    printf("fini 1\n");
 	unregister_sysctl_table(ipq_sysctl_header);
-    printf("fini 2\n");
 	proc_net_remove(IPQ_PROC_FS_NAME);
-    printf("fini 3\n");
 	unregister_netdevice_notifier(&ipq_dev_notifier);
-    printf("fini 4\n");
 	ipq_destroy_queue(nlq);
-    printf("fini 5\n");
     ip_noise_delayer_destroy(delayer);
-    printf("fini 6\n");
     ip_noise_arbitrator_data_free(*(packet_logic->data));
-    printf("fini 7\n");
     ip_noise_arbitrator_iface_destroy(iface);
 }
 

@@ -80,9 +80,18 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
 
 
     packet_logic = ip_noise_arbitrator_packet_logic_alloc(data, flags);
-
+    
+    /* As long as another thread did not instruct us to terminate - loop!
+     *
+     */
     while (! (*terminate))
     {
+        /* 
+         * Inside the loop, we dequeue an item from the queue,
+         * decide what to do with it. If it should be dropped or released,
+         * it is done immidiately. Else, it is placed in the delayer's priority
+         * queue for release in the future.
+         * */
         msg_with_time = ip_noise_messages_queue_dequeue(packets_to_arbitrate_queue);
         if (msg_with_time == NULL)
         {
@@ -158,6 +167,10 @@ struct ip_noise_release_packets_thread_context_struct
 typedef struct ip_noise_release_packets_thread_context_struct ip_noise_release_packets_thread_context_t;
 
 #ifndef __KERNEL__
+/* 
+ * This function calls ip_noise_delayer_loop() to perform a loop for the
+ * relase of the delayed packets
+ * */
 static void * release_packets_thread_func(void * void_context)
 {
     ip_noise_release_packets_thread_context_t * context;
@@ -220,6 +233,8 @@ static void * arb_switcher_thread_func(void * context)
 /*
  * What the main() function does is initialize all the objects, 
  * inter-connect them and start all of their threads.
+ *
+ * The objects are inter-connected very deeply, so this code is quite ugly.
  *
  * */
 #ifndef __KERNEL__
