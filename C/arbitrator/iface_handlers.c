@@ -199,7 +199,7 @@ static int ip_noise_arbitrator_iface_handler_new_chain(ip_noise_arbitrator_iface
     
     data->num_chains++;
 
-    out_params[1]._int = index;
+    out_params[0]._int = index;
 
 	return 0;
 }
@@ -227,6 +227,7 @@ static int ip_noise_arbitrator_iface_handler_new_state(ip_noise_arbitrator_iface
     {
         chain->states[a]->move_tos = ourrealloc(chain->states[a]->move_tos, sizeof(chain->states[a]->move_tos[0])*(chain->num_states), sizeof(chain->states[a]->move_tos[0])*(chain->num_states+1));
         chain->states[a]->move_tos[chain->num_states].comulative_prob = 0; 
+        chain->states[a]->num_move_tos = (chain->num_states + 1);
     }
 
     if (chain->num_states == chain->max_num_states)
