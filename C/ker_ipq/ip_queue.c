@@ -120,7 +120,6 @@ static void ipq_flush(ipq_queue_t *q)
 }
 
 static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
-                                     ipq_send_cb_t send_cb,
                                      int *errp, int *sysctl_qmax)
 {
 	int status;
@@ -132,11 +131,6 @@ static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
 		*errp = -ENOMEM;
 		return NULL;
 	}
-	q->peer.pid = 0;
-	q->peer.died = 0;
-	q->peer.copy_mode = IPQ_COPY_NONE;
-	q->peer.copy_range = 0;
-	q->peer.send = send_cb;
 	q->len = 0;
 	q->maxlen = sysctl_qmax;
 	q->flushing = 0;
@@ -151,12 +145,6 @@ static ipq_queue_t *ipq_create_queue(nf_queue_outfn_t outfn,
 	}
 	return q;
 }
-
-static int ipq_set_verdict_helper(
-    ipq_queue_element_t * e, 
-    ipq_verdict_msg_t *v,
-    unsigned int len
-    );
 
 struct wrapper_struct
 {
@@ -207,17 +195,7 @@ static int ipq_enqueue(ipq_queue_t *q,
 	}
 
 	spin_lock_bh(&q->lock);
-	if (q->len >= *q->maxlen) {
-		spin_unlock_bh(&q->lock);
-		if (net_ratelimit()) 
-			printk(KERN_WARNING "ip_queue_ker: full at %d entries, "
-			       "dropping packet(s).\n", q->len);
-		goto free_drop;
-	}
-#if 0
-	if (q->flushing || q->peer.copy_mode == IPQ_COPY_NONE
-	    || q->peer.pid == 0 || q->peer.died || q->terminate)
-#endif
+    
     if (q->flushing || q->terminate)
     {
 		spin_unlock_bh(&q->lock);
@@ -257,31 +235,8 @@ static int ipq_enqueue(ipq_queue_t *q,
         add_timer(mytimer);
     } 
     
-    //ipq_set_verdict_helper(e);
-
-#if 0
-	status = q->peer.send(e);
-	if (status > 0) {
-		list_add(&e->list, &q->list);
-		q->len++;
-		spin_unlock_bh(&q->lock);
-		return status;
-	}
-#endif
-	
     return 0;
 
-#if 0
-	if (status == -ECONNREFUSED) {
-		printk(KERN_INFO "ip_queue: peer %d died, "
-		       "resetting state and flushing queue\n", q->peer.pid);
-			q->peer.died = 1;
-			q->peer.pid = 0;
-			q->peer.copy_mode = IPQ_COPY_NONE;
-			q->peer.copy_range = 0;
-			ipq_flush(q);
-	}
-#endif
 free_drop:
 	kfree(e);
 	return -EBUSY;
@@ -297,160 +252,9 @@ static void ipq_destroy_queue(ipq_queue_t *q)
 	kfree(q);
 }
 
-/* With a chainsaw... */
-static int route_me_harder(struct sk_buff *skb)
-{
-	struct iphdr *iph = skb->nh.iph;
-	struct rtable *rt;
-
-	struct rt_key key = {
-				dst:iph->daddr, src:iph->saddr,
-				oif:skb->sk ? skb->sk->bound_dev_if : 0,
-				tos:RT_TOS(iph->tos)|RTO_CONN,
-#ifdef CONFIG_IP_ROUTE_FWMARK
-				fwmark:skb->nfmark
-#endif
-			};
-
-	if (ip_route_output_key(&rt, &key) != 0) {
-		printk("route_me_harder: No more route.\n");
-		return -EINVAL;
-	}
-
-	/* Drop old route. */
-	dst_release(skb->dst);
-	skb->dst = &rt->u.dst;
-	return 0;
-}
-
-static int ipq_mangle_ipv4(ipq_verdict_msg_t *v, ipq_queue_element_t *e)
-{
-	int diff;
-	struct iphdr *user_iph = (struct iphdr *)v->payload;
-
-	if (v->data_len < sizeof(*user_iph))
-		return 0;
-	diff = v->data_len - e->skb->len;
-	if (diff < 0)
-		skb_trim(e->skb, v->data_len);
-	else if (diff > 0) {
-		if (v->data_len > 0xFFFF)
-			return -EINVAL;
-		if (diff > skb_tailroom(e->skb)) {
-			struct sk_buff *newskb;
-			
-			newskb = skb_copy_expand(e->skb,
-			                         skb_headroom(e->skb),
-			                         diff,
-			                         GFP_ATOMIC);
-			if (newskb == NULL) {
-				printk(KERN_WARNING "ip_queue_ker: OOM "
-				      "in mangle, dropping packet\n");
-				return -ENOMEM;
-			}
-			if (e->skb->sk)
-				skb_set_owner_w(newskb, e->skb->sk);
-			kfree_skb(e->skb);
-			e->skb = newskb;
-		}
-		skb_put(e->skb, diff);
-	}
-	memcpy(e->skb->data, v->payload, v->data_len);
-	e->skb->nfcache |= NFC_ALTERED;
-
-	/*
-	 * Extra routing may needed on local out, as the QUEUE target never
-	 * returns control to the table.
-	 */
-	if (e->info->hook == NF_IP_LOCAL_OUT) {
-		struct iphdr *iph = e->skb->nh.iph;
-
-		if (!(iph->tos == e->rt_info.tos
-		      && iph->daddr == e->rt_info.daddr
-		      && iph->saddr == e->rt_info.saddr))
-			return route_me_harder(e->skb);
-	}
-	return 0;
-}
-
 static inline int id_cmp(ipq_queue_element_t *e, unsigned long id)
 {
 	return (id == (unsigned long )e);
-}
-
-static int ipq_set_verdict_helper(
-    ipq_queue_element_t * e, 
-    ipq_verdict_msg_t *v,
-    unsigned int len
-    )
-{
-	if (e == NULL)
-		return -ENOENT;
-	else {
-		e->verdict = v->value;
-		if (v->data_len && v->data_len == len)
-			if (ipq_mangle_ipv4(v, e) < 0)
-				e->verdict = NF_DROP;
-		nf_reinject(e->skb, e->info, e->verdict);
-		kfree(e);
-		return 0;
-	}
-}
-
-static int ipq_set_verdict(ipq_queue_t *q,
-                           ipq_verdict_msg_t *v, unsigned int len)
-{
-	ipq_queue_element_t *e;
-
-	if (v->value > NF_MAX_VERDICT)
-		return -EINVAL;
-	e = ipq_dequeue(q, id_cmp, v->id);
-    return ipq_set_verdict_helper(e, v, len);
-}
-
-static int ipq_receive_peer(ipq_queue_t *q, ipq_peer_msg_t *m,
-                            unsigned char type, unsigned int len)
-{
-
-	int status = 0;
-	int busy;
-		
-	spin_lock_bh(&q->lock);
-	busy = (q->terminate || q->flushing);
-	spin_unlock_bh(&q->lock);
-	if (busy)
-		return -EBUSY;
-	if (len < sizeof(ipq_peer_msg_t))
-		return -EINVAL;
-	switch (type) {
-		case IPQM_MODE:
-			switch (m->msg.mode.value) {
-				case IPQ_COPY_META:
-					q->peer.copy_mode = IPQ_COPY_META;
-					q->peer.copy_range = 0;
-					break;
-				case IPQ_COPY_PACKET:
-					q->peer.copy_mode = IPQ_COPY_PACKET;
-					q->peer.copy_range = m->msg.mode.range;
-					if (q->peer.copy_range > 0xFFFF)
-						q->peer.copy_range = 0xFFFF;
-					break;
-				default:
-					status = -EINVAL;
-			}
-			break;
-		case IPQM_VERDICT:
-			if (m->msg.verdict.value > NF_MAX_VERDICT)
-				status = -EINVAL;
-			else
-				status = ipq_set_verdict(q,
-				                         &m->msg.verdict,
-				                         len - sizeof(*m));
-			break;
-		default:
-			 status = -EINVAL;
-	}
-	return status;
 }
 
 static inline int dev_cmp(ipq_queue_element_t *e, unsigned long ifindex)
@@ -498,148 +302,9 @@ static int netfilter_receive(struct sk_buff *skb,
  *
  ****************************************************************************/
 
-static struct sock *nfnl = NULL;
 ipq_queue_t *nlq = NULL;
 
-static struct sk_buff *netlink_build_message(ipq_queue_element_t *e, int *errp)
-{
-	unsigned char *old_tail;
-	size_t size = 0;
-	size_t data_len = 0;
-	struct sk_buff *skb;
-	ipq_packet_msg_t *pm;
-	struct nlmsghdr *nlh;
-
-	switch (nlq->peer.copy_mode) {
-		size_t copy_range;
-
-		case IPQ_COPY_META:
-			size = NLMSG_SPACE(sizeof(*pm));
-			data_len = 0;
-			break;
-		case IPQ_COPY_PACKET:
-			copy_range = nlq->peer.copy_range;
-			if (copy_range == 0 || copy_range > e->skb->len)
-				data_len = e->skb->len;
-			else
-				data_len = copy_range;
-			size = NLMSG_SPACE(sizeof(*pm) + data_len);
-			
-			break;
-		case IPQ_COPY_NONE:
-		default:
-			*errp = -EINVAL;
-			return NULL;
-	}
-	skb = alloc_skb(size, GFP_ATOMIC);
-	if (!skb)
-		goto nlmsg_failure;
-	old_tail = skb->tail;
-	nlh = NLMSG_PUT(skb, 0, 0, IPQM_PACKET, size - sizeof(*nlh));
-	pm = NLMSG_DATA(nlh);
-	memset(pm, 0, sizeof(*pm));
-	pm->packet_id = (unsigned long )e;
-	pm->data_len = data_len;
-	pm->timestamp_sec = e->skb->stamp.tv_sec;
-	pm->timestamp_usec = e->skb->stamp.tv_usec;
-	pm->mark = e->skb->nfmark;
-	pm->hook = e->info->hook;
-	if (e->info->indev) strcpy(pm->indev_name, e->info->indev->name);
-	else pm->indev_name[0] = '\0';
-	if (e->info->outdev) strcpy(pm->outdev_name, e->info->outdev->name);
-	else pm->outdev_name[0] = '\0';
-	pm->hw_protocol = e->skb->protocol;
-	if (e->info->indev && e->skb->dev) {
-		pm->hw_type = e->skb->dev->type;
-		if (e->skb->dev->hard_header_parse)
-			pm->hw_addrlen =
-				e->skb->dev->hard_header_parse(e->skb,
-				                               pm->hw_addr);
-	}
-	if (data_len)
-		memcpy(pm->payload, e->skb->data, data_len);
-	nlh->nlmsg_len = skb->tail - old_tail;
-	NETLINK_CB(skb).dst_groups = 0;
-	return skb;
-nlmsg_failure:
-	if (skb)
-		kfree_skb(skb);
-	*errp = 0;
-	printk(KERN_ERR "ip_queue_ker: error creating netlink message\n");
-	return NULL;
-}
-
-static int netlink_send_peer(ipq_queue_element_t *e)
-{
-	int status = 0;
-	struct sk_buff *skb;
-
-	skb = netlink_build_message(e, &status);
-	if (skb == NULL)
-		return status;
-	return netlink_unicast(nfnl, skb, nlq->peer.pid, MSG_DONTWAIT);
-}
-
 #define RCV_SKB_FAIL(err) do { netlink_ack(skb, nlh, (err)); return; } while (0);
-
-static __inline__ void netlink_receive_user_skb(struct sk_buff *skb)
-{
-	int status, type;
-	struct nlmsghdr *nlh;
-
-	if (skb->len < sizeof(struct nlmsghdr))
-		return;
-
-	nlh = (struct nlmsghdr *)skb->data;
-	if (nlh->nlmsg_len < sizeof(struct nlmsghdr)
-	    || skb->len < nlh->nlmsg_len)
-	    	return;
-
-	if(nlh->nlmsg_pid <= 0
-	    || !(nlh->nlmsg_flags & NLM_F_REQUEST)
-	    || nlh->nlmsg_flags & NLM_F_MULTI)
-		RCV_SKB_FAIL(-EINVAL);
-	if (nlh->nlmsg_flags & MSG_TRUNC)
-		RCV_SKB_FAIL(-ECOMM);
-	type = nlh->nlmsg_type;
-	if (type < NLMSG_NOOP || type >= IPQM_MAX)
-		RCV_SKB_FAIL(-EINVAL);
-	if (type <= IPQM_BASE)
-		return;
-	if(!cap_raised(NETLINK_CB(skb).eff_cap, CAP_NET_ADMIN))
-		RCV_SKB_FAIL(-EPERM);
-	if (nlq->peer.pid && !nlq->peer.died
-	    && (nlq->peer.pid != nlh->nlmsg_pid)) {
-	    	printk(KERN_WARNING "ip_queue_ker: peer pid changed from %d to "
-	    	      "%d, flushing queue\n", nlq->peer.pid, nlh->nlmsg_pid);
-		ipq_flush(nlq);
-	}	
-	nlq->peer.pid = nlh->nlmsg_pid;
-	nlq->peer.died = 0;
-	status = ipq_receive_peer(nlq, NLMSG_DATA(nlh),
-	                          type, skb->len - NLMSG_LENGTH(0));
-	if (status < 0)
-		RCV_SKB_FAIL(status);
-	if (nlh->nlmsg_flags & NLM_F_ACK)
-		netlink_ack(skb, nlh, 0);
-        return;
-}
-
-/* Note: we are only dealing with single part messages at the moment. */
-static void netlink_receive_user_sk(struct sock *sk, int len)
-{
-	do {
-		struct sk_buff *skb;
-
-		if (rtnl_shlock_nowait())
-			return;
-		while ((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
-			netlink_receive_user_skb(skb);
-			kfree_skb(skb);
-		}
-		up(&rtnl_sem);
-	} while (nfnl && nfnl->receive_queue.qlen);
-}
 
 /****************************************************************************
  *
@@ -702,18 +367,10 @@ static int ipq_get_info(char *buffer, char **start, off_t offset, int length)
 
 	spin_lock_bh(&nlq->lock);
 	len = sprintf(buffer,
-	              "Peer pid            : %d\n"
-	              "Peer died           : %d\n"
-	              "Peer copy mode      : %d\n"
-	              "Peer copy range     : %Zu\n"
 	              "Queue length        : %d\n"
 	              "Queue max. length   : %d\n"
 	              "Queue flushing      : %d\n"
 	              "Queue terminate     : %d\n",
-	              nlq->peer.pid,
-	              nlq->peer.died,
-	              nlq->peer.copy_mode,
-	              nlq->peer.copy_range,
 	              nlq->len,
 	              *nlq->maxlen,
 	              nlq->flushing,
@@ -741,25 +398,17 @@ static int __init init(void)
 
     rand_gen = ip_noise_rand_alloc(24);
 	
-	nfnl = netlink_kernel_create(NETLINK_FIREWALL, netlink_receive_user_sk);
-	if (nfnl == NULL) {
-		printk(KERN_ERR "ip_queue_ker: initialisation failed: unable to "
-		       "create kernel netlink socket\n");
-		return -ENOMEM;
-	}
 	nlq = ipq_create_queue(netfilter_receive,
-	                       netlink_send_peer, &status, &sysctl_maxlen);
+	                       &status, &sysctl_maxlen);
 	if (nlq == NULL) {
 		printk(KERN_ERR "ip_queue_ker: initialisation failed: unable to "
 		       "create queue\n");
-		sock_release(nfnl->socket);
 		return status;
 	}
 	proc = proc_net_create(IPQ_PROC_FS_NAME, 0, ipq_get_info);
 	if (proc) proc->owner = THIS_MODULE;
 	else {
 		ipq_destroy_queue(nlq);
-		sock_release(nfnl->socket);
 		return -ENOMEM;
 	}
 	register_netdevice_notifier(&ipq_dev_notifier);
@@ -773,7 +422,6 @@ static void __exit fini(void)
 	proc_net_remove(IPQ_PROC_FS_NAME);
 	unregister_netdevice_notifier(&ipq_dev_notifier);
 	ipq_destroy_queue(nlq);
-	sock_release(nfnl->socket);
 }
 
 MODULE_DESCRIPTION("IPv4 in-kernel packet queue handler");
