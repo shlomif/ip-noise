@@ -1,3 +1,9 @@
+* Introduction
+    - What is IP-Noise Simulator?
+    - When can it be useful?
+    - Credits
+    - Supported platforms
+
 * Installation Instructions
     - Global
     - For the user-land arbitrator
