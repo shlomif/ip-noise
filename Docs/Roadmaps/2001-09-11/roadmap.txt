@@ -77,7 +77,7 @@ configuration language in perl. It is available on the site.
 it can handle very high loads, but it is still good for inspiration.
 
 3. We have started converting the packet handler to C. So far, we have a
-framework that allows for arbitary interception and delay of packets. We are
+framework that allows for arbitrary interception and delay of packets. We are
 now working on implementing the full-fledged arbitrator.
 
 Documents:
@@ -132,7 +132,7 @@ Finish converting the packet handler to C:
 
 This will require some work, but it's definitely an inevitable thing that
 should be done. We anticipate that a lot of time will be spent dealing
-with C's idiosyncrecies, which were not encountered when programming in Perl.
+with C's idiosyncrasies, which were not encountered when programming in Perl.
 
 By the time we have this task finished, the simulator will be able to handle
 at least medium loads of IP traffic.
