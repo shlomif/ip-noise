@@ -558,9 +558,12 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
             packet_info->length
             );
 #endif
-            
 
         verdict = decide(self, packet_info);
+
+#if 0
+        printf("verdict=%i,%i\n", verdict.action, verdict.delay_len);
+#endif
         
         free(packet_info);
         ip_noise_rwlock_up_read(data_lock);

@@ -24,6 +24,11 @@ struct ip_noise_delayer_struct
 #ifndef __KERNEL__
     pthread_cond_t cond;
 #endif
+#ifdef __KERNEL__
+    struct timer_list current_timer;
+    int current_timer_initialized;
+#endif
+
     PQUEUE pq;
     void (*release_callback)(ip_noise_message_t * m, void * context);
     void * release_callback_context;
@@ -32,21 +37,27 @@ struct ip_noise_delayer_struct
 
 typedef struct ip_noise_delayer_struct ip_noise_delayer_t;
 
-ip_noise_delayer_t * ip_noise_delayer_alloc(
+extern ip_noise_delayer_t * ip_noise_delayer_alloc(
     void (*release_callback)(ip_noise_message_t * m, void * context),
     void * release_callback_context
     );
 
-void ip_noise_delayer_delay_packet(
+extern void ip_noise_delayer_delay_packet(
     ip_noise_delayer_t * delayer, 
     ip_noise_message_t * m,
+#ifndef __KERNEL__    
     struct timeval tv,
+#endif
     int delay_len
     );
 
-void ip_noise_delayer_loop(
+#ifndef __KERNEL__
+extern void ip_noise_delayer_loop(
     ip_noise_delayer_t * delayer
     );
+#endif
+
+extern void ip_noise_delayer_destroy(ip_noise_delayer_t * delayer);
 
 #ifdef __cplusplus
 }

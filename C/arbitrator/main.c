@@ -404,10 +404,9 @@ int init_module()
             {
                 ip_noise_message_t * msg_with_time;
                 struct timezone tz;
-#ifdef DEBUG
+
 #if 0
                 static int num = 0;
-#endif
 #endif
 
                 msg_with_time = malloc(sizeof(ip_noise_message_t));

@@ -28,7 +28,7 @@ Chain Vipe {
         }
         delay = 1
 
-        delay_type = U(2000,3000)
+        delay_type = U(100,3000)
 
         time_factor = 20000
 
@@ -36,8 +36,8 @@ Chain Vipe {
     }
    
     # These are the IPs of vipe.technion.ac.il and the local host
-    source = 132.69.253.254 ; 132.68.52.118
-    dest = 132.69.253.254 ; 132.68.52.118
+    source = 132.68.7.4 ; 132.68.52.118 ; 127.0.0.1
+    dest = 132.68.7.4 ; 132.68.52.118 ; 127.0.0.1
     
 }
 
