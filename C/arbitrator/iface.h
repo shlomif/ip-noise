@@ -7,10 +7,16 @@ extern "C" {
 #endif
 
 
+#ifndef __KERNEL__
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#else
+#include <linux/types.h>
+#include <linux/if.h>
+#include <linux/in.h>
+#endif
 
 #include "redblack.h"
 

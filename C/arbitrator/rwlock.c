@@ -1,13 +1,21 @@
+#ifndef __KERNEL__
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+
+#else
+#include "k_stdlib.h"
+#endif
+
+
 
 #include "rwlock.h"
 /*
  * Initialize a new readers-writers lock
  * */
 
+#ifndef __KERNEL__
 static const pthread_mutex_t mutex_initializer = PTHREAD_MUTEX_INITIALIZER;
 static const pthread_cond_t cond_initializer = PTHREAD_COND_INITIALIZER;
 
@@ -135,6 +143,26 @@ void ip_noise_rwlock_up_write(ip_noise_rwlock_t * lock)
     
     pthread_mutex_unlock(&(lock->mutex_lock));
 }
+
+#else
+
+ip_noise_rwlock_t * ip_noise_rwlock_alloc(void)
+{
+    ip_noise_rwlock_t * ret;
+
+    ret = malloc(sizeof(ip_noise_rwlock_t));
+    pthread_mutex_init(ret, NULL);
+    
+    return ret;
+}
+
+void ip_noise_rwlock_free(ip_noise_rwlock_t * lock)
+{
+    pthread_mutex_destroy(lock);
+    free(lock);
+}
+
+#endif
 
 #if 0
 

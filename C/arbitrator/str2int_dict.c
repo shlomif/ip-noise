@@ -1,5 +1,10 @@
+#ifndef __KERNEL__
+
 #include <string.h>
 #include <stdlib.h>
+#else
+#include "k_stdlib.h"
+#endif
 
 
 #include "iface.h"

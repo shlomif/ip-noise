@@ -1,8 +1,13 @@
+#ifndef __KERNEL__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <math.h>
+#else
+#include "k_time.h"
+#endif
 
 #include "switcher.h"
 

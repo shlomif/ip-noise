@@ -6,8 +6,9 @@
 extern "C" {
 #endif
 
-
+#ifndef __KERNEL__
 #include <pthread.h>
+
 
 struct ip_noise_rwlock_struct
 {
@@ -49,6 +50,23 @@ extern void ip_noise_rwlock_down_read ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_down_write ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_up_read ( ip_noise_rwlock_t * lock );
 extern void ip_noise_rwlock_up_write ( ip_noise_rwlock_t * lock );
+#else
+
+#include "k_pthread.h"
+
+typedef pthread_mutex_t ip_noise_rwlock_t;
+
+extern ip_noise_rwlock_t * ip_noise_rwlock_alloc();
+extern void ip_noise_rwlock_free(ip_noise_rwlock_t * lock);
+
+#define ip_noise_rwlock_down_read(lock) pthread_mutex_lock(lock)
+#define ip_noise_rwlock_down_write(lock) pthread_mutex_lock(lock)
+#define ip_noise_rwlock_up_read(lock) pthread_mutex_unlock(lock)
+#define ip_noise_rwlock_up_write(lock) pthread_mutex_unlock(lock)
+
+
+#endif
+
 
 
 

@@ -1,7 +1,15 @@
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#else
+#include "k_stdlib.h"
+#include "k_stdio.h"
+#include "k_math.h"
+#include "k_time.h"
+#endif
 
 #include "fcs_dm.h"
 #include "rand.h"
@@ -251,7 +259,9 @@ static int is_in_chain_filter(
         default:
         {
             printf("Uknown len_type == %i!\n", len_type);
+#ifndef __KERNEL__
             exit(-1);
+#endif
         }
         break;
     }
@@ -304,7 +314,9 @@ static ip_noise_verdict_t chain_decide(
         int delay;
         ip_noise_prob_t do_a_stable_delay_prob;
         struct timeval tv, last_tv;
+#ifndef __KERNEL__
         struct timezone tz;
+#endif
 
         if (current_state->delay_function.type == IP_NOISE_DELAY_FUNCTION_EXP)
         {
@@ -475,7 +487,9 @@ static ip_noise_verdict_t decide(
             else
             {
                 printf("Unknown global_verdict.action %i!\n", global_verdict.action);
+#ifndef __KERNEL__
                 exit(-1);
+#endif
             }
         }
         else if (chain_verdict.action == IP_NOISE_VERDICT_ACCEPT)
@@ -488,7 +502,9 @@ static ip_noise_verdict_t decide(
         else
         {
             printf("Unknown chain_verdict.action %i!\n", chain_verdict.action);
+#ifndef __KERNEL__
             exit(-1);
+#endif
         }
     }
 #if 0

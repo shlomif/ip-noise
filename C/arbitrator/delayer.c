@@ -136,7 +136,7 @@ void ip_noise_delayer_loop(
 
     ip_noise_delayer_pq_element_t current_time_pseudo_msg, * msg;
 
-    while (1)
+    while (*(delayer->terminate))
     {
         pthread_mutex_lock(&(delayer->mutex));
         gettimeofday(&(current_time_pseudo_msg.tv), &tz);

@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#else
+#include "k_stdlib.h"
 #endif
 
 #include "queue.h"
@@ -22,17 +24,22 @@
 
 #define DEBUG
 
+#ifndef __KERNEL__
 static void die(struct ipq_handle * h)
 {
     ipq_perror("IP-Noise Arbitrator");
     ipq_destroy_handle(h);
     exit(-1);
 }
-
+#else
+#define die(h) 
+#endif
 
 struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
 {
+#ifndef __KERNEL__
     ip_noise_messages_queue_t * queue;
+#endif
     int * terminate;
     struct ipq_handle * h;
     ip_noise_delayer_t * delayer;
@@ -42,6 +49,7 @@ struct ip_noise_decide_what_to_do_with_packets_thread_context_struct
 
 typedef struct ip_noise_decide_what_to_do_with_packets_thread_context_struct ip_noise_decide_what_to_do_with_packets_thread_context_t;
 
+#ifndef __KERNEL__
 static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
 {
     ip_noise_decide_what_to_do_with_packets_thread_context_t * context;      
@@ -139,6 +147,7 @@ static void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_c
 
     return NULL;
 }
+#endif
 
 struct ip_noise_release_packets_thread_context_struct
 {
@@ -148,6 +157,7 @@ struct ip_noise_release_packets_thread_context_struct
 
 typedef struct ip_noise_release_packets_thread_context_struct ip_noise_release_packets_thread_context_t;
 
+#ifndef __KERNEL__
 static void * release_packets_thread_func(void * void_context)
 {
     ip_noise_release_packets_thread_context_t * context;
@@ -160,19 +170,22 @@ static void * release_packets_thread_func(void * void_context)
 
     free(context);
 
-    while (! (*terminate) )
-    {
-        ip_noise_delayer_loop(delayer);
-        usleep(500);
-    }
+    delayer->terminate = terminate;
+
+    ip_noise_delayer_loop(delayer);
 
     return NULL;
     
 }
+#endif
 
 static void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
 {
+#ifndef __KERNEL__    
     struct ipq_handle * h = (struct ipq_handle *)context;
+#else
+#define h 5
+#endif
     int status;
     status = ipq_set_verdict(h, m->m->packet_id, NF_ACCEPT, 0, NULL);
 
@@ -183,6 +196,11 @@ static void ip_noise_delayer_release_function(ip_noise_message_t * m, void * con
     free(m);
 }
 
+#ifdef __KERNEL__
+#undef h
+#endif
+
+#ifndef __KERNEL__
 static void * arb_iface_thread_func(void * context)
 {
     ip_noise_arbitrator_iface_loop( (ip_noise_arbitrator_iface_t * )context);
@@ -190,43 +208,61 @@ static void * arb_iface_thread_func(void * context)
     return NULL;
 }
 
+
 static void * arb_switcher_thread_func(void * context)
 {
     ip_noise_arbitrator_switcher_loop( (ip_noise_arbitrator_switcher_t * )context);
 
     return NULL;
 }
+#endif
 
-
+#ifndef __KERNEL__
 int main(int argc, char * argv[])
+#else
+int init_module()
+#endif
 {
     int status;
+#ifndef __KERNEL__
     unsigned char message[IP_NOISE_MESSAGE_BUFSIZE];
+#endif
     struct ipq_handle * h;
+#ifndef __KERNEL__
     ip_noise_messages_queue_t * packets_to_arbitrate_queue;
+#endif
     int terminate = 0;
     
     ip_noise_decide_what_to_do_with_packets_thread_context_t * arbitrator_context;
+
+#ifndef __KERNEL__
     pthread_t decide_what_to_with_packets_thread;
+#endif    
     
     ip_noise_release_packets_thread_context_t * release_packets_context;
+#ifndef __KERNEL__
     pthread_t release_packets_thread;
+#endif
+#ifndef __KERNEL__
     int check;
+#endif
     ip_noise_delayer_t * delayer;
 
     ip_noise_arbitrator_data_t * data, * * data_ptr;
     ip_noise_flags_t flags;
     ip_noise_arbitrator_iface_t * arb_iface;
+#ifndef __KERNEL__
     pthread_t arb_iface_thread;
+#endif
 
     ip_noise_arbitrator_switcher_t * arb_switcher;
+#ifndef __KERNEL__
     pthread_t arb_switcher_thread;
+#endif
 
 
 
 
-
-    srand(24);
 
     h = ipq_create_handle(0);
     if (h == NULL)
@@ -241,14 +277,17 @@ int main(int argc, char * argv[])
         die(h);
     }
 
+#ifndef __KERNEL__
     packets_to_arbitrate_queue = ip_noise_messages_queue_alloc();
+#endif
 
     delayer = ip_noise_delayer_alloc(ip_noise_delayer_release_function, (void *)h);
     
     release_packets_context = malloc(sizeof(ip_noise_release_packets_thread_context_t));
     release_packets_context->delayer = delayer;
     release_packets_context->terminate = &terminate;
-    
+
+#ifndef __KERNEL__
     check = pthread_create(
         &release_packets_thread,
         NULL,
@@ -261,6 +300,7 @@ int main(int argc, char * argv[])
         fprintf(stderr, "Could not create the release packets thread!\n");
         exit(-1);
     }
+#endif
 
     data = ip_noise_arbitrator_data_alloc();
     data_ptr = malloc(sizeof(*data_ptr));
@@ -270,6 +310,7 @@ int main(int argc, char * argv[])
 
     arb_iface = ip_noise_arbitrator_iface_alloc(data_ptr, &flags);
 
+#ifndef __KERNEL__
     check = pthread_create(
         &arb_iface_thread,
         NULL,
@@ -282,9 +323,11 @@ int main(int argc, char * argv[])
         fprintf(stderr, "Could not create the arbitrator interface thread!\n");
         exit(-1);
     }
+#endif
 
     arb_switcher = ip_noise_arbitrator_switcher_alloc(data_ptr, &flags, &terminate);
 
+#ifndef __KERNEL__
     check = pthread_create(
         &arb_switcher_thread,
         NULL,
@@ -297,16 +340,19 @@ int main(int argc, char * argv[])
         fprintf(stderr, "Could not create the arbitrator switcher thread!\n");
         exit(-1);
     }
+#endif
 
     arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
+#ifndef __KERNEL__
     arbitrator_context->queue = packets_to_arbitrate_queue ;
+#endif
     arbitrator_context->h = h;
     arbitrator_context->terminate = &terminate;
     arbitrator_context->delayer = delayer;
     arbitrator_context->data = data_ptr;
     arbitrator_context->flags = &flags;
 
-
+#ifndef __KERNEL__
     check = pthread_create(
         &decide_what_to_with_packets_thread,
         NULL,
@@ -319,6 +365,7 @@ int main(int argc, char * argv[])
         fprintf(stderr, "Could not create the arbitrator thread!\n");
         exit(-1);
     }
+#endif
     
 
 #if 0
@@ -334,7 +381,8 @@ int main(int argc, char * argv[])
         }
     }
 #endif
-    
+
+#ifndef __KERNEL__
     do
     {
         status = ipq_read(h, message, sizeof(message), 0);
@@ -400,6 +448,7 @@ int main(int argc, char * argv[])
                 break;                        
         }
     } while (1);
+#endif
 
     ipq_destroy_handle(h);
 

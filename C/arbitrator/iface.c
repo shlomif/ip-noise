@@ -1,6 +1,11 @@
+#ifndef __KERNEL__
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#else
+#include "k_stdlib.h"
+#include "k_stdio.h"
+#endif
 
 
 #include "conn.h"
@@ -8,6 +13,10 @@
 #include "rwlock.h"
 
 #include "read.h"
+
+#ifdef __KERNEL__
+#define exit(error_value) 
+#endif
 
 enum IP_NOISE_RET_VALUE_T
 {

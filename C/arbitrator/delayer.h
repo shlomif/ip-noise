@@ -27,6 +27,7 @@ struct ip_noise_delayer_struct
     PQUEUE pq;
     void (*release_callback)(ip_noise_message_t * m, void * context);
     void * release_callback_context;
+    int * terminate;
 };
 
 typedef struct ip_noise_delayer_struct ip_noise_delayer_t;

@@ -1,3 +1,5 @@
+#ifndef __KERNEL__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -88,3 +90,5 @@ void ip_noise_messages_queue_enqueue(ip_noise_messages_queue_t * queue, ip_noise
     
     pthread_mutex_unlock(&(queue->mutex));
 }
+
+#endif
