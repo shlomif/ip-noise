@@ -1,10 +1,11 @@
 
 all: arb
 
+INCLUDES = delayer.h pqueue.h queue.h verdict.h
 
-OBJECTS = pqueue.o main.o queue.o
+OBJECTS = delayer.o main.o pqueue.o queue.o
 
-$(OBJECTS) :: %.o : %.c
+$(OBJECTS) :: %.o : %.c $(INCLUDES)
 	gcc -g -Wall -c $<
 
 arb: $(OBJECTS)

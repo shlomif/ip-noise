@@ -136,6 +136,10 @@ int PQueuePush( PQUEUE *pq, void *item)
 
 }
 
+void * PQueuePeekMinimum( PQUEUE * pq)
+{
+    return pq->Elements[ PQ_FIRST_ENTRY ];
+}
 
 int PQueueIsEmpty( PQUEUE *pq )
 {

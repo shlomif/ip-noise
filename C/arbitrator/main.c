@@ -97,6 +97,8 @@ void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
             {
                 die(h);
             }
+
+            free(msg_with_time);
         }
         else if (verdict.action == IP_NOISE_VERDICT_DROP)
         {
@@ -107,13 +109,15 @@ void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
             {
                 die(h);
             }
+
+            free(msg_with_time);
         }
         else if (verdict.action == IP_NOISE_VERDICT_DELAY)
         {
             printf("Delaying Packet! (%i)\n", num++);
             ip_noise_delayer_delay_packet(
                 delayer,
-                msg_with_time->m,
+                msg_with_time,
                 msg_with_time->tv,
                 verdict.delay_len
                 );
@@ -124,10 +128,6 @@ void * ip_noise_decide_what_to_do_with_packets_thread_func (void * void_context)
             fprintf(stderr, "Unknown Action!\n");
             return NULL;
         }
-        
-        
-
-        free(msg_with_time);
     }
 
     return NULL;
@@ -156,10 +156,24 @@ void * release_packets_thread_func(void * void_context)
     while (! (*terminate) )
     {
         ip_noise_delayer_poll(delayer);
+        usleep(500);
     }
 
     return NULL;
     
+}
+
+void ip_noise_delayer_release_function(ip_noise_message_t * m, void * context)
+{
+    struct ipq_handle * h = (struct ipq_handle *)context;
+    int status;
+    status = ipq_set_verdict(h, m->m->packet_id, NF_ACCEPT, 0, NULL);
+
+    if (status < 0)
+    {
+        die(h);
+    }    
+    free(m);
 }
 
 int main(int argc, char * argv[])
@@ -195,7 +209,7 @@ int main(int argc, char * argv[])
 
     packets_to_arbitrate_queue = ip_noise_messages_queue_alloc();
 
-    delayer = ip_noise_delayer_alloc();
+    delayer = ip_noise_delayer_alloc(ip_noise_delayer_release_function, (void *)h);
     
     arbitrator_context = malloc(sizeof(ip_noise_decide_what_to_do_with_packets_thread_context_t));
     arbitrator_context->queue = packets_to_arbitrate_queue ;

@@ -70,6 +70,7 @@ void ip_noise_messages_queue_enqueue(ip_noise_messages_queue_t * queue, ip_noise
     {
         queue->tail->next = msg;
         queue->tail = msg;
+        msg->next = NULL;
     }
 
     queue->num_msgs++;

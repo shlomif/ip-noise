@@ -58,6 +58,8 @@ int PQueueIsEmpty( PQUEUE *pq );
 
 void *PQueuePop( PQUEUE *pq);
 
+void * PQueuePeekMinimum( PQUEUE * pq);
+
 #define PGetRating(elem) ((elem).rating)
 
 #endif /* #ifdef __PQUEUE_H */
