@@ -539,15 +539,23 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
     ip_noise_rwlock_t * data_lock;
     ip_noise_packet_info_t * packet_info;
 
+#ifndef __KERNEL__
     if (msg->data_len > 0)
+#else
+    if (msg->len > 0)
+#endif
     {
+#ifndef __KERNEL__
         payload = msg->payload;
+#else
+        payload = msg->data;
+#endif
 
         data_lock = (*(self->data))->lock;
 
-        ip_noise_rwlock_down_read(data_lock);
-
         packet_info = get_packet_info(payload);
+
+        ip_noise_rwlock_down_read(data_lock);
 
 #if 0
         printf(
