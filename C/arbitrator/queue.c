@@ -1,3 +1,10 @@
+/*
+ * queue.c
+ * 
+ * This module implements a thread-safe queue.
+ *
+ * */
+
 #ifndef __KERNEL__
 
 #include <stdio.h>
@@ -45,14 +52,18 @@ ip_noise_message_t * ip_noise_messages_queue_dequeue(ip_noise_messages_queue_t *
     
     pthread_mutex_lock(&(queue->mutex));
 
+    /* If there are no messages present in the queue */
     if (queue->head == NULL)
     {
         /* Inifinitely wait for an element to come */
         pthread_cond_wait(&(queue->cond), &(queue->mutex));
     }
     
+    /* Retrieve the first element */
     ret = queue->head;
+    /* Remove it from the list */
     queue->head = ret->next;
+    /* Mark this list is empty if it is indeed so */
     if (queue->head == NULL)
     {
         queue->tail = NULL;
@@ -76,8 +87,11 @@ void ip_noise_messages_queue_enqueue(ip_noise_messages_queue_t * queue, ip_noise
     }
     else
     {
+        /* Append this message to the end of the linked list */
         queue->tail->next = msg;
+        /* Mark it as the end */
         queue->tail = msg;
+        /* Signify that it is not connected to anything */
         msg->next = NULL;
     }
 
