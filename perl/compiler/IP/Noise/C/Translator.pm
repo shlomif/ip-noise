@@ -747,6 +747,8 @@ sub load_arbitrator
 
         if ($chain->{'length_spec'}->{'type'} ne "all")
         {
+            print "Setting Length Spec!\n";
+
             my $length_spec = $chain->{'length_spec'};
     
             my $type = $length_spec->{'type'};            

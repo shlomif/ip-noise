@@ -856,7 +856,7 @@ void ip_noise_arbitrator_iface_loop(
                     /* Free the previous parameters that were read from the line*/
                     for(i=0;i<a;i++)
                     {
-                        free_param_type(self, record->params[a], &params[a]);
+                        free_param_type(self, record->params[i], &params[i]);
                     }
                     
                     if (ok == IP_NOISE_READ_CONN_TERM)
@@ -872,6 +872,19 @@ void ip_noise_arbitrator_iface_loop(
             }
 
             ret_code = record->handler(self, params, out_params);
+
+            if (ret_code < 0)
+            {
+                if (ret_code == IP_NOISE_READ_CONN_TERM)
+                {
+                    self->_continue = 0;
+                }
+                else if (ret_code == IP_NOISE_READ_NOT_FULLY)
+                {
+                    ip_noise_read_rollback();
+                }
+                goto end_of_loop;                    
+            }
 
             ip_noise_read_commit();
 

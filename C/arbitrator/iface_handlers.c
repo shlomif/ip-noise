@@ -275,6 +275,8 @@ static int ip_noise_arbitrator_iface_handler_set_move_probs(ip_noise_arbitrator_
 
     ip_noise_chain_t * chain;
 
+    printf("Set Move Probs!\n");
+
     chain = get_chain(self, chain_index);
 
     if (chain == NULL)
