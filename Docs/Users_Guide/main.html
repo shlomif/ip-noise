@@ -5,13 +5,106 @@
 <body bgcolor="white">
 
 <div align="center">
-<h3>The Technion - Israel Institute of Technology</h3>
-<h3>Electrical Engineering Department</h3>
-<h3>Computer Networks Laboratory</h3>
+<h3 class="credits">Computer Networks Laboratory</h3>
+<h3 class="credits">Electrical Engineering Department</h3>
+<h3 class="credits">The Technion - Israel Institute of Technology</h3>
+<br>
+<br>
+<br>
 <h1>The IP-Noise Simulator Users' Guide</h1>
 </div>
 
 <h2>Introduction</h2>
+
+<h3>What is the IP-Noise Simulator</h3>
+
+<p>
+The IP-Noise Simulator is a simulator for TCP/IP networks noise that can run
+on top of a Linux 2.4.x system. It is available in two versions: one as a 
+standalone user-level program that can run from the command line. The second 
+one is a kernel module, that should be loaded with <tt>insmod</tt>.
+</p>
+
+<p>
+TCP/IP noise generation involves the deliberate dropping or delaying of 
+packets sent over the TCP/IP network. The simulator can distinguish between the
+various protocols above the IP level and arbitrate them differently 
+accordingly. However, the contents of the packets cannot affect its decision
+in any way.
+</p>
+
+<p>
+Note that it is assumed that the network congestion is independant of what
+occurs in the applications that are tested with the noise. Thus, the load
+of the network does not affect the simulator's behaviour.
+</p>
+
+<h3>When can it prove useful?</h3>
+
+<p>
+We intend the simulator to be used to test the robustness of protocols, and
+see how immune they are to network noise. The simulator is designed to be 
+flexible and simulate various network noise conditions, in a manner that is 
+accurate enough for most needs.
+</p>
+
+<h3>Credits</h3>
+
+<p>
+The project was initiated by Lavy Libman, and was written by Shlomi Fish
+and Roy Glasberg under his supervision. It was conducted with the help and
+resources of the 
+<a href="http://comnet.technion.ac.il/">Computer Networks Lab</a> 
+of <a href="http://www.technion.ac.il/">The Technion</a>.
+</p>
+
+<p>
+We would like to thank the various people in the 
+<a href="http://www.iglu.org.il/">Israeli Group of Linux Users</a> who provided
+important help and input during the varios stages of the project: Omer Mussaev,
+Guy Keren, Mulix and others. We would also like to thank the developers of the 
+<a href="http://netfilter.samba.org/">Netfilter</a> firewalling stack of the 
+Linux Kernel 2.4, which gave us most of the necessary kernel functionality,
+and made our work much easier.
+</p>
+
+<h3>Supported Platforms</h3>
+
+<p>
+The simulator requires a GNU/Linux system running the Linux Kernel version 
+2.4.x. IP-Tables has to be available as a kernel module, as is the 
+IP-Queue module.
+</p>
+
+<h3>License</h3>
+
+<p>
+The translator which is written in Perl is distributed under the MIT X11 
+license. The compiler is distributed under a dual GPL and MIT X11 license except for the following modules:
+</p>
+
+<p>
+<ul>
+
+<li>
+<tt>redblack.c</tt> - derived work which is distributed under the LGPL. (part of the 
+<a href="http://libredblack.sourceforge.net/">libredblack</a> distribution)
+</li>
+
+<li>
+<tt>ip_queue.c</tt> - derived work which is distributed under the GPL. (was derived from
+the module of the same name of the Linux 2.4.x kernel.)
+</li>
+
+</ul>
+</p>
+
+<p>
+The Perl arbitrator is no longer maintained and is only useful as a reference
+implementation. We cannot guarantee that it does not contain bugs. It is 
+distributed under the MIT X11 license.
+</p>
+
 
 </body>
 </html>

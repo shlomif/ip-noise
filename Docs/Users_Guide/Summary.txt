@@ -3,6 +3,7 @@
     - When can it be useful?
     - Credits
     - Supported platforms
+    - License
 
 * Installation Instructions
     - Global
@@ -37,6 +38,13 @@
             - dest & source
                 - IPs
                 - Netmasks
+                - ports
             - tos
             
         - The default chain.
+
+* Final notes
+    - Known Issues
+    - Disclaimer
+    - Links and References
+
