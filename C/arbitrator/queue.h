@@ -6,7 +6,7 @@
 #include <linux/netfilter.h>
 #include <libipq.h>
 
-#define IP_NOISE_MESSAGE_BUFSIZE 2048
+#define IP_NOISE_MESSAGE_BUFSIZE 0x10000
 
 struct ip_noise_message_struct
 {

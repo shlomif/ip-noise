@@ -298,7 +298,7 @@ static ip_noise_verdict_t chain_decide(
         ret.action = IP_NOISE_VERDICT_DROP;
         return ret;            
     }
-    else if (which_prob < current_state->drop_prob + current_state->delay_prob)
+    else if (which_prob <= current_state->drop_prob + current_state->delay_prob)
     {
         /* Delay */
         int delay;
@@ -328,7 +328,6 @@ static ip_noise_verdict_t chain_decide(
             ip_noise_prob_and_delay_t * points, pseudo_point, * searched;
             int is_precise;
             
-            
             prob = ip_noise_rand_rand_in_0_1(self->rand);
 
             num_points = current_state->delay_function.params.split_linear.num_points;
@@ -347,6 +346,11 @@ static ip_noise_verdict_t chain_decide(
                     &is_precise
                     );
 
+            /* SFO_bsearch() returns the place in which the item should
+             * be put in case it was inserted. Our reference points is 
+             * one place before that */
+            searched--;
+
             if (is_precise)
             {
                 delay = searched->delay;                
@@ -356,13 +360,16 @@ static ip_noise_verdict_t chain_decide(
                 /* This is the formula for linear interpolation. */
                 ip_noise_prob_t x1,x2;
                 int y1, y2;
+                double delay_double;
 
                 x1 = searched[0].prob;
                 y1 = searched[0].delay;
                 x2 = searched[1].prob;
                 y2 = searched[1].delay;
-                
-                delay = (int)(((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
+
+                delay_double = (((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
+                /* delay = (int)(((prob-x1)*y1+(x2-prob)*y2)/(x2-x1)); */
+                delay = (int)delay_double;               
             }
         }
         else
@@ -370,6 +377,8 @@ static ip_noise_verdict_t chain_decide(
             /* Non-existent delay type - default the delay to 0. */
             delay = 0;
         }
+
+        
 
         do_a_stable_delay_prob = ip_noise_rand_rand_in_0_1(self->rand);
 
@@ -482,6 +491,7 @@ static ip_noise_verdict_t decide(
             exit(-1);
         }
     }
+    printf("global_verdict.delay_len=%i\n", global_verdict.delay_len);    
 
     if (global_verdict.flag == IP_NOISE_VERDICT_FLAG_UNPROCESSED)
     {
@@ -531,7 +541,6 @@ extern ip_noise_verdict_t ip_noise_arbitrator_packet_logic_decide_what_to_do_wit
             
 
         verdict = decide(self, packet_info);
-        verdict.action = IP_NOISE_VERDICT_ACCEPT;
         
         free(packet_info);
         ip_noise_rwlock_up_read(data_lock);

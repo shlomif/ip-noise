@@ -389,7 +389,7 @@ static int ip_noise_arbitrator_iface_handler_set_protocol(ip_noise_arbitrator_if
     byte = (index >> 3);
     bit = (index & 0x7);
 
-    if ((byte < 0) || (byte > sizeof(chain->filter->protocols)))
+    if ((byte < 0) || (byte >= sizeof(chain->filter->protocols)))
     {
         memset(
             chain->filter->protocols ,
@@ -436,7 +436,7 @@ static int ip_noise_arbitrator_iface_handler_set_tos(ip_noise_arbitrator_iface_t
     byte = (index >> 3);
     bit = (index & 0x7);
 
-    if ((byte < 0) || (byte > sizeof(chain->filter->tos)))
+    if ((byte < 0) || (byte >= sizeof(chain->filter->tos)))
     {
         memset(
             chain->filter->tos ,

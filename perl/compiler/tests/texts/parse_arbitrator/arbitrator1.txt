@@ -24,7 +24,7 @@ Chain Vipe {
         delay = 1
 
         #delay_type = U(0,3000)        
-        delay_type = E(500)
+        delay_type = U(1000,1000);
 
         time_factor = 50000
 
@@ -38,10 +38,9 @@ Chain Vipe {
     # tos works
     #
     
-    source = 132.68.52.118
-    dest = 132.68.52.118
-    tos = 24
-    length = l < 500
+    source = 127.0.0.1:80
+    #tos = 24
+    #length = l < 500
 
     protocol = tcp
  
