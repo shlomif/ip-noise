@@ -109,7 +109,7 @@ sub load_arbitrator
 
     my $ds = $self->{'arb_ds'};
 
-    my $ret_value = $self->transact("clear_all");
+    my ($ret_value, $other_args) = $self->transact("clear_all");
 
     if ($ret_value != 0)
     {

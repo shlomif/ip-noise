@@ -47,6 +47,17 @@ my %operations =
     
 );
 
+sub handler_clear_all
+{
+    my $self = shift;
+
+    # TODO: Really clear all the chains.
+
+    print "Clear All!\n";
+
+    return 0;
+}
+
 sub loop
 {
     my $self = shift;
@@ -79,13 +90,16 @@ sub loop
 
         $conn->conn_write(pack("V", $ret_code));
 
-        for(my $i=0;$i<scalar(@{$record->{'out_params'});$i++)
+        if (exists($record->{'out_params'}))
         {
-            $self->write_param_type(
-                $record->{'out_params'}->[$i],
-                $ret[$i]
-                );
-        }            
+            for(my $i=0;$i<scalar(@{$record->{'out_params'}});$i++)
+            {
+                $self->write_param_type(
+                    $record->{'out_params'}->[$i],
+                    $ret[$i]
+                    );
+            }
+        }
     }
 }
 

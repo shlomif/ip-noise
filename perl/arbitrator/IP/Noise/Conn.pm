@@ -34,9 +34,9 @@ sub initialize
         open *IN, "<$pipes_dir/to_arb";
     }
     else
-    {
-        open *OUT, ">$pipes_dir/to_arb";
+    {        
         open *IN, "<$pipes_dir/from_arb";
+        open *OUT, ">$pipes_dir/to_arb";
     }
 
     $self->{'out'} = \*OUT;
