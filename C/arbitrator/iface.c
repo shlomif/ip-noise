@@ -135,6 +135,8 @@ static ip_noise_chain_t * chain_alloc(char * name)
 
     chain->state_names = ip_noise_str2int_dict_alloc();
 
+    chain->last_packet_release_time.tv_sec = 0;
+
     return chain;
 }
 

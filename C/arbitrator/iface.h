@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #include "redblack.h"
 
@@ -138,7 +139,7 @@ struct ip_noise_chain_struct
     int current_state;
     ip_noise_chain_filter_t * filter;
 
-    struct timeval time_of_last_packet;
+    struct timeval last_packet_release_time;
 
     ip_noise_str2int_dict state_names;
 };

@@ -127,6 +127,9 @@ static ip_noise_verdict_t chain_decide(
     {
         /* Delay */
         int delay;
+        ip_noise_prob_t do_a_stable_delay_prob;
+        struct timeval tv, last_tv;
+        struct timezone tz;
 
         if (current_state->delay_function.type == IP_NOISE_DELAY_FUNCTION_EXP)
         {
@@ -169,12 +172,71 @@ static ip_noise_verdict_t chain_decide(
                     &is_precise
                     );
 
+            if (is_precise)
+            {
+                delay = searched->delay;                
+            }
+            else
+            {
+                /* This is the formula for linear interpolation. */
+                ip_noise_prob_t x1,x2;
+                int y1, y2;
 
-                    
+                x1 = searched[0].prob;
+                y1 = searched[0].delay;
+                x2 = searched[1].prob;
+                y2 = searched[1].delay;
                 
-               
+                delay = (int)(((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
+            }
+        }
+        else
+        {
+            /* Non-existent delay type - default the delay to 0. */
+            delay = 0;
         }
 
+        do_a_stable_delay_prob = ip_noise_rand_rand_in_0_1(self->rand);
+
+        gettimeofday(&tv, &tz);
+
+        if (chain->last_packet_release_time.tv_sec == 0)
+        {
+            chain->last_packet_release_time = tv;
+        }
+
+        if (do_a_stable_delay_prob < current_state->stable_delay_prob)
+        {
+            /* last_sec and last_usec are the times in which the current
+               packet will be released. It is calculated by taking the release
+               time of the last packet and adding the delay. */
+
+            last_tv = chain->last_packet_release_time;
+            last_tv.tv_usec += delay*1000;
+            if (last_tv.tv_usec > 1000000)
+            {
+                last_tv.tv_sec += last_tv.tv_usec / 1000000;
+                last_tv.tv_usec %= 1000000;                
+            }
+
+            delay = (last_tv.tv_sec - tv.tv_sec) * 1000 + ((last_tv.tv_usec-tv.tv_usec) / 1000);
+
+            if (delay < 0)
+            {
+                delay = 0;
+            }        
+        }
+
+        tv.tv_usec += delay * 1000;
+        if (tv.tv_usec > 1000000)
+        {
+            tv.tv_sec += tv.tv_usec / 1000000;
+            tv.tv_usec %= 1000000;
+        }
+        chain->last_packet_release_time = tv;
+        
+        ret.action = IP_NOISE_VERDICT_DELAY;
+        ret.delay_len = delay;
     }
     else
     {
