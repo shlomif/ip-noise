@@ -23,6 +23,9 @@ $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
 iface.o: iface.c iface_handlers.c $(INCLUDES)
 	kgcc $(CFLAGS) -c iface.c
 
+e_log.o: e_log.s
+	kgcc -c $<
+
 OBJECTS = $(OBJECTS_PROTO) iface.o
 
 EXTRA_OBJECT = $(OBJECTS) e_log.o
