@@ -5,6 +5,9 @@ D = /var/www/html/ip-noise
 IMAGES = $(D)/style.css                                             \
          $(D)/docs/Arbitrator_Architecture.txt                      \
          $(D)/docs/Architecture.txt                                 \
+		 $(D)/docs/Final.ppt                                        \
+		 $(D)/docs/IP-Noise-Gen-Final.doc                           \
+		 $(D)/docs/IP-Noise-Gen-Final.pdf                           \
          $(D)/docs/IP-Noise-Generator-Mid-Term.doc                  \
          $(D)/docs/ip_noise.spec.zip                                \
          $(D)/docs/Mid-Term.ppt                                     \
@@ -44,7 +47,7 @@ SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/docs/Users_Guide $(D)/
 HTMLS = $(D)/index.html $(D)/berlios.html $(D)/download/index.html $(D)/links.html \
 	$(D)/docs/index.html $(D)/mailing-list/index.html
 
-RAW_SUBDIRS = $(D)/docs/Mid-Term-html
+RAW_SUBDIRS = $(D)/docs/Mid-Term-html $(D)/docs/Final-html $(D)/docs/Final-Report-HTML
 
 all : $(SUBDIRS) $(HTMLS) $(IMAGES) $(RAW_SUBDIRS)
 
