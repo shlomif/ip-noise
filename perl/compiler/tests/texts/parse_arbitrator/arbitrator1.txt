@@ -11,6 +11,8 @@ Chain MyChain {
     }
     State B {
         drop = 0.4
+        delay = 0.2
+        delay_type = E(500)
         move_to = {
             0.3 = A
             0.7 = B

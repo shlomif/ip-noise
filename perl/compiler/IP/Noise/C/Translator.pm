@@ -83,6 +83,18 @@ my %transactions =
         'params' => [ "chain", "state", "delay_type" ],
         'out_params' => [],
     },
+    'set_split_linear_points' =>
+    {
+        'opcode' => 0x10,
+        'params' => [ "chain", "state", "split_linear_points" ],
+        'out_params' => [],
+    },
+    'set_lambda' =>
+    {
+        'opcode' => 0x11,
+        'params' => [ "chain", "state", "lambda" ],
+        'out_params' => [],
+    },        
 );
 
 sub pack_int32
@@ -129,16 +141,22 @@ sub pack_delay_type
 {
     my $delay_type = shift;
 
-    if ($delay_type->{'type'} eq "exponential")
+    if ($delay_type eq "exponential")
     {
         return pack_int32(0);
     }
-    elsif ($delay_type->{'type'} eq "generic")
+    elsif ($delay_type eq "generic")
     {
         return pack_int32(1);
     }
 }
 
+sub pack_delay
+{
+    my $delay = shift;
+
+    return pack_int32($delay);
+}
 
 sub transact
 {
@@ -196,6 +214,18 @@ sub transact
         elsif ($param_type eq "delay_type")
         {
             $conn->conn_write(pack_delay_type($param));
+        }
+        elsif ($param_type eq "split_linear_points")
+        {
+            foreach my $point (@{$param})
+            {
+                $conn->conn_write(pack_prob($point->{'prob'}));
+                $conn->conn_write(pack_delay($point->{'delay'}));
+            }
+        }
+        elsif ($param_type eq "lambda")
+        {
+            $conn->conn_write(pack_int32($param));
         }
         else
         {
@@ -303,10 +333,50 @@ sub load_arbitrator
                         "set_delay_type",
                         LAST_CHAIN,
                         LAST_STATE,
-                        $state->{'delay_type'}
+                        $state->{'delay_type'}->{'type'}
                         );
+
+                if ($ret_value != 0)
+                {
+                    die "The arbitrator did not accept the delay type!\n";
+                }
+                
+                if ($state->{'delay_type'}->{'type'} eq "generic")
+                {
+                    # Let's transmit the points to the other end
+
+                    ($ret_value, $other_args) = 
+                        $self->transact(
+                            "set_split_linear_points",
+                            LAST_CHAIN,
+                            LAST_STATE,
+                            $state->{'delay_type'}->{'points'}
+                            );
+
+                    if ($ret_value != 0)
+                    {
+                        die "The arbitrator did not accept the points " . 
+                            "for the generic function!\n";                            
+                    }
+                }
+                elsif ($state->{'delay_type'}->{'type'} eq "exponential")
+                {
+                    # Let's transmit the Lambda to the arbitrator
+                    ($ret_value, $other_args) = 
+                        $self->transact(
+                            "set_lambda",
+                            LAST_CHAIN,
+                            LAST_STATE,
+                            $state->{'delay_type'}->{'lambda'}
+                            );
+
+                    if ($ret_value != 0)
+                    {                        
+                        die "The arbitrator did not accept our lambda!\n";
+                    }
+                }
             }
-       }
+        }
     }
 
     ($ret_value, $other_args) = $self->transact("end_connection");

@@ -75,8 +75,23 @@ my %operations =
     0xE =>
     {
         'params' => [ "chain", "state", "prob", "prob" ],
-        'handler' => \&handler_set_drop_delay_prob
+        'handler' => \&handler_set_drop_delay_prob,
     },
+    0xF => 
+    {
+        'params' => [ "chain", "state", "delay_type" ],
+        'handler' => \&handler_set_delay_type,
+    },
+    0x10 =>
+    {
+        'params' => [ "chain", "state", "split_linear_points" ],
+        'handler' => \&handler_set_split_linear_points,
+    },
+    0x11 =>
+    {    
+        'params' => [ "chain", "state", "lambda" ],
+        'handler' => \&handler_set_lambda,
+    },    
     0x10000 =>
     {
         'params' => [],
@@ -156,7 +171,11 @@ sub handler_new_state
         { 
             'name' => $state_name , 
             'drop_prob' => 0, 
-            'delay_prob' => 0 
+            'delay_prob' => 0,
+            'delay_type' => 
+                {
+                    'type' => "none",
+                },
         };
 
     my $index = scalar(@$states_ref) - 1;
@@ -185,6 +204,62 @@ sub handler_set_drop_delay_prob
 
     $state->{'drop_prob'} = $drop_prob;
     $state->{'delay_prob'} = $delay_prob;
+
+    return 0;
+}
+
+sub handler_set_delay_type
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $delay_type = shift;
+    
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    $state->{'delay_type'}->{'type'} = $delay_type;
+
+    return 0;
+}
+
+sub handler_set_split_linear_points
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $points = shift;
+
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    if ($state->{'delay_type'}->{'type'} eq "generic")
+    {
+        $state->{'delay_type'}->{'points'} = $points;
+    }
+
+    return 0;
+}
+
+sub handler_set_lambda
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $lambda = shift;
+    
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    if ($state->{'delay_type'}->{'type'} eq "exponential")
+    {
+        $state->{'delay_type'}->{'lambda'} = $lambda;
+    }
+
+    return 0;
 }
 
 sub read_param_type
@@ -247,6 +322,57 @@ sub read_param_type
         }
         
         return $prob;
+    }
+    elsif ($param_type eq "delay_type")
+    {
+        my $delay_type = $conn->conn_read(4);
+
+        $delay_type = unpack("V", $delay_type);
+
+        if ($delay_type == 0)
+        {
+            return "exponential";
+        }
+        elsif ($delay_type == 1)
+        {
+            return "generic";
+        }
+        else
+        {
+            return "none";
+        }
+    }
+    elsif ($param_type eq "split_linear_points")
+    {
+        my ($prob, $delay);
+
+        my (@ret);
+
+        my $do_first = 1;
+        while ($do_first || ($prob < 1))
+        {
+            $do_first = 0;
+            # TODO: Sanity check that 
+            $prob = unpack("d", $conn->conn_read(8));
+            $delay = unpack("V", $conn->conn_read(4));
+
+            if (($prob < 0) || ($prob > 1))
+            {
+                $prob = 0;
+            }
+            
+            push @ret, {'prob' => $prob, 'delay' => $delay };
+        }
+
+        return \@ret;
+    }
+    elsif ($param_type eq "lambda")
+    {
+        my $lambda = $conn->conn_read(4);
+
+        $lambda = unpack("V", $lambda);
+
+        return $lambda;      
     }
     else
     {
