@@ -67,6 +67,11 @@ my %operations =
         'out_params' => [ "int" ],
         'handler' => \&handler_new_state,
     },
+    0x3 =>
+    {
+        'params' => [ "chain", "ip_packet_filter" ],
+        'handler' => \&handler_set_source,
+    },
     0x19 =>
     {
         'params' => [],
@@ -96,6 +101,11 @@ my %operations =
     {
         'params' => [ "chain", "state", "delay_type" ],
         'handler' => \&handler_set_time_factor,
+    },
+    0x14 =>
+    {
+        'params' => [ "chain", "state", "prob" ],
+        'handler' => \&handler_set_stable_delay_prob,
     },
     0x10000 =>
     {
@@ -136,6 +146,8 @@ sub handler_new_chain
             'name' => $name, 
             'states' => [], 
             'states_map' => {},
+            'source' => { 'type' => "none" },
+            'dest' => { 'type' => "none" },
         };
     
     my $index = scalar(@{$data->{'chains'}})-1;
@@ -184,6 +196,7 @@ sub handler_new_state
                     'type' => "none",
                 },
             'time_factor' => 1000,
+            'stable_delay_prob' => 0,
         };
 
     my $index = scalar(@$states_ref) - 1;
@@ -286,6 +299,40 @@ sub handler_set_time_factor
     return 0;
 }
 
+sub handler_set_stable_delay_prob
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $state_index = shift;
+    my $stable_delay_prob = shift;
+
+    print "Set Stable Delay Prob!\n";
+    
+    my $data = $self->{'data'};
+
+    my $state = $data->{'chains'}->[$chain_index]->{'states'}->[$state_index];
+
+    $state->{'stable_delay_prob'} = $stable_delay_prob;
+
+    return 0;
+}
+
+sub handler_set_source
+{
+    my $self = shift;
+    my $chain_index = shift;
+    my $source = shift;
+
+    print "Set Source!\n";
+
+    my $data = $self->{'data'};
+
+    my $chain = $data->{'chains'}->[$chain_index];
+
+    $chain->{'source'} = $source;
+
+    return 0;    
+}
 
 sub read_param_type
 {
@@ -406,6 +453,37 @@ sub read_param_type
         $delay = unpack("V", $delay);
 
         return $delay;
+    }
+    elsif ($param_type eq "ip_packet_filter")
+    {
+        my ($ip);
+        my @ret;
+
+        # TODO: Add sanity checks.
+        
+        while ($ip ne "\xFF\xFF\xFF\xFF")
+        {
+            $ip = $conn->conn_read(4);
+            my $netmask = unpack("V", $conn->conn_read(4));
+            my @ports = ();
+            while (1)
+            {
+                my ($start, $end) = unpack("SS", $conn->conn_read(4));
+                if ($start > $end)
+                {
+                    last;
+                }
+                push @ports, { 'start' => $start, 'end' => $end };
+            }
+            push @ret, 
+                { 
+                    'ip' => $ip, 
+                    'ports' => [ @ports ],
+                    'netmask_width' => $netmask
+                };
+        }
+
+        return { 'type' => 'pass', 'filters' => \@ret};
     }
     else
     {

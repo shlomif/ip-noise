@@ -7,7 +7,8 @@ Chain MyChain {
             0.5 = B 
             0.5 = C
         }
-        time_factor = 500        
+        time_factor = 500
+        stable_delay = 0.5
     }
     State B {
         drop = 0.4

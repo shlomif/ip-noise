@@ -71,6 +71,12 @@ my %transactions =
         'params' => [ "chain", "string" ],
         'out_params' => [ "int" ],
     },
+    'set_source' =>
+    {
+        'opcode' => 0x3,
+        'params' => [ "chain", "ip_packet_filter"],
+        'out_params' => [],
+    },
     'set_drop_delay_prob' =>
     {
         'opcode' => 0x0E,
@@ -99,6 +105,24 @@ my %transactions =
     {
         'opcode' => 0x13,
         'params' => [ "chain", "state", "delay_type" ],
+        'out_params' => [],
+    },
+    'set_stable_delay_prob' =>
+    {
+        'opcode' => 0x14,
+        'params' => [ "chain", "state", "prob" ],
+        'out_params' => [],
+    },
+    'delete_state' =>
+    {
+        'opcode' => 0x15,
+        'params' => [ "chain", "state" ],
+        'out_params' => [],
+    },
+    'delete_chain' =>
+    {
+        'opcode' => 0x16,
+        'params' => [ "chain"],
         'out_params' => [],
     },
 );
@@ -162,6 +186,35 @@ sub pack_delay
     my $delay = shift;
 
     return pack_int32($delay);
+}
+
+sub pack_ip
+{
+    my $ip = shift;
+
+    return join("", (map { chr($_) } split(/\./, $ip)));
+}
+
+sub pack_range
+{
+    my $range = shift;
+
+    return pack("SS", $range->{'start'}, $range->{'end'});
+}
+
+sub pack_ip_filter
+{
+    my $filter = shift;
+    my $ret = "";
+    
+    $ret = pack_ip($filter->{'ip'}) . pack_int32($filter->{'netmask_width'});
+
+    $ret .= join("", (map { &pack_range($_) } @{$filter->{'ports'}}));
+
+    # Now append the port terminator
+    $ret .= pack("SS", 65535, 0);
+
+    return $ret;
 }
 
 sub transact
@@ -236,6 +289,24 @@ sub transact
         elsif ($param_type eq "delay_type")
         {
             $conn->conn_write(pack_int32($param));
+        }
+        elsif ($param_type eq "ip_packet_filter")
+        {
+            my $filters = $param->{'filters'};
+
+            foreach my $f (@$filters)
+            {
+                $conn->conn_write(pack_ip_filter($f));
+            }
+            $conn->conn_write(
+                pack_ip_filter(
+                    {
+                        'ip' => "255.255.255.255",
+                        'ports' => [ { 'start' => 0, 'end' => 65535 } ],
+                        'netmask_width' => 32,
+                    }
+                    )
+                );
         }
         else
         {
@@ -400,6 +471,41 @@ sub load_arbitrator
             if ($ret_value != 0)
             {
                 die "The arbitrator did not accept our time factor!\n";
+            }
+
+            # Let's transmit the stable delay probability
+
+            ($ret_value, $other_args) =
+                $self->transact(
+                    "set_stable_delay_prob",
+                    LAST_CHAIN,
+                    LAST_STATE,
+                    $state->{'stable_delay_prob'}
+                    );
+
+            if ($ret_value != 0)
+            {
+                die ("The arbitrator did not accept our " . 
+                    "stable delay probability!\n");
+            }
+        } # End of States-Loop
+
+        # Now, let's upload the source IP Packet Filter
+
+        if ($chain->{'source'}->{'type'} ne "none")
+        {
+            print "Uploading source!\n";
+
+            ($ret_value, $other_args) = 
+                $self->transact(
+                    "set_source",
+                    LAST_CHAIN,
+                    $chain->{'source'}
+                    );
+
+            if ($ret_value != 0)
+            {
+                die "The arbitrator did not accept our source!\n";
             }
         }
     }
