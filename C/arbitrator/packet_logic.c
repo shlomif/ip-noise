@@ -403,7 +403,7 @@ static ip_noise_verdict_t chain_decide(
                     delay_double = (((prob-x1)*y1+(x2-prob)*y2)/(x2-x1));
                 }
                 /* delay = (int)(((prob-x1)*y1+(x2-prob)*y2)/(x2-x1)); */
-                delay = (int)delay_double;               
+                delay = (int)delay_double;
             }
         }
         else

@@ -7,24 +7,26 @@ OBJECTS_PROTO = conn.o delayer.o fcs_dm.o main.o packet_logic.o pqueue.o queue.o
 
 DEBUG = 0
 
+CC = kgcc
+
 ifeq ($(DEBUG),1)
-	OPT_FLAGS = -g
+	#OPT_FLAGS = -g
 else
-	OPT_FLAGS = -O2
+	OPT_FLAGS = -g -O2
 endif
 
 CFLAGS = -DUSE_TEXT_QUEUE_IN -DUSE_TEXT_QUEUE_OUT $(OPT_FLAGS) -Wall
 
 $(OBJECTS_PROTO) :: %.o : %.c $(INCLUDES)
-	gcc $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 iface.o: iface.c iface_handlers.c $(INCLUDES)
-	gcc $(CFLAGS) -c iface.c
+	$(CC) $(CFLAGS) -c iface.c
 
 OBJECTS = $(OBJECTS_PROTO) iface.o
 
 arb: $(OBJECTS)
-	gcc -g -Wall -o $@ $(OBJECTS) -lipq -lpthread -lm
+	$(CC) -Wall -o $@ $(OBJECTS) -lipq -lpthread -lm
 
 clean:
 	rm -f arb $(OBJECTS)

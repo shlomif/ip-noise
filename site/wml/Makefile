@@ -16,10 +16,12 @@ IMAGES = $(D)/style.css                                             \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.2.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.3.tar.gz           \
          $(D)/download/IP-Noise-C-Arbitrator-0.1.6.tar.gz           \
+         $(D)/download/IP-Noise-C-Arbitrator-0.1.7.tar.gz           \
          $(D)/download/IP-Noise-Compiler-2001-08-28-rev1.tar.gz     \
          $(D)/download/IP-Noise-Compiler-0.1.2.tar.gz               \
          $(D)/download/IP-Noise-Compiler-0.1.3.tar.gz               \
          $(D)/download/IP-Noise-Compiler-0.1.4.tar.gz               \
+         $(D)/download/IP-Noise-Compiler-0.1.6.tar.gz               \
          $(D)/download/IP-Noise-Engine-perl-0.1.0.tar.gz            \
          $(D)/download/IP-Noise-Engine-perl-0.1.1.tar.gz            \
          $(D)/download/IP-Noise-Engine-perl-0.1.2.tar.gz            \
