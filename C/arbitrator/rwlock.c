@@ -51,7 +51,7 @@ inline int ip_noise_rwlock_allow_writer(ip_noise_rwlock_t * lock)
     return ((lock->active_writers == 0) && (lock->active_readers == 0));
 }
 
-void ip_noise_rwlock_before_read(ip_noise_rwlock_t * lock)
+void ip_noise_rwlock_down_read(ip_noise_rwlock_t * lock)
 {
     int ret = 0;
    
@@ -80,7 +80,7 @@ void ip_noise_rwlock_before_read(ip_noise_rwlock_t * lock)
     pthread_mutex_unlock(&(lock->mutex_lock));
 }
 
-void ip_noise_rwlock_before_write(ip_noise_rwlock_t * lock)
+void ip_noise_rwlock_down_write(ip_noise_rwlock_t * lock)
 {
     int ret = 0;
     
@@ -106,7 +106,7 @@ void ip_noise_rwlock_before_write(ip_noise_rwlock_t * lock)
     pthread_mutex_unlock(&(lock->mutex_lock));
 }
 
-void ip_noise_rwlock_after_read(ip_noise_rwlock_t * lock)
+void ip_noise_rwlock_up_read(ip_noise_rwlock_t * lock)
 {
     pthread_mutex_lock(&(lock->mutex_lock));
 
@@ -121,7 +121,7 @@ void ip_noise_rwlock_after_read(ip_noise_rwlock_t * lock)
     pthread_mutex_unlock(&(lock->mutex_lock));
 }
 
-void ip_noise_rwlock_after_write(ip_noise_rwlock_t * lock)
+void ip_noise_rwlock_up_write(ip_noise_rwlock_t * lock)
 {
     pthread_mutex_lock(&(lock->mutex_lock));
 
@@ -159,13 +159,13 @@ void * reader_thread(void * void_context)
 
     while (1)
     {
-        ip_noise_rwlock_before_read(mylock);
+        ip_noise_rwlock_down_read(mylock);
 
         printf("Reader %i - Lock!\n", context->index);
 
         usleep(rand()%1000000);
 
-        ip_noise_rwlock_after_read(mylock);
+        ip_noise_rwlock_up_read(mylock);
 
         printf("Reader %i - Unlock!\n", context->index);
 
@@ -183,7 +183,7 @@ void * writer_thread(void * void_context)
 
     while (1)
     {
-        ip_noise_rwlock_before_write(mylock);
+        ip_noise_rwlock_down_write(mylock);
 
         printf("Writer %i - Lock!\n", context->index);
 
@@ -191,7 +191,7 @@ void * writer_thread(void * void_context)
 
         printf("Writer %i - Unlock!\n", context->index);
 
-        ip_noise_rwlock_after_write(mylock);
+        ip_noise_rwlock_up_write(mylock);
 
         usleep(rand()%1000000);
     }

@@ -37,10 +37,10 @@ struct ip_noise_rwlock_struct
 
 typedef struct ip_noise_rwlock_struct ip_noise_rwlock_t;
 
-extern void ip_noise_rwlock_before_read(ip_noise_rwlock_t * lock);
-extern void ip_noise_rwlock_before_write(ip_noise_rwlock_t * lock);
-extern void ip_noise_rwlock_after_read(ip_noise_rwlock_t * lock);
-extern void ip_noise_rwlock_after_write(ip_noise_rwlock_t * lock);
+extern void ip_noise_rwlock_down_read ( ip_noise_rwlock_t * lock );
+extern void ip_noise_rwlock_down_write ( ip_noise_rwlock_t * lock );
+extern void ip_noise_rwlock_up_read ( ip_noise_rwlock_t * lock );
+extern void ip_noise_rwlock_up_write ( ip_noise_rwlock_t * lock );
 
 
 #endif /*#ifndef __IP_NOISE_RWLOCK_H */

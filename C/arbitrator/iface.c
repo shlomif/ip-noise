@@ -113,7 +113,7 @@ void ip_noise_arbitrator_iface_loop(
         /* Gain writer permission to the data */
 
         printf("%s", "IFace: down_write()!\n");
-        ip_noise_rwlock_before_write(data_lock);
+        ip_noise_rwlock_down_write(data_lock);
 
         printf("%s", "IFace: gained down_write()!\n");
 
@@ -126,7 +126,7 @@ void ip_noise_arbitrator_iface_loop(
         flags->reinit_switcher = 1;
 
         /* Release the data for others to use */
-        ip_noise_rwlock_after_write(data_lock);
+        ip_noise_rwlock_up_write(data_lock);
         
         printf("%s", "IFace: Closing a connection!\n");
         ip_noise_conn_destroy(self->conn);
