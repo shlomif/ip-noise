@@ -681,9 +681,9 @@ int read_param_type(
             struct in_addr ip;
             struct in_addr terminator;
             int netmask;
-            int num_port_ranges;
+            int num_port_ranges = 0;
             int max_num_port_ranges;
-            ip_noise_port_range_t * port_ranges;
+            ip_noise_port_range_t * port_ranges = NULL;
             int start, end;
             
             
