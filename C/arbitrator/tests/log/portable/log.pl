@@ -2,13 +2,20 @@
 
 use strict;
 
+use POSIX;
+
 my $e_const = exp(1);
 my $e_const_reci = (1/$e_const);
 
 my $number = shift || 516;
 
-printf("%.80lf\n", mylog($number));
-printf("%.80lf\n", log($number));
+my $myval = mylog($number);
+my $sysval = log($number);
+my $percent_diff = (abs($myval-$sysval)/$sysval);
+my $log_error = POSIX::log10($percent_diff);
+printf("%.80lf\n", $myval);
+printf("%.80lf\n", $sysval);
+print(int($log_error), "\n");
 
 sub mylog
 {
@@ -28,12 +35,13 @@ sub mylog
             $exp_base--;
         }
     }
-
-
-    while ($number > 2)
+    else
     {
-        $number *= $e_const_reci;
-        $exp_base++;
+        while ($number > 2)
+        {
+            $number *= $e_const_reci;
+            $exp_base++;
+        }
     }
     
     if ($number == 1)
