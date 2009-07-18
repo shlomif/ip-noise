@@ -1,5 +1,5 @@
 
-D = /var/www/html/ip-noise
+D = ./dest
 #D = /home/httpd/html/ip-noise
 
 IMAGES = $(D)/style.css                                             \
@@ -47,7 +47,7 @@ SUBDIRS = $(D)/download $(D)/docs $(D)/docs/roadmaps $(D)/docs/Users_Guide $(D)/
 HTMLS = $(D)/index.html $(D)/berlios.html $(D)/download/index.html $(D)/links.html \
 	$(D)/docs/index.html $(D)/mailing-list/index.html
 
-RAW_SUBDIRS = $(D)/docs/Mid-Term-html $(D)/docs/Final-html $(D)/docs/Final-Report-HTML
+RAW_SUBDIRS = $(D)/docs/Mid-Term-html $(D)/docs/Final-Report-HTML
 
 all : $(SUBDIRS) $(HTMLS) $(IMAGES) $(RAW_SUBDIRS)
 
