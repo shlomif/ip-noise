@@ -1,0 +1,21 @@
+TCP/IP Noise Simulator for GNU/Linux Systems
+============================================
+Shlomi Fish <shlomif@cpan.org>
+:Date: 2018-10-07
+:Revision: $Id$
+
+[id="intro"]
+Introduction
+------------
+
+This is an open source TCP/IP noise simulator for Linux-based
+systems using https://en.wikipedia.org/wiki/Netfilter[Netfilter's]
+ipqueue mechanism. It delays or drops IP packets based on
+predefined rules.
+
+This project was originally done as a Technion project by
+https://www.shlomifish.org/[Shlomi Fish] and Roy Glasberg.
+
+Fish and Glasberg have placed their modifications and new code under
+the https://en.wikipedia.org/wiki/MIT_License[MIT / Expat licence]
+but some of it is based on FOSS code under different licences.
